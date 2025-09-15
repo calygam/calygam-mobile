@@ -3,19 +3,22 @@ import React from 'react'
 import { Dimensions } from 'react-native';
 import BoxLogin from '../../components/BoxLogin';
 
-export default function LoginScreen() {
-    const { width, height } = Dimensions.get("window");
+// Aqui nessa página eu estou usando para renderizar meu componente BoxLogin
+// E criando ou Definindo meus Textos de Bem-Vindo e nosso Fundo Branco que tem um efeito na tela de duas metades de cores uma Roxa e a outra metade Branca
 
+const { width, height } = Dimensions.get("window");
+
+export default function LoginScreen() {
     return (
         <View style={styles.container}>
             {/* Titulo De Boas-Vindas */}
             <View style={styles.TitleWelcome}>
-                <Text style={{ color: '#fff', fontSize: 24, zIndex: 0, fontWeight: '200' }}>Olá Bem-Vindo</Text>
-                <Text style={{ color: '#fff', fontSize: 24, zIndex: 1}}>Ao Calygam</Text>
+                <Text style={{ color: '#fff', fontSize: 24, fontWeight: '300' }}>Olá Bem-Vindo</Text>
+                <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700', alignItems: 'center', justifyContent: 'center' }}>Ao Calygam</Text>
             </View>
 
-            <BoxLogin/>
-            
+            {/* ParteLogin */}
+            <BoxLogin />
 
             {/* Fundo Branco */}
             <View style={styles.ViewBG}>
@@ -34,8 +37,9 @@ const styles = StyleSheet.create({
         paddingTop: 50,
     },
     TitleWelcome: {
-        // backgroundColor: 'red',
         alignItems: 'center',
+        justifyContent: 'center',
+        width: '90%'
     },
     ViewBG: {
         position: "absolute",
