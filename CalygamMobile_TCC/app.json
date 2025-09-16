@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Calygam",
+    "slug": "CalygamMobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/Propriedade 1=Padrão (2).png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/Propriedade 1=Padrão (2).png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
