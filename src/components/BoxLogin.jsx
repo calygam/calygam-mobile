@@ -5,12 +5,12 @@ const { width, height } = Dimensions.get('window')
 
 export default function BoxLogin() {
 
-    return (
-        <View>
-            <View style={styles.BoxLogin}>
-                <FormGenerico
-                    title='Entrar'
-                    fields={[
+    return (      
+        <View>   
+            <View style={styles.BoxLogin}>   
+                <FormGenerico   
+                    title='Entrar'    
+                    fields={[        
                         { label: 'Digite seu endereço de Email', placeholder: 'Nome de usuário ou endereço de e-mail:' },
                         { label: 'Digite sua Senha', placeholder: 'Digite sua Senha:' },
                     ]}
