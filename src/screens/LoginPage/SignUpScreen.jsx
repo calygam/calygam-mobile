@@ -11,7 +11,8 @@ export default function SignUpScreen() {
                 <Text style={{ color: '#fff', fontSize: 24, zIndex: 1 }}>Ao Calygam</Text>
             </View>
 
-            <BoxSignUp/>
+            {/* ParteCadastro */}
+            <BoxSignUp />
 
             {/* Fundo Branco */}
             <View style={styles.ViewBG}>
@@ -28,8 +29,9 @@ const styles = StyleSheet.create({
         paddingTop: 50,
     },
     TitleWelcome: {
-        // backgroundColor: 'red',
         alignItems: 'center',
+        justifyContent: 'center',
+        width: '90%'
     },
     ViewBG: {
         position: "absolute",
