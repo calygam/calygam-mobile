@@ -4,12 +4,13 @@ import GoogleIcon from "../../assets/Svg/google.svg";
 import { createStaticNavigation, useNavigation } from '@react-navigation/native';
 import useGoogleLogin from '../hooks/loginWithGoogle';
 import loginWithGoogle from '../hooks/loginWithGoogle';
+import Homepage from '../screens/HomePage/Homepage';
 
 // Aqui nessa página eu estou criando um formulario de Login Generico usando Props assim facilitando na hora de reutilizar os mesmos componentes
 // onde eu defino como elas vão se comportar (Obs: Isso aqui e pra tela de Login e Cadastro) e 
 // isso eu posso manipula-lás na Pagina de BoxLogin ou seja muda o valor delas.
 
-export default function FormGenerico({ title, fields = [], buttonText, onSubmit, GoogleButton = false, linkText, NãoTem, userInfo}) {
+export default function FormGenerico({ title, fields = [], buttonText, onHomePage, GoogleButton = false, linkText, NãoTem, userInfo}) {
 
   const navigation = useNavigation();
 
@@ -60,7 +61,7 @@ export default function FormGenerico({ title, fields = [], buttonText, onSubmit,
       )}
 
       {/* Botão De Entrar*/}
-      <TouchableOpacity style={styles.button} onPress={onSubmit}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
         <Text style={styles.buttonText}>{buttonText}</Text>
       </TouchableOpacity>
     </View>

@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions } from 'react-native'
 import FormGenerico from './FormGenerico';
 import useGoogleLogin from '../hooks/loginWithGoogle';
+import Homepage from '../screens/HomePage/Homepage';
 
 const { width, height } = Dimensions.get('window')
 
@@ -16,7 +17,7 @@ export default function BoxLogin() {
                         { label: 'Digite sua Senha', placeholder: 'Digite sua Senha:' },
                     ]}
                     buttonText="Entrar"
-                    onSubmit={() => alert("Sucesso!")}
+                    onHomePage={Homepage}
                     GoogleButton={loginWithGoogle}
                     userInfo={userInfo}
                     NãoTem='Não tem Conta?'
