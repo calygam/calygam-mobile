@@ -25,6 +25,9 @@ export default function BoxLogin() {
                 />
             </View>
         </View>
+
+
+
     )
 }
 
