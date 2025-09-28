@@ -1,6 +1,6 @@
-import Bem_Vindo from './assets/Svg/Raising hand-bro 1.svg';
-import Atividades from './assets/Svg/Success factors-bro 1.svg';
-import Evolua from './assets/Svg/Task-bro 1.svg';
+import Bem_Vindo from './assets/Svg/IconsOnboading/Raising hand-bro 1.svg';
+import Atividades from './assets/Svg/IconsOnboading/Success factors-bro 1.svg';
+import Evolua from './assets/Svg/IconsOnboading/Task-bro 1.svg';
 
 
 // Exporta uma lista (array) com os slides

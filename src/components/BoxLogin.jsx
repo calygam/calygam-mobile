@@ -6,7 +6,7 @@ import Homepage from '../screens/HomePage/Homepage';
 const { width, height } = Dimensions.get('window')
 
 export default function BoxLogin() {
-    const { userInfo, loginWithGoogle } = useGoogleLogin();
+    const { goToGoogle } = useGoogleLogin();
     return (
         <View>
             <View style={styles.BoxLogin}>
@@ -18,8 +18,8 @@ export default function BoxLogin() {
                     ]}
                     buttonText="Entrar"
                     onHomePage={Homepage}
-                    GoogleButton={loginWithGoogle}
-                    userInfo={userInfo}
+                    GoogleButton={goToGoogle}
+                    // userInfo={userInfo}
                     NãoTem='Não tem Conta?'
                     linkText='Cadastre-se'
                 />
