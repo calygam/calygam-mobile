@@ -6,8 +6,10 @@ import IOTIcon from "../../../assets/Svg/IconsCardExplorar/site-alt 1.svg";
 import FigmaIcon from "../../../assets/Svg/IconsCardExplorar/Group.svg";
 import AdobeIcon from "../../../assets/Svg/IconsCardExplorar/illustrator 1.svg";
 import ExcelIcon from "../../../assets/Svg/IconsCardExplorar/file-excel 1.svg";
+import { useNavigation } from '@react-navigation/native';
 
 export default function Homepage() {
+     const navigation = useNavigation();
     return (
         <View style={styles.container}>
             <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
@@ -76,7 +78,7 @@ export default function Homepage() {
                         {/* Button Ver Mais */}
                         <View>
                             <TouchableOpacity style={styles.Button}>
-                                <Text style={{ color: '#FFF', fontSize: 15 }}>Ver Mais</Text>
+                                <Text style={{ color: '#FFF', fontSize: 15 }} onPress={() => navigation.navigate('BibliotecaCursos')}>Ver Mais </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -86,7 +88,7 @@ export default function Homepage() {
                 <View style={styles.MascoteContainer}>
                     <View style={styles.VemNenem}>
                         <View style={styles.ProBraçosdoPapai}>
-                            <Text style={{ color: '#FFF', fontSize: 16, left: 25 }}>Meu Mascote</Text>
+                            <Text style={{ color: '#FFF', fontSize: 18, left: 25, fontWeight: 'bold' }}>Meu Mascote</Text>
                             <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '700' }}>Ops! Você ainda não tem nenhum mascote</Text>
                             <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '200' }}>Conheça os benefícios de ter um pet no seu dia a dia e descubra como adotar seu novo melhor amigo de forma responsável e consciente!</Text>
                             <View>
@@ -158,7 +160,8 @@ const styles = StyleSheet.create({
     Texto: {
         color: '#FFF',
         fontSize: 14,
-        textAlign: 'center'
+        textAlign: 'center',
+        fontWeight: '100'
     },
     TextExplorar: {
         width: '90%',
