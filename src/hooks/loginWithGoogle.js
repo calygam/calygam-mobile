@@ -1,46 +1,53 @@
-import { useState } from "react";
-import * as WebBrowser from "expo-web-browser";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as React from "react";
+import { useEffect } from "react";
+import * as AuthSession from "expo-auth-session";
+import { Linking } from "react-native";
 
-WebBrowser.maybeCompleteAuthSession();
+
+const BACKEND_URL = "https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google";
 
 export default function useGoogleLogin() {
-    const [userInfo, setUserInfo] = useState(null);
+    // Cria o redirect URI pro Expo Go
+    const redirectUri = AuthSession.makeRedirectUri({
+        useProxy: true, // importante pro Expo Go
+        projectNameForProxy: "@figmayago/CalygamMobile",
+    });
+    console.log('Redirect URI:', redirectUri);
 
-    // Define o ambiente (true pra local, false pra Azure)
-    const isLocal = process.env.NODE_ENV === 'development';
-
-    // IP local dinâmico - muda aqui pro IP atual (casa, faculdade ou amigo)
-    const localIp = "10.0.0.191: 8080"; // Exemplo: casa. Muda pra "10.105.81.174" na faculdade, ou pede pro amigo mudar.
-
-    const azureUrl = "https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net";
-
-    const googleAuthUrl = isLocal ? `http://${localIp}:8080/auth/google` : `${azureUrl}/auth/google`;
-    const redirectUri = isLocal ? `http://${localIp}:8080/auth/google/callback` : `${azureUrl}/auth/google/callback`;
-
-    const goToGoogle = async () => {
-        try {
-            const result = await WebBrowser.openAuthSessionAsync(googleAuthUrl, redirectUri);
-
-            if (result.type === "success" && result.url) {
-                const urlParams = new URLSearchParams(result.url.split("?")[1]);
-                const jwtToken = urlParams.get("token");
-                if (jwtToken) {
-                    await AsyncStorage.setItem("token", jwtToken);
-                    setUserInfo({ jwtToken });
-                    alert("Login bem-sucedido!");
-                } else {
-                    alert("Erro: Token não encontrado");
-                }
-            } else if (result.type === "dismiss") {
-                alert("Login cancelado");
-            } else if (result.type === "error") {
-                alert("Erro na autenticação");
-            }
-        } catch (error) {
-            alert("Erro ao iniciar login");
-        }
+// Descoberta da URL de autenticação
+    const discovery = {
+        authorizationEndpoint: `${BACKEND_URL}/auth/google`,
+        tokenEndpoint: "", // se o backend gerar o token, pode ficar vazio
     };
+    
+// Cria a requisição de autenticação
+const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+        clientId: "810580691936-4bck7sg06e22td5q4da83jfir8i0gbga.apps.googleusercontent.com", // Placeholder, backend usa o real
+        redirectUri,
+        scopes: ["profile", "email"],
+        extraParams: {
+            redirect_uri: redirectUri, // Passa pro backend
+        },
+    },
+    discovery
+);
 
-    return { userInfo, goToGoogle };
+// Captura o resultado quando o usuário volta do Google
+useEffect(() => {
+    if (response?.type === "success") {
+        console.log("Login sucesso:", response.params);
+        // Aqui você pode pegar o token que o backend passou via redirect
+        // e salvar no AsyncStorage ou contexto global
+    } else if (response?.type === "error") {
+        console.log("Erro no login:", response.error);
+    }
+}, [response]);
+
+// Função que vai ser chamada no botão
+const goToGoogle = () => {
+    Linking.openURL(BACKEND_URL) // abre o navegador pro Google login
+};
+
+return { goToGoogle, request };
 }

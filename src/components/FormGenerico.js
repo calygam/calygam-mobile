@@ -4,7 +4,7 @@ import GoogleIcon from "../../assets/Svg/google.svg";
 import { createStaticNavigation, useNavigation } from '@react-navigation/native';
 import useGoogleLogin from '../hooks/loginWithGoogle';
 import loginWithGoogle from '../hooks/loginWithGoogle';
-import Homepage from '../screens/HomePage/Homepage';
+import Homepage from '../../src/screens/HomePage/Homepage';
 
 // Aqui nessa página eu estou criando um formulario de Login Generico usando Props assim facilitando na hora de reutilizar os mesmos componentes
 // onde eu defino como elas vão se comportar (Obs: Isso aqui e pra tela de Login e Cadastro) e 

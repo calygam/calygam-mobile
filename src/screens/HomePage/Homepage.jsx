@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Montanha from "../../../src/screens/HomePage/SvgMontanha/Montanha";
+import Montanha from "./SvgMontanha/Montanha"
 import Cards from '../../components/CardHomeExplorar/Card';
 import IOTIcon from "../../../assets/Svg/IconsCardExplorar/site-alt 1.svg";
 import FigmaIcon from "../../../assets/Svg/IconsCardExplorar/Group.svg";
 import AdobeIcon from "../../../assets/Svg/IconsCardExplorar/illustrator 1.svg";
 import ExcelIcon from "../../../assets/Svg/IconsCardExplorar/file-excel 1.svg";
 import { useNavigation } from '@react-navigation/native';
+import CUzinho from "./SvgMontanha/Montanha"
 
 export default function Homepage() {
      const navigation = useNavigation();
@@ -35,7 +36,7 @@ export default function Homepage() {
                 {/* Montanha */}
                 <View style={styles.MontanhaContainer}>
                     <View style={styles.MontanhaView}>
-                        <Montanha />
+                        <CUzinho Monta={Montanha} />
                     </View>
                 </View>
 
@@ -77,8 +78,8 @@ export default function Homepage() {
 
                         {/* Button Ver Mais */}
                         <View>
-                            <TouchableOpacity style={styles.Button}>
-                                <Text style={{ color: '#FFF', fontSize: 15 }} onPress={() => navigation.navigate('BibliotecaCursos')}>Ver Mais </Text>
+                            <TouchableOpacity style={styles.Button} onPress={() => navigation.navigate('Biblioteca', { screen: 'BibliotecaCursos' })} >
+                                <Text style={{ color: '#FFF', fontSize: 15 }}>Ver Mais </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -143,10 +144,14 @@ const styles = StyleSheet.create({
         height: 230,
         justifyContent: 'flex-start',
         alignItems: 'center',
+        // backgroundColor: 'blue'
     },
     MontanhaView: {
-        top: -10, // Adjusted to move mountain down
+        top: -40, // Adjusted to move mountain down
         justifyContent: 'flex-start',
+        // backgroundColor: 'red',
+        width: '100%',
+        
     },
     Titulo: {
         fontSize: 16,

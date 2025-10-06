@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions } from 'react-native'
 import FormGenerico from './FormGenerico';
 import useGoogleLogin from '../hooks/loginWithGoogle';
-import Homepage from '../screens/HomePage/Homepage';
+import Homepage from '../../src/screens/HomePage/Homepage';
+// import ToGoogle from '../hooks/loginWithGoogle';
+
 
 const { width, height } = Dimensions.get('window')
 

@@ -1,6 +1,9 @@
 import React from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 import IconSeach from "../../../assets/Svg/IconsInterface/Icon Seach.svg";
+import { Dimensions } from "react-native";
+
+const { width, height } = Dimensions.get('window')
 
 export default function SearchBar() {
     return (
@@ -24,7 +27,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         height: 50,
-        width: 235
+        width: width * 0.7
     },
     icon: {
         marginRight: 8,

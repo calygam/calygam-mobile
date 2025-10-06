@@ -1,9 +1,17 @@
 // src/screens/HomePage/SvgMontanha/Montanha.js
 import React from "react";
-import MontanhaSvg from "../../../../assets/Svg/Group 146.svg"; // OBS: o nome aqui NÃO pode ser igual ao nome da função
+import Montanha from "../../../../assets/Svg/Group 146.svg"; // OBS: o nome aqui NÃO pode ser igual ao nome da função
+import { StyleSheet } from "react-native";
 
-export default function Montanha(props) {
-    const { width = 350, height = 260, style, ...rest } = props;
-    return <MontanhaSvg width={width} height={height} style={style} {...rest} />;
+export default function CUzinho({ Monta }) {
+    return (
+        <Montanha width={'100%'} fill="#888" style={styles.icon} />
+    )
 }
 
+const styles = StyleSheet.create({
+    icon: {
+        width: '100%',
+        // backgroundColor: 'green'
+    }
+})

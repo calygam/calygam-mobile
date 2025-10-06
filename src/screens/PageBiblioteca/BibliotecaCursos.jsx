@@ -2,9 +2,16 @@ import { View, Text, StyleSheet } from 'react-native'
 import React from 'react'
 import SearchBar from '../../components/SeachBiblioteca/Seach'
 import CardsTrilhas from '../../components/CardTrilhas/CardsTrilhas'
+import IconReact from "../../../assets/Svg/IconsInterface/react 1.svg";
+import IconBancoDeDados from "../../../assets/Svg/IconsInterface/base-de-dados 1.svg";
+import IconFront from "../../../assets/Svg/IconsInterface/codigo-simples 1.svg";
+import IconJava from "../../../assets/Svg/IconsInterface/Group.svg";
+import IconAdobeIllustrador from "../../../assets/Svg/IconsInterface/illustrator 1.svg";
+import { ScrollView } from 'react-native';
 
 export default function BibliotecaCursos() {
     return (
+        <ScrollView>
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.containerHeader}>
@@ -21,8 +28,16 @@ export default function BibliotecaCursos() {
             </View>
 
             {/* Cards */}
-            <CardsTrilhas />
+            
+            <CardsTrilhas NameTrail="Java - BackEnd" Icons={IconJava} />
+            <CardsTrilhas NameTrail="Banco De Dados" Icons={IconBancoDeDados} />
+            <CardsTrilhas NameTrail="Adobe - Illustrador" Icons={IconAdobeIllustrador} />
+            <CardsTrilhas NameTrail="FrontEnd - Tailwind" Icons={IconFront} />
+            <CardsTrilhas NameTrail="React-Native" Icons={IconReact} />
+            <CardsTrilhas NameTrail="Java - BackEnd" Icons={IconJava} />
+           
         </View>
+        </ScrollView>
     )
 }
 const styles = StyleSheet.create({
