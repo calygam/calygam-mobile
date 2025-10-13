@@ -19,3 +19,6 @@
 //   },
   
 // })
+
+import Sla from '../../../assets/image/logocalygam.png'
+import bla from '../../../assets/image/adaptive-icon.png'

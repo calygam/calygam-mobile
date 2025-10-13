@@ -7,6 +7,10 @@ import Routes from './src/routes/TabNavigatorBottom';
 import Onboarding from './src/screens/OnboardingScreens/Onboarding';
 import LoginScreen from './src/screens/LoginPage/LoginScreen';
 
+// import * as dotenv from 'dotenv';
+
+// dotenv.config(); // Carrega as variáveis do .env
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {

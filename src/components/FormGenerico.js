@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native'
 import React from 'react'
-import GoogleIcon from "../../assets/Svg/google.svg";
+import GoogleIcon from "../../assets/svg/google.svg";
 import { createStaticNavigation, useNavigation } from '@react-navigation/native';
 import useGoogleLogin from '../hooks/loginWithGoogle';
 import loginWithGoogle from '../hooks/loginWithGoogle';

@@ -2,10 +2,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient';
 import Montanha from "./SvgMontanha/Montanha"
 import Cards from '../../components/CardHomeExplorar/Card';
-import IOTIcon from "../../../assets/Svg/IconsCardExplorar/site-alt 1.svg";
-import FigmaIcon from "../../../assets/Svg/IconsCardExplorar/Group.svg";
-import AdobeIcon from "../../../assets/Svg/IconsCardExplorar/illustrator 1.svg";
-import ExcelIcon from "../../../assets/Svg/IconsCardExplorar/file-excel 1.svg";
+import IOTIcon from "../../../assets/svg/IconsCardExplorar/site-alt-1.svg";
+import FigmaIcon from "../../../assets/svg/IconsCardExplorar/group.svg";
+import AdobeIcon from "../../../assets/svg/IconsCardExplorar/illustrator-1.svg";
+import ExcelIcon from "../../../assets/svg/IconsCardExplorar/file-excel-1.svg";
 import { useNavigation } from '@react-navigation/native';
 import CUzinho from "./SvgMontanha/Montanha"
 

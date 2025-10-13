@@ -5,14 +5,14 @@ import BibliotecaCursos from "../screens/PageBiblioteca/BibliotecaCursos";
 import ShopPage from "../screens/ShopPage/ShopPage";
 
 // Icon Tab Naviagtion
-import IconHomeAtivo from '../../assets/Svg/IconsTabBottom/Group 1.svg'
-import IconHomeDesabilitado from '../../assets/Svg/IconsTabBottom/casa 1 2.svg'
+import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
+import IconHomeDesabilitado from '../../assets/svg/IconsTabBottom/casa-1-2.svg'
 
-import IconLivroAtivo from '../../assets/Svg/IconsTabBottom/livros 1.svg'
-import IconLivroDesabilitado from '../../assets/Svg/IconsTabBottom/livros 1 desa.svg'
+import IconLivroAtivo from '../../assets/svg/IconsTabBottom/livros-1.svg'
+import IconLivroDesabilitado from '../../assets/svg/IconsTabBottom/livros-1-desa.svg'
 
-import IconShopAtivo from '../../assets/Svg/IconsTabBottom/comprar 1.svg'
-import IconShopDesabilitado from '../../assets/Svg/IconsTabBottom/Frame 6.svg'
+import IconShopAtivo from '../../assets/svg/IconsTabBottom/comprar-1.svg'
+import IconShopDesabilitado from '../../assets/svg/IconsTabBottom/frame-6.svg'
 
 const Tab = createBottomTabNavigator();
 
@@ -24,7 +24,7 @@ function Routes(){
             headerShown: false,
             tabBarStyle: {
                 position: 'absolute',
-                backgroundColor: '#131417',
+                backgroundColor: '#1D1F24',
                 borderTopWidth: 0,
                 bottom: 24,
                 marginLeft: 20,

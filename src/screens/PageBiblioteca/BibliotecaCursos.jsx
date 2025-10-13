@@ -2,11 +2,11 @@ import { View, Text, StyleSheet } from 'react-native'
 import React from 'react'
 import SearchBar from '../../components/SeachBiblioteca/Seach'
 import CardsTrilhas from '../../components/CardTrilhas/CardsTrilhas'
-import IconReact from "../../../assets/Svg/IconsInterface/react 1.svg";
-import IconBancoDeDados from "../../../assets/Svg/IconsInterface/base-de-dados 1.svg";
-import IconFront from "../../../assets/Svg/IconsInterface/codigo-simples 1.svg";
-import IconJava from "../../../assets/Svg/IconsInterface/Group.svg";
-import IconAdobeIllustrador from "../../../assets/Svg/IconsInterface/illustrator 1.svg";
+import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
+import IconBancoDeDados from "../../../assets/svg/IconsInterface/base-de-dados-1.svg";
+import IconFront from "../../../assets/svg/IconsInterface/codigo-simples-1.svg";
+import IconJava from "../../../assets/svg/IconsInterface/group.svg";
+import IconAdobeIllustrador from "../../../assets/svg/IconsInterface/illustrator-1.svg";
 import { ScrollView } from 'react-native';
 
 export default function BibliotecaCursos() {

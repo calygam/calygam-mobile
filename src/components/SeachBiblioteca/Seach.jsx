@@ -1,6 +1,6 @@
 import React from "react";
 import { View, TextInput, StyleSheet } from "react-native";
-import IconSeach from "../../../assets/Svg/IconsInterface/Icon Seach.svg";
+import IconSeach from "../../../assets/svg/IconsInterface/icon_seach.svg";
 import { Dimensions } from "react-native";
 
 const { width, height } = Dimensions.get('window')

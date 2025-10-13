@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet} from 'react-native'
 import React from 'react'
 import Svg from 'react-native-svg'
-import IOTIcon from "../../../assets/Svg/IconsCardExplorar/site-alt 1.svg";
+
 
 
 export default function Cards({ title, Icon }) {

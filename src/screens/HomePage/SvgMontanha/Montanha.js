@@ -1,6 +1,6 @@
 // src/screens/HomePage/SvgMontanha/Montanha.js
 import React from "react";
-import Montanha from "../../../../assets/Svg/Group 146.svg"; // OBS: o nome aqui NÃO pode ser igual ao nome da função
+import Montanha from "../../../../assets/svg/group-146.svg"; // OBS: o nome aqui NÃO pode ser igual ao nome da função
 import { StyleSheet } from "react-native";
 
 export default function CUzinho({ Monta }) {

@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import React from 'react'
 import { Dimensions } from 'react-native'
-import IconPessoas from "../../../assets/Svg/IconsInterface/users-alt 1.svg";
+import IconPessoas from "../../../assets/svg/IconsInterface/users-alt-1.svg";
 
 const { width, height } = Dimensions.get('window')
 
