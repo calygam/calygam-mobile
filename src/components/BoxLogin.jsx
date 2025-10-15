@@ -15,7 +15,7 @@ export default function BoxLogin() {
                 <FormGenerico
                     title='Entrar'
                     fields={[
-                        { label: 'Digite seu endereço de Email', placeholder: 'Nome de usuário ou endereço de e-mail:' },
+                        { label: 'Digite seu endereço de Email', placeholder: 'Nome de usuário ou endereço de e-mail:'},
                         { label: 'Digite sua Senha', placeholder: 'Digite sua Senha:' },
                     ]}
                     buttonText="Entrar"

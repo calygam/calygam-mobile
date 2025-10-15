@@ -11,7 +11,7 @@ api.interceptors.request.use(
         try { // O try Tenta pegar o token
             const token = await AsyncStorage.getItem('token') // Procurar no celular se existe um token salvo
             if (token) {
-                config.headers.Authorizantion = `Bearer ${token}`; // Aqui verificar se encontrou o token se encontrou 
+                config.headers.Authorization = `Bearer ${token}`; // Aqui verificar se encontrou o token se encontrou 
                 // Cola no cabeçalho do pedido
             }
         } catch (error) { // Se deu ruim na hora de buscar o token Mostre um erro

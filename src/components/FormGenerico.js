@@ -47,6 +47,7 @@ export default function FormGenerico({ title, fields = [], buttonText, onHomePag
         <View key={index} style={styles.inputContainer}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
+            placeholderTextColor={"#ADADAD"}
             placeholder={field.placeholder}
             secureTextEntry={field.secureTextEntry}
             style={styles.styleInput}
@@ -87,7 +88,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '300',
     width: '100%',
-    height: 55
+    height: 55,
+    
   },
   button: {
     backgroundColor: '#0089ED',

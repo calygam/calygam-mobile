@@ -3,6 +3,11 @@
     "name": "Calygam",
     "scheme": "calygam",
     "slug": "Calygam",
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ],
     "version": "1.0.0",
     "owner": "mr_cat",
     "orientation": "portrait",
@@ -14,6 +19,22 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "intentFilters": [
+      {
+        "action": "VIEW",
+        "autoVerify": true,
+        "data": [
+          {
+            "scheme": "calygam",
+            "host": ""
+          }
+        ],
+        "category": [
+          "BROWSABLE",
+          "DEFAULT"
+        ]
+      }
+    ],
     "ios": {
       "supportsTablet": true
     },
