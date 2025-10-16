@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     width: '100%',
     height: 55,
+    color: '#6C63FF'
     
   },
   button: {
