@@ -18,7 +18,7 @@ const Tab = createBottomTabNavigator();
 
 function Routes(){
     return(
-        <Tab.Navigator initialRouteName="Home" screenOptions={{
+        <Tab.Navigator initialRouteName="home" screenOptions={{
             tabBarActiveTintColor: '#6C63FF',
             tabBarInactiveTintColor: '#676D75',
             headerShown: false,
@@ -34,7 +34,7 @@ function Routes(){
                 height: 60
             }
         }}>
-            <Tab.Screen name="Home" component={Homepage} options={{
+            <Tab.Screen name="home" component={Homepage} options={{
                 tabBarIcon: ({color, size, focused}) => {
                     if(focused){
                         return <IconHomeAtivo />

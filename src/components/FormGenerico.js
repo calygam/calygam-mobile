@@ -10,7 +10,7 @@ import Homepage from '../../src/screens/HomePage/Homepage';
 // onde eu defino como elas vão se comportar (Obs: Isso aqui e pra tela de Login e Cadastro) e 
 // isso eu posso manipula-lás na Pagina de BoxLogin ou seja muda o valor delas.
 
-export default function FormGenerico({ title, fields = [], buttonText, onHomePage, GoogleButton = false, linkText, NãoTem, userInfo}) {
+export default function FormGenerico({ title, fields = [], buttonText, GoogleButton = false, linkText, NãoTem, userInfo, onSubmit, }) {
 
   const navigation = useNavigation();
 
@@ -51,6 +51,8 @@ export default function FormGenerico({ title, fields = [], buttonText, onHomePag
             placeholder={field.placeholder}
             secureTextEntry={field.secureTextEntry}
             style={styles.styleInput}
+            value={field.value}
+            onChangeText={field.onChangeText}
           />
         </View>
       ))}
@@ -62,7 +64,7 @@ export default function FormGenerico({ title, fields = [], buttonText, onHomePag
       )}
 
       {/* Botão De Entrar*/}
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
+      <TouchableOpacity style={styles.button} onPress={onSubmit}>
         <Text style={styles.buttonText}>{buttonText}</Text>
       </TouchableOpacity>
     </View>
