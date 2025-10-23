@@ -1,22 +1,56 @@
 import { View, StyleSheet, Dimensions, Alert } from 'react-native'
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FormGenerico from './FormGenerico';
-import useGoogleLogin from '../hooks/loginWithGoogle';
 import { useNavigation } from '@react-navigation/native';
-import Homepage from '../../src/screens/HomePage/Homepage';
 // import ToGoogle from '../hooks/loginWithGoogle';
-import TestarConexao from '../api/teste';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import axios from 'axios';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window')
 
 export default function BoxLogin() {
-        const navigation = useNavigation();
-    const { goToGoogle } = useGoogleLogin();
+
+    useEffect(() => {
+        GoogleSignin.configure({
+            webClientId: '810580691936-4bck7sg06e22td5q4da83jfir8i0gbga.apps.googleusercontent.com', // vem do console do Firebase ou Google Cloud
+            offlineAccess: true,
+        });
+    }, []);
+
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+
+    const navigation = useNavigation();
+
 
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
 
+    // Login com o Google
+    const signInWithGoogle = async () => {
+        try {
+            setLoading(true);
+            setErrorMessage(null);
+            await GoogleSignin.hasPlayServices();
+            const userInfo = await GoogleSignin.signIn();
+            const idToken = userInfo.idToken;
+
+            // Salvar token no AsyncStorage
+            await AsyncStorage.setItem('userToken', idToken);
+
+            // Navegar para Home após sucesso
+            navigation.replace('home');
+        } catch (error) {
+            setErrorMessage(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Login sem o Google aqui o usuario vem pra cá se ele não quer fazer o login com o Google ai ele vai ter que ser
+    // Cadastrar
     const handleLogin = async () => {
         if (!email || !senha) {
             Alert.alert("Atenção", "Preencha todos os campos.");
@@ -50,34 +84,35 @@ export default function BoxLogin() {
             {/* <TestarConexao />; */}
 
             <View style={styles.BoxLogin}>
+
                 <FormGenerico
                     title='Entrar'
                     fields={[
                         {
                             label: 'Digite seu endereço de Email',
                             placeholder: 'Nome de usuário ou endereço de e-mail:',
-                            value:email,
+                            value: email,
                             onChangeText: setEmail,
                         },
                         {
                             label: 'Digite sua Senha',
                             placeholder: 'Digite sua Senha:',
-                            value:senha,
+                            value: senha,
                             onChangeText: setSenha,
                             secureTextEntry: true,
                         },
                     ]}
+
                     buttonText="Entrar"
                     onSubmit={handleLogin}
-                    GoogleButton={goToGoogle}
+                    GoogleButton={signInWithGoogle}
                     // userInfo={userInfo}
                     NãoTem='Não tem Conta?'
                     linkText='Cadastre-se'
+
                 />
             </View>
         </View>
-
-
 
     )
 }

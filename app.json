@@ -1,46 +1,15 @@
 {
   "expo": {
     "name": "Calygam",
-    "scheme": "calygam",
     "slug": "Calygam",
-    "platforms": [
-      "android",
-      "ios",
-      "web"
-    ],
     "version": "1.0.0",
-    "owner": "mr_cat",
-    "orientation": "portrait",
-    "icon": "./assets/image/logocalygam.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/image/logocalygam.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/image/logocalygam.png",
-        "backgroundColor": "#FFFFFF"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.mr_cat.calygam"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-web-browser"
-    ],
     "extra": {
       "eas": {
         "projectId": "a9bd4283-889c-4997-a058-2698fcbf4905"
       }
+    },
+    "android": {
+      "package": "com.mr_cat.Calygam"
     }
   }
 }

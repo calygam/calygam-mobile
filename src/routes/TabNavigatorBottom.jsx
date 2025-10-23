@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Homepage from "../screens/HomePage/Homepage";
 import BibliotecaCursos from "../screens/PageBiblioteca/BibliotecaCursos";
 import ShopPage from "../screens/ShopPage/ShopPage";
+import TesteModal from "../screens/TesteModal/TesteModal";
 
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
@@ -51,6 +52,15 @@ function Routes(){
                 }
             }} />
             <Tab.Screen name="Shop" component={ShopPage} options={{
+                tabBarIcon: ({ color, size, focused }) => {
+                    if (focused) {
+                        return <IconShopAtivo />
+                    }
+                    return <IconShopDesabilitado />
+                }
+            }} />
+
+            <Tab.Screen name="teste" component={TesteModal} options={{
                 tabBarIcon: ({ color, size, focused }) => {
                     if (focused) {
                         return <IconShopAtivo />

@@ -1,18 +1,34 @@
-import { makeRedirectUri } from "expo-auth-session";
-import { Linking } from "react-native";
+// import {
+//     GoogleOneTapSignIn,
+//     GoogleLogoButton,
+// } from '@react-native-google-signin/google-signin';
 
-const BACKEND_URL = "https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google";
+// <GoogleLogoButton onPress={startSignInFlow} label="Sign in with Google" />;
 
-export default function useGoogleLogin() {
+// const startSignInFlow = async () => {
+//     try {
+//         GoogleOneTapSignIn.configure(); // move this to after your app starts
+//         await GoogleOneTapSignIn.checkPlayServices();
+//         const signInResponse = await GoogleOneTapSignIn.signIn();
+//         if (signInResponse.type === 'success') {
+//             // use signInResponse.data
+//         } else if (signInResponse.type === 'noSavedCredentialFound') {
+//             // the user wasn't previously signed into this app
+//             const createResponse = await GoogleOneTapSignIn.createAccount();
+//             if (createResponse.type === 'success') {
+//                 // use createResponse.data
+//             } else if (createResponse.type === 'noSavedCredentialFound') {
+//                 // no Google user account was present on the device yet (unlikely but possible)
+//                 const explicitResponse =
+//                     await GoogleOneTapSignIn.presentExplicitSignIn();
 
-    const goToGoogle = () => {
-        Linking.openURL(BACKEND_URL);
-    };
-
-    const redirectUri = makeRedirectUri({
-        scheme: "calygam",
-    });
-    console.log("Redirect URI:", redirectUri);
-
-    return { goToGoogle };
-}
+//                 if (explicitResponse.type === 'success') {
+//                     // use explicitResponse.data
+//                 }
+//             }
+//         }
+//         // the else branches correspond to the user canceling the sign in
+//     } catch (error) {
+//         // handle error
+//     }
+// };

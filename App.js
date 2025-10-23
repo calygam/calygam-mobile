@@ -1,20 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import StackRoutes from './src/routes/StackNavigator';
 import Routes from './src/routes/TabNavigatorBottom';
 import Onboarding from './src/screens/OnboardingScreens/Onboarding';
 import LoginScreen from './src/screens/LoginPage/LoginScreen';
 import SignUpScreen from './src/screens/LoginPage/SignUpScreen';
 import * as Linking from 'expo-linking'
-import Homepage from './src/screens/HomePage/Homepage';
 import React, { useEffect } from 'react';
 import { AuthContext, AuthProvider } from './src/hooks/AuthContext';
 
-// import * as dotenv from 'dotenv';
 
-// dotenv.config(); // Carrega as variáveis do .env
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
+// Configure Google Signin
+GoogleSignin.configure({
+    webClientId: '810580691936-4bck7sg06e22td5q4da83jfir8i0gbga.apps.googleusercontent.com', // Troque pelo seu Web Client ID do Google Console
+    offlineAccess: true,
+});
 
 const Stack = createNativeStackNavigator();
 
@@ -67,7 +69,7 @@ export default function App() {
         <AuthProvider>
             <SafeAreaProvider>
                 <NavigationContainer linking={linking}>
-                    <Stack.Navigator initialRouteName="Onboarding">
+                    <Stack.Navigator initialRouteName="Login">
                         <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} />
                         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />

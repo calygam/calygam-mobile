@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "996401956233",
+    "project_id": "calygam-63613",
+    "storage_bucket": "calygam-63613.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:996401956233:android:927bbda363116e5e380d58",
+        "android_client_info": {
+          "package_name": "com.mr_cat.calygam"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMGn95ySNiVqUfs-RvvsN8bxR0oT1cH2U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
