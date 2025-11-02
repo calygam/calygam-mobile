@@ -2,10 +2,10 @@ import { View, StyleSheet, Dimensions, Alert } from 'react-native'
 import React, { useState, useEffect } from "react";
 import FormGenerico from './FormGenerico';
 import { useNavigation } from '@react-navigation/native';
-// import ToGoogle from '../hooks/loginWithGoogle';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { auth } from '../firebase';
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import axios from 'axios';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window')
@@ -14,17 +14,15 @@ export default function BoxLogin() {
 
     useEffect(() => {
         GoogleSignin.configure({
-            webClientId: '810580691936-4bck7sg06e22td5q4da83jfir8i0gbga.apps.googleusercontent.com', // vem do console do Firebase ou Google Cloud
+            webClientId: "996401956233-e598ntk7edg86tmb2731ie4d7evor7d1.apps.googleusercontent.com", // vem do console do Firebase ou Google Cloud
             offlineAccess: true,
+            scopes: ["profile", "email"],
         });
     }, []);
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
-
     const navigation = useNavigation();
-
-
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
 
@@ -32,18 +30,41 @@ export default function BoxLogin() {
     const signInWithGoogle = async () => {
         try {
             setLoading(true);
-            setErrorMessage(null);
-            await GoogleSignin.hasPlayServices();
-            const userInfo = await GoogleSignin.signIn();
-            const idToken = userInfo.idToken;
+            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-            // Salvar token no AsyncStorage
-            await AsyncStorage.setItem('userToken', idToken);
+            const { idToken } = await GoogleSignin.signIn();
+            console.log("ID Token recebido:", !!idToken);
 
-            // Navegar para Home após sucesso
-            navigation.replace('home');
+            if (!idToken) throw new Error("ID Token não retornado");
+
+            // CORRETO: GoogleAuthProvider.credential + signInWithCredential
+            const credential = GoogleAuthProvider.credential(idToken);
+            const userCredential = await signInWithCredential(auth, credential);
+
+            // CORRETO: use .user
+            const user = userCredential.user;
+
+            const userInfo = {
+                uid: user.uid,
+                displayName: user.displayName || user.email.split("@")[0], // ← fallback
+                email: user.email,
+                photoURL: user.photoURL,
+            }
+
+            console.log("Usuário logado:", userInfo);
+
+            // ENVIA PARA O SEU BACKEND
+            const response = await axios.post("http://10.0.0.191:8080/auth/googlereact", userInfo);
+            const { token } = response.data; // ← JWT DO BACKEND
+            if (response.status === 200 || response.status === 201) {
+                await AsyncStorage.setItem("userToken", token);
+                await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
+                navigation.replace("home");
+            }
+
         } catch (error) {
-            setErrorMessage(error.message);
+            console.error("Erro no login Google:", error.response?.data || error.message);
+            Alert.alert("Erro", error.response?.data?.message || "Falha ao salvar usuário");
         } finally {
             setLoading(false);
         }

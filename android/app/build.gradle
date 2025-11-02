@@ -1,10 +1,7 @@
-plugins {
-    id('com.android.application')
-    id('com.google.gms.google-services')
-    id('org.jetbrains.kotlin.android')
-    id('com.facebook.react')
-}
-
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+apply plugin: 'com.google.gms.google-services'
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
@@ -91,9 +88,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.mr_cat.Calygam'
+    namespace 'com.mr_cat.calygam'
     defaultConfig {
-        applicationId 'com.mr_cat.Calygam'
+        applicationId 'com.mr_cat.calygam'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -156,14 +153,12 @@ android {
     }
 }
 
-apply plugin: 'com.google.gms.google-services'
-
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation 'com.google.android.gms:play-services-auth:20.7.0'
     implementation platform('com.google.firebase:firebase-bom:34.4.0')
     implementation 'com.google.firebase:firebase-analytics'
+    
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

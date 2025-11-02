@@ -9,10 +9,23 @@
       "client_info": {
         "mobilesdk_app_id": "1:996401956233:android:927bbda363116e5e380d58",
         "android_client_info": {
-          "package_name": "com.mr_cat.Calygam"
+          "package_name": "com.mr_cat.calygam"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "996401956233-983p67clskeh9h3pkijbk1f8ocltk1c9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mr_cat.calygam",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "996401956233-e598ntk7edg86tmb2731ie4d7evor7d1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBMGn95ySNiVqUfs-RvvsN8bxR0oT1cH2U"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "996401956233-e598ntk7edg86tmb2731ie4d7evor7d1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

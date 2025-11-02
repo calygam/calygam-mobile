@@ -8,6 +8,7 @@ import AdobeIcon from "../../../assets/svg/IconsCardExplorar/illustrator-1.svg";
 import ExcelIcon from "../../../assets/svg/IconsCardExplorar/file-excel-1.svg";
 import { useNavigation } from '@react-navigation/native';
 import CUzinho from "./SvgMontanha/Montanha"
+import Modal from '../../components/BottomSheetModalPerfil/Modalperfil';
 
 export default function Homepage() {
      const navigation = useNavigation();
@@ -32,6 +33,8 @@ export default function Homepage() {
                         />
                     </View>
                 </View>
+
+                <Modal />
 
                 {/* Montanha */}
                 <View style={styles.MontanhaContainer}>
