@@ -1,11 +1,16 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase'; // Ajuste o caminho se necessário
 
 const Modal = () => {
+    const navigation = useNavigation();
     // ref
     const bottomSheetRef = useRef(null);
     const snapPoints = useMemo(() => ["40%", "80%"], [])
@@ -42,25 +47,60 @@ const Modal = () => {
         );
     }
 
-    // renders
+    // Função de logout
+    const handleLogout = async () => {
+        try {
+            // Limpar o estado do usuário
+            setUser(null);
+            await GoogleSignin.signOut();
+            await signOut(auth); // ← Adicione isso para deslogar do Firebase
+            // Limpar o AsyncStorage
+            await AsyncStorage.removeItem("userToken");
+            await AsyncStorage.removeItem("userInfo");
+
+            // Remova o navigation.dispatch aqui, pois o Firebase vai cuidar da navegação
+            Alert.alert("Sucesso", "Você saiu da sua conta.");
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível sair da conta");
+        }
+    };
+
     return (
         
         <GestureHandlerRootView style={styles.container}>
 
-            <TouchableOpacity onPress={handleOpenPress} style={{ width: 60, height: 60, backgroundColor: 'blue', borderRadius: 100}}/>
+            <TouchableOpacity onPress={handleOpenPress} style={{ width: 50, height: 50, overflow: 'hidden', borderRadius: 100}}>
+                <Image source={{ uri: user?.photoURL}} style={{ width: '100%', height: '100%' }} />
+            </TouchableOpacity>
+
             
             <BottomSheet
                 ref={bottomSheetRef}
                 snapPoints={snapPoints}
                 index={1}
                 enablePanDownToClose={true}
-                backgroundStyle={{ backgroundColor: '#FFF' }}
+                backgroundStyle={{ backgroundColor: '#0D141C' }}
                 
             >
                 <BottomSheetView style={styles.contentContainer}>
-                    <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 30 }}> Perfil </Text>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20}}>
+                        <Text style={{ fontSize: 24, color: '#ffffffff'}}>Perfil</Text>
+                        <Button title='Fechar' onPress={handleCloseAction} />
+                    </View>
+ 
+
+                    {/* Profile Info */}
+                    <Image
+                        source={{ uri: user?.photoURL || "https://via.placeholder.com/100" }}
+                        style={styles.profileImage}
+                    />
+
                     <Text style={styles.userName}>Nome: {user?.displayName || 'Usuário'}</Text>
                     <Text style={styles.userEmail}>Email: {user?.email || 'Não disponível'}</Text>
+
+                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                        <Text style={styles.logoutText}>Sair da conta</Text>
+                    </TouchableOpacity>
 
                     {/* Divider */}
                     <View style={styles.divider} />
@@ -85,7 +125,7 @@ const Modal = () => {
                         </View>
                     </View>
 
-                    <Button title='Fechar' onPress={handleCloseAction} />
+                    
                 </BottomSheetView>
             </BottomSheet>
         </GestureHandlerRootView>
@@ -110,12 +150,12 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#1a1a1a',
+        color: '#FFF',
         marginBottom: 4,
     },
     userEmail: {
         fontSize: 16,
-        color: '#666',
+        color: '#E5E5E5',
         marginBottom: 20,
     },
     divider: {
@@ -140,8 +180,30 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 12,
-        color: '#888',
+        color: '#E5E5E5',
         marginTop: 4,
+    },
+    profileImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        marginBottom: 16,
+        borderWidth: 3,
+        borderColor: '#007AFF',
+    },
+    logoutButton: {
+        backgroundColor: '#FF3B30',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginTop: 30,
+        width: '80%',
+        alignItems: 'center',
+    },
+    logoutText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
 

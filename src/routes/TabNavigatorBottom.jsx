@@ -4,6 +4,7 @@ import Homepage from "../screens/HomePage/Homepage";
 import BibliotecaCursos from "../screens/PageBiblioteca/BibliotecaCursos";
 import ShopPage from "../screens/ShopPage/ShopPage";
 import TesteModal from "../screens/TesteModal/TesteModal";
+import Modal from "../components/BottomSheetModalPerfil/Modalperfil";
 
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
@@ -34,6 +35,7 @@ function Routes(){
                 borderRadius: 20,
                 height: 60
             }
+            
         }}>
             <Tab.Screen name="home" component={Homepage} options={{
                 tabBarIcon: ({color, size, focused}) => {
@@ -68,6 +70,8 @@ function Routes(){
                     return <IconShopDesabilitado />
                 }
             }} />
+            
+
         </Tab.Navigator>
     )
 }

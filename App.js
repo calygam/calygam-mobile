@@ -6,8 +6,12 @@ import Onboarding from './src/screens/OnboardingScreens/Onboarding';
 import LoginScreen from './src/screens/LoginPage/LoginScreen';
 import SignUpScreen from './src/screens/LoginPage/SignUpScreen';
 import * as Linking from 'expo-linking'
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthContext, AuthProvider } from './src/hooks/AuthContext';
+import { View, Text } from 'react-native';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './src/firebase';
+import Modal from './src/components/BottomSheetModalPerfil/Modalperfil';
 
 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -33,48 +37,46 @@ const linking = {
 
 export default function App() {
 
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true); // pra mostrar splash
+
     useEffect(() => {
-        const handleInitialUrl = async () => {
-            const url = await Linking.getInitialURL();
-            if (url) {
-                const token = extrairToken(url);
-                if (token) {
-                    navigation.navigate('home', { token });
-                }
-            }
-        };
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            setLoading(false); // terminou de checar
+        });
 
-        handleInitialUrl();
-
-        const onReceiveURL = ({ url }) => {
-            const token = extrairToken(url);
-            if (token) {
-                navigation.navigate('home', { token });
-            }
-        };
-
-        const subscription = Linking.addEventListener('url', onReceiveURL);
-
-        return () => subscription.remove();
+        // Limpa o listener quando desmontar
+        return () => unsubscribe();
     }, []);
 
-    const extrairToken = (url) => {
-        const paramsString = url.split('?')[1];
-        if (!paramsString) return null;
-        const params = new URLSearchParams(paramsString);
-        return params.get('token');
-    };
+    if (loading) {
+        return (
+            // Tela de splash (pode ser um logo girando)
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{color: '#FFF'}}>Carregando...</Text>
+            </View>
+        );
+    }
 
     return (
         <AuthProvider>
             <SafeAreaProvider>
                 <NavigationContainer linking={linking}>
-                    <Stack.Navigator initialRouteName="Login">
-                        <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} />
-                        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
+                    <Stack.Navigator initialRouteName={user ? "home" : "Login"}>
+                        {user ? (
+                            // Usuário está logado -> ele vai para a home
+                            <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
+                        ) : (
+                            // Usuário não está logado -> ele vê as telas de onboarding/login/signup
+                            <>
+                                {/* <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} /> */}
+                                <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+                                <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
+                            </>
+                        )}
                     </Stack.Navigator>
+                    
                 </NavigationContainer>
             </SafeAreaProvider>
         </AuthProvider>

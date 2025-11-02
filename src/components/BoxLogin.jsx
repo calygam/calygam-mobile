@@ -17,6 +17,7 @@ export default function BoxLogin() {
             webClientId: "996401956233-e598ntk7edg86tmb2731ie4d7evor7d1.apps.googleusercontent.com", // vem do console do Firebase ou Google Cloud
             offlineAccess: true,
             scopes: ["profile", "email"],
+            forceCodeForRefreshToken: true, // PRA TROCA DE CONTA
         });
     }, []);
 
@@ -63,6 +64,7 @@ export default function BoxLogin() {
             }
 
         } catch (error) {
+            console.error("ERRO COMPLETO:", error);
             console.error("Erro no login Google:", error.response?.data || error.message);
             Alert.alert("Erro", error.response?.data?.message || "Falha ao salvar usuário");
         } finally {
