@@ -26,6 +26,7 @@ export default function BibliotecaCursos() {
                     <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
                 </View>
 
+
                 {/* Cards */}
 
                 <CardsTrilhas NameTrail="Java - BackEnd" Icons={IconJava} />

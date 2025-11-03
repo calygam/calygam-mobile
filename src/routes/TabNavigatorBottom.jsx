@@ -4,7 +4,7 @@ import Homepage from "../screens/HomePage/Homepage";
 import BibliotecaCursos from "../screens/PageBiblioteca/BibliotecaCursos";
 import ShopPage from "../screens/ShopPage/ShopPage";
 import TesteModal from "../screens/TesteModal/TesteModal";
-import Modal from "../components/BottomSheetModalPerfil/Modalperfil";
+import CriarTrilha from "../screens/PageProfessorCriarTrilha/CriarTrilha";
 
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
@@ -70,7 +70,15 @@ function Routes(){
                     return <IconShopDesabilitado />
                 }
             }} />
-            
+
+            <Tab.Screen name="CriarTrilha" component={CriarTrilha} options={{
+                tabBarIcon: ({ color, size, focused }) => {
+                    if (focused) {
+                        return <IconShopAtivo />
+                    }
+                    return <IconShopDesabilitado />
+                }
+            }} />
 
         </Tab.Navigator>
     )

@@ -7,6 +7,9 @@ import { auth } from '../firebase';
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import jwtDecode from 'jwt-decode';
+// import * as jwt from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 const { width, height } = Dimensions.get('window')
 
@@ -26,6 +29,8 @@ export default function BoxLogin() {
     const navigation = useNavigation();
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
+
+    
 
     // Login com o Google
     const signInWithGoogle = async () => {
@@ -56,9 +61,19 @@ export default function BoxLogin() {
 
             // ENVIA PARA O SEU BACKEND
             const response = await axios.post("http://10.0.0.191:8080/auth/googlereact", userInfo);
+            console.log('Resposta da API:', response.data);
+
             const { token } = response.data; // ← JWT DO BACKEND
+            if (!token) {
+                throw new Error('Token não encontrado na resposta. Verifique o backend.');
+            }
+
+            const decoded = jwtDecode(token);
+            const role = decoded.role || 'ALUNO'; 
+            
             if (response.status === 200 || response.status === 201) {
                 await AsyncStorage.setItem("userToken", token);
+                await AsyncStorage.setItem("userRole", role); // ← SALVA A ROLE
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
                 navigation.replace("home");
             }
