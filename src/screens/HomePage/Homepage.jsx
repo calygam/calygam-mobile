@@ -34,7 +34,7 @@ export default function Homepage() {
                     </View>
                 </View>
 
-                <Modal />
+                {/* <Modal /> */}
 
                 {/* Montanha */}
                 <View style={styles.MontanhaContainer}>

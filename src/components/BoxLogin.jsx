@@ -43,37 +43,37 @@ export default function BoxLogin() {
 
             if (!idToken) throw new Error("ID Token não retornado");
 
-            // CORRETO: GoogleAuthProvider.credential + signInWithCredential
             const credential = GoogleAuthProvider.credential(idToken);
             const userCredential = await signInWithCredential(auth, credential);
 
-            // CORRETO: use .user
             const user = userCredential.user;
 
             const userInfo = {
                 uid: user.uid,
-                displayName: user.displayName || user.email.split("@")[0], // ← fallback
+                displayName: user.displayName || user.email.split("@")[0],
                 email: user.email,
                 photoURL: user.photoURL,
             }
 
             console.log("Usuário logado:", userInfo);
 
-            // ENVIA PARA O SEU BACKEND
+            // ENVIA PARA O BACKEND
             const response = await axios.post("http://10.0.0.191:8080/auth/googlereact", userInfo);
             console.log('Resposta da API:', response.data);
 
             const { token } = response.data; // ← JWT DO BACKEND
-            if (!token) {
+            if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
                 throw new Error('Token não encontrado na resposta. Verifique o backend.');
             }
 
             const decoded = jwtDecode(token);
-            const role = decoded.role || 'ALUNO'; 
+            const role = decoded.role || 'ALUNO'; // ← PEGA A ROLE DO USUÁRIO
+            console.log("Token recebido:", token);
+            console.log("Role do usuário:", role);
             
             if (response.status === 200 || response.status === 201) {
                 await AsyncStorage.setItem("userToken", token);
-                await AsyncStorage.setItem("userRole", role); // ← SALVA A ROLE
+                await AsyncStorage.setItem("userRole", role); // ← Salva a role
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
                 navigation.replace("home");
             }
@@ -101,9 +101,30 @@ export default function BoxLogin() {
                 userPassword: senha,
             });
 
+            console.log('Resposta login manual:', response.data); // << importante para debug
+
             if (response.status === 200) {
+                const { token, user } = response.data; // ← JWT DO BACKEND
+                if(!token) {
+                    throw new Error('Token não encontrado na resposta do login manual.');
+                }
+                // Salvar token e informações do usuário
+                await AsyncStorage.setItem("userToken", token);
+                
+                // Criar e salvar userInfo básico
+                const userInfo = {
+                    uid: user?.id || user?.userId,
+                    displayName: user?.user_name ?? user?.name ?? user?.displayName ?? email,
+                    email: user?.email || email,
+                    photoURL: user?.photoURL || null,
+                }
+                await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
+                // Salvar role se disponível (opcional, como no Google)
+                const decoded = jwtDecode(token);
+                const role = decoded.role || 'ALUNO';
+                await AsyncStorage.setItem("userRole", role); // ← Salva a role
+
                 Alert.alert("Sucesso", "Login realizado!");
-                // Aqui você pode salvar o token se quiser
                 // e navegar para a Home
                 navigation.navigate('home');
             }
@@ -144,7 +165,7 @@ export default function BoxLogin() {
                     buttonText="Entrar"
                     onSubmit={handleLogin}
                     GoogleButton={signInWithGoogle}
-                    // userInfo={userInfo}
+                    loading={loading}
                     NãoTem='Não tem Conta?'
                     linkText='Cadastre-se'
 

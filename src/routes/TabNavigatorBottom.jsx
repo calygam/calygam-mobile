@@ -5,6 +5,7 @@ import BibliotecaCursos from "../screens/PageBiblioteca/BibliotecaCursos";
 import ShopPage from "../screens/ShopPage/ShopPage";
 import TesteModal from "../screens/TesteModal/TesteModal";
 import CriarTrilha from "../screens/PageProfessorCriarTrilha/CriarTrilha";
+import useUserRole from "../hooks/useUserRole";
 
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
@@ -18,8 +19,17 @@ import IconShopDesabilitado from '../../assets/svg/IconsTabBottom/frame-6.svg'
 
 const Tab = createBottomTabNavigator();
 
-function Routes(){
-    return(
+function Routes() {
+
+    const { role, loading } = useUserRole();
+
+    if (loading) {
+        return null; // or a loading spinner
+    }
+
+    const isProfessor = role === "INSTRUTOR";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
+
+    return (
         <Tab.Navigator initialRouteName="home" screenOptions={{
             tabBarActiveTintColor: '#6C63FF',
             tabBarInactiveTintColor: '#676D75',
@@ -35,16 +45,16 @@ function Routes(){
                 borderRadius: 20,
                 height: 60
             }
-            
+
         }}>
             <Tab.Screen name="home" component={Homepage} options={{
-                tabBarIcon: ({color, size, focused}) => {
-                    if(focused){
+                tabBarIcon: ({ color, size, focused }) => {
+                    if (focused) {
                         return <IconHomeAtivo />
                     }
                     return <IconHomeDesabilitado />
                 }
-            }}/>
+            }} />
             <Tab.Screen name="Biblioteca" component={BibliotecaCursos} options={{
                 tabBarIcon: ({ color, size, focused }) => {
                     if (focused) {
@@ -71,14 +81,17 @@ function Routes(){
                 }
             }} />
 
-            <Tab.Screen name="CriarTrilha" component={CriarTrilha} options={{
-                tabBarIcon: ({ color, size, focused }) => {
-                    if (focused) {
-                        return <IconShopAtivo />
+            {/* Aba só pro professor */}
+            {isProfessor && (
+                <Tab.Screen name="Minhas Trilhas" component={CriarTrilha} options={{
+                    tabBarIcon: ({ color, size, focused }) => {
+                        if (focused) {
+                            return <IconShopAtivo />
+                        }
+                        return <IconShopDesabilitado />
                     }
-                    return <IconShopDesabilitado />
-                }
-            }} />
+                }} />
+            )}
 
         </Tab.Navigator>
     )

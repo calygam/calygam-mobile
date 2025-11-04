@@ -8,6 +8,8 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase'; // Ajuste o caminho se necessário
+import jwtDecode from 'jwt-decode';
+import axios from 'axios';
 
 const Modal = () => {
     const navigation = useNavigation();
@@ -25,6 +27,48 @@ const Modal = () => {
                 const userInfo = await AsyncStorage.getItem("userInfo");
                 if (userInfo) {
                     setUser(JSON.parse(userInfo));
+                    setLoading(false);
+                    return;
+                }
+
+                const token = await AsyncStorage.getItem("userToken");
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+
+                // Primeiro: tentar buscar o perfil no backend (ajuste endpoint se necessário)
+                try {
+                    const resp = await axios.get("http://10.0.0.191:8080/users/readOne", {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const serverUser = resp.data.user ?? resp.data;
+                    const ui = {
+                        uid: serverUser?.id ?? serverUser?.userId ?? null,
+                        displayName: serverUser?.user_name ?? serverUser?.username ?? serverUser?.nome ?? serverUser?.name ?? serverUser?.email ?? 'Usuário',
+                        email: serverUser?.email ?? '',
+                        photoURL: serverUser?.photoURL ?? null,
+                    };
+                    setUser(ui);
+                    await AsyncStorage.setItem("userInfo", JSON.stringify(ui));
+                    setLoading(false);
+                    return;
+                } catch (err) {
+                    console.warn('Falha fetch /users/readOne:', err.message);
+                    // fallback: decodifica token e tenta pegar user_name do payload
+                    try {
+                        const decoded = jwtDecode(token);
+                        const ui = {
+                            uid: decoded.userId ?? decoded.id ?? null,
+                            displayName: decoded.user_name ?? decoded.username ?? decoded.name ?? decoded.email ?? 'Usuário',
+                            email: decoded.email ?? '',
+                            photoURL: decoded.picture ?? null,
+                        };
+                        setUser(ui);
+                        await AsyncStorage.setItem("userInfo", JSON.stringify(ui));
+                    } catch (e) {
+                        console.warn('Falha ao decodificar token:', e.message);
+                    }
                 }
             } catch (error) {
                 Alert.alert("Erro", "Não foi possível carregar os dados do usuário");
@@ -66,28 +110,30 @@ const Modal = () => {
     };
 
     return (
-        
+
         <GestureHandlerRootView style={styles.container}>
 
-            <TouchableOpacity onPress={handleOpenPress} style={{ width: 50, height: 50, overflow: 'hidden', borderRadius: 100}}>
-                <Image source={{ uri: user?.photoURL}} style={{ width: '100%', height: '100%' }} />
+            <TouchableOpacity onPress={handleOpenPress} style={{ width: 50, height: 50, overflow: 'hidden', borderRadius: 100 }}>
+                <Image source={{ uri: user?.photoURL }} style={{ width: '100%', height: '100%' }} />
             </TouchableOpacity>
 
-            
+
             <BottomSheet
                 ref={bottomSheetRef}
                 snapPoints={snapPoints}
-                index={1}
+                index={-1}
                 enablePanDownToClose={true}
+                enableContentPanningGesture={false}
+                enableContentPanning={false}
                 backgroundStyle={{ backgroundColor: '#0D141C' }}
-                
+
             >
                 <BottomSheetView style={styles.contentContainer}>
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20}}>
-                        <Text style={{ fontSize: 24, color: '#ffffffff'}}>Perfil</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20 }}>
+                        <Text style={{ fontSize: 24, color: '#ffffffff' }}>Perfil</Text>
                         <Button title='Fechar' onPress={handleCloseAction} />
                     </View>
- 
+
 
                     {/* Profile Info */}
                     <Image
@@ -125,7 +171,7 @@ const Modal = () => {
                         </View>
                     </View>
 
-                    
+
                 </BottomSheetView>
             </BottomSheet>
         </GestureHandlerRootView>

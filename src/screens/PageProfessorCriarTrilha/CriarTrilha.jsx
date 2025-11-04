@@ -10,6 +10,8 @@ import CardProf from '../../components/CardProfTrilhas/CardProf'
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import * as ImagePicker from 'expo-image-picker';
+import { jwtDecode } from 'jwt-decode'
+import BoxLogin from '../../components/BoxLogin'
 
 export default function CriarTrilha() {
     const navigation = useNavigation()
@@ -19,11 +21,31 @@ export default function CriarTrilha() {
     const [descricao, setDescricao] = useState('')
     const [senha, setSenha] = useState('')
     const [image, setImage] = useState(null)
+    const [userToken, setUserToken] = useState(null)  // ← Novo estado para Token
+    const [userId, setUserId] = useState(null)  
 
     const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
 
     const snapPoints = useMemo(() => ['55%', '100%'], [])
     const bottomSheetRef = useRef(null)
+
+    // ← Novo useEffect para decodificar o token e pegar userId
+    useEffect(() => {
+        const loadUserId = async () => {
+            const token = await AsyncStorage.getItem('userToken');
+            if (token) {
+                try {
+                    const decoded = jwtDecode(token);
+                    console.log(decoded);
+                    setUserId(decoded.userId);  // ← Assume que o JWT tem "userId"
+                    setProfessorId(decoded.userId.toString());  // ← Define professorId automaticamente
+                } catch (error) {
+                    console.error('Erro ao decodificar token:', error);
+                }
+            }
+        };
+        loadUserId();
+    }, []);
 
     // Função para selecionar imagem da galeria
     const pickImage = async () => {
@@ -48,26 +70,31 @@ export default function CriarTrilha() {
     }
 
     const criarTrilha = async () => {
-        if (!nome || !vagas || !professorId) {
+        const professor = userId ?? (professorId ? parseInt(professorId) : null);
+        if (!nome || !vagas || !professor) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.')
             return
         }
         try {
-            const response = await api.post('/trilhas', {
+            const token = await AsyncStorage.getItem('userToken');
+            
+            const response = await api.post('http://10.0.0.191:8080/trail/create', {
                 nome: nome,
                 vagas: parseInt(vagas),
-                professorId: professorId,
+                professorId: parseInt(professor),
                 status: 'ativa',
                 descricao: descricao,
                 senha: senha,
             }, {
                 headers: {
-                    Authorization: `Bearer ${await AsyncStorage.getItem('token')}`
+                    Authorization: `Bearer ${userToken}`, 
+                    "Content-Type": "application/json"
                 }
             })
+            console.log('criarTrilha response:', response.data);
             Alert.alert('Sucesso', 'Trilha criada com sucesso!')
             setBottomSheetOpen(false)
-            navigation.navigate('PageProfessorTrilhas')
+            navigation.goBack();
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível criar a trilha. Tente novamente mais tarde.')
             console.error(error)
@@ -126,13 +153,14 @@ export default function CriarTrilha() {
                             value={nome}
                             onChangeText={setNome}
                         />
-                        <Text style={styles.label}>Senha</Text>
+                        <Text style={styles.label}>Senha da Trilha</Text> 
                         <TextInput
                             style={styles.input}
-                            placeholder="384&E9 "
+                            placeholder="Digite a senha da trilha"
                             placeholderTextColor="#888"
-                            value={professorId}
-                            onChangeText={setProfessorId}
+                            value={senha}
+                            onChangeText={setSenha}
+                            secureTextEntry={false}  // ← Adicione para ocultar senha
                         />
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
                             <View style={{ width: 60, height: 60, backgroundColor: '#F5F5F5', borderRadius: 100, justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 10, flexDirection: 'row' }}>

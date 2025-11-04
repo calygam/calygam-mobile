@@ -3,7 +3,7 @@ import IconVagas from "../../../assets/svg/users-alt rosa.svg";
 import IconLixo from "../../../assets/svg/lixo.svg";
 import IconLapis from "../../../assets/svg/lapis.svg";
 
-export default function CardProf({titulo, professorNome, vagas, de}) {
+export default function CardProf({titulo, professorNome, vagas}) {
 
     return (
         <View style={styles.container}>

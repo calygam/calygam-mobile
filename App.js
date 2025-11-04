@@ -15,6 +15,7 @@ import Modal from './src/components/BottomSheetModalPerfil/Modalperfil';
 
 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Configure Google Signin
 GoogleSignin.configure({
@@ -62,22 +63,15 @@ export default function App() {
     return (
         <AuthProvider>
             <SafeAreaProvider>
-                <NavigationContainer linking={linking}>
-                    <Stack.Navigator initialRouteName={user ? "home" : "Login"}>
-                        {user ? (
-                            // Usuário está logado -> ele vai para a home
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                    <NavigationContainer linking={linking}>
+                        <Stack.Navigator initialRouteName={user ? "home" : "Login"}>
                             <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
-                        ) : (
-                            // Usuário não está logado -> ele vê as telas de onboarding/login/signup
-                            <>
-                                {/* <Stack.Screen name="Onboarding" component={Onboarding} options={{ headerShown: false }} /> */}
-                                <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                                <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
-                            </>
-                        )}
-                    </Stack.Navigator>
-                    
-                </NavigationContainer>
+                            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+                            <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
+                        </Stack.Navigator>
+                    </NavigationContainer>
+                </GestureHandlerRootView>
             </SafeAreaProvider>
         </AuthProvider>
     );
