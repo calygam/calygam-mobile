@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import * as ImagePicker from 'expo-image-picker';
 import { jwtDecode } from 'jwt-decode'
 import BoxLogin from '../../components/BoxLogin'
+import axios from 'axios'
 
 export default function CriarTrilha() {
     const navigation = useNavigation()
@@ -33,10 +34,13 @@ export default function CriarTrilha() {
     useEffect(() => {
         const loadUserId = async () => {
             const token = await AsyncStorage.getItem('userToken');
+            console.log('Token carregado do AsyncStorage:', token);
+            setUserToken(token);  // ← Armazena o token no estado
+
             if (token) {
                 try {
                     const decoded = jwtDecode(token);
-                    console.log(decoded);
+                    console.log('payload do token:', decoded);
                     setUserId(decoded.userId);  // ← Assume que o JWT tem "userId"
                     setProfessorId(decoded.userId.toString());  // ← Define professorId automaticamente
                 } catch (error) {
@@ -70,14 +74,21 @@ export default function CriarTrilha() {
     }
 
     const criarTrilha = async () => {
-        const professor = userId ?? (professorId ? parseInt(professorId) : null);
-        if (!nome || !vagas || !professor) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.')
-            return
-        }
         try {
             const token = await AsyncStorage.getItem('userToken');
-            
+            console.log('Token usado na requisição:', token);
+
+            if (!token) {
+                Alert.alert('Erro', 'Token de autenticação inválido. Faça login novamente.');
+                return;
+            }
+
+            const professor = userId ?? (professorId ? parseInt(professorId) : null);
+            if (!nome || !vagas || !professor) {
+                Alert.alert('Erro', 'Por favor, preencha todos os campos.')
+                return
+            }
+
             const response = await api.post('http://10.0.0.191:8080/trail/create', {
                 nome: nome,
                 vagas: parseInt(vagas),
@@ -87,7 +98,7 @@ export default function CriarTrilha() {
                 senha: senha,
             }, {
                 headers: {
-                    Authorization: `Bearer ${userToken}`, 
+                    Authorization: `Bearer ${token}`, 
                     "Content-Type": "application/json"
                 }
             })

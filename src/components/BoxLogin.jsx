@@ -68,7 +68,7 @@ export default function BoxLogin() {
 
             const decoded = jwtDecode(token);
             const role = decoded.role || 'ALUNO'; // ← PEGA A ROLE DO USUÁRIO
-            console.log("Token recebido:", token);
+            // console.log("Token recebido:", token);
             console.log("Role do usuário:", role);
             
             if (response.status === 200 || response.status === 201) {
