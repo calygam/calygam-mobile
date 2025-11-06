@@ -58,7 +58,7 @@ export default function BoxLogin() {
             console.log("Usuário logado:", userInfo);
 
             // ENVIA PARA O BACKEND
-            const response = await axios.post("http://10.0.0.191:8080/auth/googlereact", userInfo);
+            const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google", userInfo);
             console.log('Resposta da API:', response.data);
 
             const { token } = response.data; // ← JWT DO BACKEND
@@ -96,7 +96,7 @@ export default function BoxLogin() {
         }
 
         try {
-            const response = await axios.post("http://10.0.0.191:8080/auth/login", {
+            const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/login", {
                 userEmail: email,
                 userPassword: senha,
             });

@@ -11,8 +11,7 @@ import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import * as ImagePicker from 'expo-image-picker';
 import { jwtDecode } from 'jwt-decode'
-import BoxLogin from '../../components/BoxLogin'
-import axios from 'axios'
+import { StepBottomSheetContent } from '../../components/ModalAtividadeProf/ModalAtividade';
 
 export default function CriarTrilha() {
     const navigation = useNavigation()
@@ -22,13 +21,16 @@ export default function CriarTrilha() {
     const [descricao, setDescricao] = useState('')
     const [senha, setSenha] = useState('')
     const [image, setImage] = useState(null)
-    const [userToken, setUserToken] = useState(null)  // ← Novo estado para Token
-    const [userId, setUserId] = useState(null)  
+    const [userToken, setUserToken] = useState(null)
+    const [userId, setUserId] = useState(null)
+    const [activities, setActivities] = useState([]) // ← Novo estado para atividades
 
     const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
+    const [activitySheetOpen, setActivitySheetOpen] = useState(false) // ← Controla modal de atividades
 
     const snapPoints = useMemo(() => ['55%', '100%'], [])
     const bottomSheetRef = useRef(null)
+    const activitySheetRef = useRef(null) // ← Ref para modal de atividades
 
     // ← Novo useEffect para decodificar o token e pegar userId
     useEffect(() => {
@@ -73,6 +75,28 @@ export default function CriarTrilha() {
         }
     }
 
+    const handleOpenActivityModal = () => {
+        // Valida campos básicos antes de abrir modal de atividades
+        if (!nome || !vagas || !descricao) {
+            Alert.alert('Atenção', 'Por favor, preencha nome, vagas e descrição antes de adicionar atividades.')
+            return
+        }
+        setBottomSheetOpen(false)
+        bottomSheetRef.current?.close()
+        setTimeout(() => {
+            setActivitySheetOpen(true)
+            activitySheetRef.current?.expand()
+        }, 300)
+    }
+
+    const handleSaveActivities = (savedActivities) => {
+        setActivities(savedActivities)
+        setActivitySheetOpen(false)
+        activitySheetRef.current?.close()
+        // Agora envia tudo
+        criarTrilha()
+    }
+
     const criarTrilha = async () => {
         try {
             const token = await AsyncStorage.getItem('userToken');
@@ -89,19 +113,61 @@ export default function CriarTrilha() {
                 return
             }
 
-            const response = await api.post('http://10.0.0.191:8080/trail/create', {
-                nome: nome,
-                vagas: parseInt(vagas),
-                professorId: parseInt(professor),
-                status: 'ativa',
-                descricao: descricao,
-                senha: senha,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`, 
-                    "Content-Type": "application/json"
+
+            // Monta um objeto "form" com os dados atuais da tela para manter a estrutura do trecho enviado
+            const form = {
+                trailName: nome || '',
+                trailDescription: descricao || '',
+                trailPoints: 0, // ajuste quando houver campo de preço
+                trailImage: image
+                    ? {
+                          uri: image,
+                          name: 'trilha.jpg',
+                          type: 'image/jpeg',
+                      }
+                    : null,
+                trailPassword: senha || '',
+                trailVacancy: vagas || '0',
+                activities: activities, // ← Usa as atividades do estado
+            }
+
+            // Se existir algum código alvo, defina aqui; caso contrário, omitiremos
+            const codeTarget = undefined // ajuste conforme sua lógica
+
+            // ===== Trecho encaixado e válido =====
+            const formData = new FormData();
+            formData.append('trailName', form.trailName.trim());
+            formData.append('trailDescription', form.trailDescription.trim());
+            const rawtrailPts = String(form.trailPoints).replace(/[.,]/g, '');
+            formData.append('trailPrice', Number(rawtrailPts));
+            if (form.trailImage) formData.append('trailFileImage', form.trailImage);
+            formData.append('trailPassword', (form.trailPassword || '').trim());
+            formData.append('trailVacancies', Number(form.trailVacancy));
+            form.activities.forEach((activity, index) => {
+                if (activity.activityId) {
+                    formData.append(`activities[${index}].activityId`, String(activity.activityId));
                 }
-            })
+                formData.append(`activities[${index}].activityName`, activity.activityName || '');
+                formData.append(`activities[${index}].activityDescription`, activity.activityDescription || '');
+                const rawActPts = String(activity.activityPoints || 0).replace(/[.,]/g, '');
+                const intValue = parseInt(rawActPts);
+                const validValue = isNaN(intValue) ? 0 : intValue;
+                formData.append(`activities[${index}].activityPrice`, validValue);
+                formData.append(`activities[${index}].activityDifficulty`, activity.activityDifficulty || 'EASY');
+            });
+            if (codeTarget) formData.append('calygamCode', codeTarget);
+            console.log('FormData enviado:', Array.from(formData.entries()));
+
+            const response = await api.post(
+                'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/create',
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            )
             console.log('criarTrilha response:', response.data);
             Alert.alert('Sucesso', 'Trilha criada com sucesso!')
             setBottomSheetOpen(false)
@@ -164,7 +230,7 @@ export default function CriarTrilha() {
                             value={nome}
                             onChangeText={setNome}
                         />
-                        <Text style={styles.label}>Senha da Trilha</Text> 
+                        <Text style={styles.label}>Senha da Trilha</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Digite a senha da trilha"
@@ -183,7 +249,7 @@ export default function CriarTrilha() {
                             </View>
 
                             {/* Botão de adicionar imagem */}
-                            <TouchableOpacity onPress={pickImage} style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 5, borderColor: '#FFF', borderWidth: 2, padding: 10, borderRadius: 18}}>
+                            <TouchableOpacity onPress={pickImage} style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 5, borderColor: '#FFF', borderWidth: 2, padding: 10, borderRadius: 18 }}>
                                 <IconUpload width={30} height={30} />
                                 <Text style={{ color: '#FFF', fontSize: 14 }}>Adicionar Imagem</Text>
                             </TouchableOpacity>
@@ -206,7 +272,7 @@ export default function CriarTrilha() {
                             value={descricao}
                             onChangeText={setDescricao}
                         />
-                        <TouchableOpacity style={styles.confirmButton} onPress={criarTrilha}>
+                        <TouchableOpacity style={styles.confirmButton} onPress={handleOpenActivityModal}>
                             <Text style={styles.confirmText}>Criar Trilha</Text>
                         </TouchableOpacity>
 
@@ -216,6 +282,18 @@ export default function CriarTrilha() {
                     </BottomSheetView>
                 </BottomSheet>
 
+                {/* Modal de Atividades */}
+                <BottomSheet
+                    ref={activitySheetRef}
+                    snapPoints={['40%', '80%']}
+                    index={-1}
+                    enablePanDownToClose={true}
+                    backgroundStyle={{ backgroundColor: '#0D141C' }}
+                >
+                    <BottomSheetView style={styles.modalContent}>
+                        <StepBottomSheetContent onSave={handleSaveActivities} />
+                    </BottomSheetView>
+                </BottomSheet>
 
             </View>
         </GestureHandlerRootView>
@@ -229,6 +307,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#021713',
         paddingTop: 55,
+        color: '#FFF',
         gap: 35
     },
     modalTitle: {
@@ -241,6 +320,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         borderRadius: 8,
         padding: 12,
+        color: '#000',
         marginBottom: 12,
         width: '100%',
         height: 45
@@ -272,6 +352,7 @@ const styles = StyleSheet.create({
     modalContent: {
         flex: 1,
         padding: 15,
+        color:'#fff',
         backgroundColor: '#0D141C',
     },
     label: {
