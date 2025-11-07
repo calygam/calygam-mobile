@@ -24,6 +24,7 @@ export default function BoxSignUp() {
 
         try {
             // Faz a requisição para o seu backend
+            // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/register",
             const response = await axios.post("http://10.0.0.191:8080/auth/register", {
                 userName: nome,
                 userEmail: email,
@@ -56,14 +57,14 @@ export default function BoxSignUp() {
                         {
                             label: 'Digite seu endereço de e-mail',
                             placeholder: 'Nome de usuário ou endereço de e-mail: ',
-                            value:email,
+                            value: email,
                             onChangeText: setEmail
-                            
+
                         },
                         {
                             label: 'Username',
                             placeholder: 'Nome de Usuario: ',
-                            value:nome,
+                            value: nome,
                             onChangeText: setNome
                         },
                         {

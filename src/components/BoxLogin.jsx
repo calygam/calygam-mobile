@@ -23,14 +23,11 @@ export default function BoxLogin() {
             forceCodeForRefreshToken: true, // PRA TROCA DE CONTA
         });
     }, []);
-
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
     const navigation = useNavigation();
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
-
-    
 
     // Login com o Google
     const signInWithGoogle = async () => {
@@ -58,7 +55,8 @@ export default function BoxLogin() {
             console.log("Usuário logado:", userInfo);
 
             // ENVIA PARA O BACKEND
-            const response = await axios.post("http://10.0.0.191:8080/auth/googlereact", userInfo);
+            // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google", userInfo);
+            const response = await axios.post("http://10.0.0.191:8080/auth/google", userInfo);
             console.log('Resposta da API:', response.data);
 
             const { token } = response.data; // ← JWT DO BACKEND
@@ -70,7 +68,7 @@ export default function BoxLogin() {
             const role = decoded.role || 'ALUNO'; // ← PEGA A ROLE DO USUÁRIO
             // console.log("Token recebido:", token);
             console.log("Role do usuário:", role);
-            
+
             if (response.status === 200 || response.status === 201) {
                 await AsyncStorage.setItem("userToken", token);
                 await AsyncStorage.setItem("userRole", role); // ← Salva a role
@@ -101,16 +99,16 @@ export default function BoxLogin() {
                 userPassword: senha,
             });
 
-            console.log('Resposta login manual:', response.data); // << importante para debug
+            console.log("Token decodificado:", JSON.parse(atob(response.data.token.split(".")[1]))); // << importante para debug
 
             if (response.status === 200) {
                 const { token, user } = response.data; // ← JWT DO BACKEND
-                if(!token) {
+                if (!token) {
                     throw new Error('Token não encontrado na resposta do login manual.');
                 }
                 // Salvar token e informações do usuário
                 await AsyncStorage.setItem("userToken", token);
-                
+
                 // Criar e salvar userInfo básico
                 const userInfo = {
                     uid: user?.id || user?.userId,

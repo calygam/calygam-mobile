@@ -9,7 +9,7 @@ const api = axios.create({
 api.interceptors.request.use(
     async(config) => {
         try { // O try Tenta pegar o token
-            const token = await AsyncStorage.getItem('token') // Procurar no celular se existe um token salvo
+            const token = await AsyncStorage.getItem('userToken') // Procurar no celular se existe um token salvo
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`; // Aqui verificar se encontrou o token se encontrou 
                 // Cola no cabeçalho do pedido

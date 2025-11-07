@@ -2,14 +2,15 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import SearchBar from '../../components/SeachBiblioteca/Seach'
 import CardsTrilhas from '../../components/CardTrilhas/CardsTrilhas'
-import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
-import IconBancoDeDados from "../../../assets/svg/IconsInterface/base-de-dados-1.svg";
-import IconFront from "../../../assets/svg/IconsInterface/codigo-simples-1.svg";
-import IconJava from "../../../assets/svg/IconsInterface/group.svg";
-import IconAdobeIllustrador from "../../../assets/svg/IconsInterface/illustrator-1.svg";
+// import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
+// import IconBancoDeDados from "../../../assets/svg/IconsInterface/base-de-dados-1.svg";
+// import IconFront from "../../../assets/svg/IconsInterface/codigo-simples-1.svg";
+// import IconJava from "../../../assets/svg/IconsInterface/group.svg";
+// import IconAdobeIllustrador from "../../../assets/svg/IconsInterface/illustrator-1.svg";
 import { FlatList } from 'react-native-gesture-handler';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../api/api';
 
 export default function BibliotecaCursos() {
     const [trails, setTrails] = useState([]);
@@ -19,13 +20,16 @@ export default function BibliotecaCursos() {
         const fetchTrails = async () => {
             try {
                 const token = await AsyncStorage.getItem("userToken");
-                const response = await axios.get('http://10.0.0.191:8080/trail/read/all-trails', {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // Substitua ${token} pelo token real se necessário
-                    },
+                // const response = await axios.get('https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/read/all-trails'
+                const response = await api.get("http://10.0.0.191:8080/trail/read/all-trails", {
                     params: {
                         status: 'ativa', // Exemplo de filtro por status
-                        haveProgress: true // Exemplo de filtro por progresso
+                        // haveProgress: "HAVE_PROGRESS", // Exemplo de filtro por progresso
+                        haveProgress: "NOT_HAVE_PROGRESS"
+
+                    },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
                     },
                 });
                 setTrails(response.data);
@@ -57,9 +61,15 @@ export default function BibliotecaCursos() {
         <FlatList
             data={trails}
             renderItem={({ item }) => (
-                <CardsTrilhas NameTrail={item.name} Icons={item.icon} />
+                <CardsTrilhas 
+                NameTrail={item.trailName} 
+                Icons={item.icon}
+                vacanciesTrail={item.trailVacancies}
+                ImageTrail={item.trailImage}
+                />
+                
             )}
-            keyExtractor={item => item.id}
+            keyExtractor={item => item.trailId.toString()}
             ListHeaderComponent={renderHeader}
             contentContainerStyle={styles.flatListContainer}
         />
@@ -97,5 +107,8 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         backgroundColor: '#021713',
         alignItems: 'center',
+        gap: 20,
+        paddingBottom: 20,
+        
     }
 })

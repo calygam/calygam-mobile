@@ -27,7 +27,7 @@ function Routes() {
         return null; // or a loading spinner
     }
 
-    const isProfessor = role === "INSTRUTOR";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
+    const isProfessor = role === "ROLE_INSTRUTOR";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
 
     return (
         <Tab.Navigator initialRouteName="home" screenOptions={{

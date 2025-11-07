@@ -2,15 +2,57 @@ import { View, Text, StyleSheet } from 'react-native'
 import React from 'react'
 import { Dimensions } from 'react-native'
 import IconPessoas from "../../../assets/svg/IconsInterface/users-alt-1.svg";
+import { Image } from 'react-native';
+
+// novos imports de ícones (adicione/ajuste conforme seus arquivos)
+import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
+import IconBancoDeDados from "../../../assets/svg/IconsInterface/base-de-dados-1.svg";
+import IconFront from "../../../assets/svg/IconsInterface/codigo-simples-1.svg";
+import IconGroup from "../../../assets/svg/IconsInterface/group.svg";
+import IconIllustrator from "../../../assets/svg/IconsInterface/illustrator-1.svg";
 
 const { width, height } = Dimensions.get('window')
 
-export default function CardsTrilhas({ NameTrail, Icons }) {
+export default function CardsTrilhas({ NameTrail, Icons, vacanciesTrail, ImageTrail }) {
+    // mapa para converter strings em componentes SVG
+    const ICONS_MAP = {
+        // chaves normalizadas (sem espaços/traços/pontos)
+        react: IconReact,
+        'react-1': IconReact,
+        'base-de-dados': IconBancoDeDados,
+        'basededados': IconBancoDeDados,
+        banco: IconBancoDeDados,
+        db: IconBancoDeDados,
+        front: IconFront,
+        'codigo-simples': IconFront,
+        group: IconGroup,
+        java: IconGroup,
+        illustrator: IconIllustrator,
+        'illustrator-1': IconIllustrator,
+        users: IconPessoas,
+        'users-alt-1': IconPessoas,
+    };
+
+    // resolve o componente de ícone a partir da prop Icons
+    let IconComponent = IconPessoas; // fallback
+    if (typeof Icons === 'string') {
+        const normalized = Icons.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
+        // tenta encontrar pelo nome normalizado ou pelo valor original em lowercase
+        IconComponent = ICONS_MAP[normalized] ?? ICONS_MAP[Icons.toLowerCase()] ?? IconPessoas;
+    } else if (Icons) {
+        // se vier um componente React (função/classe), usa direto
+        IconComponent = Icons;
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.BoxCard}>
 
+                {/* Renderiza a imagem corretamente usando <Image> em vez de inserir string dentro de <View> */}
                 <View style={styles.FotoTrilha}>
+                    {ImageTrail ? (
+                        <Image source={{ uri: ImageTrail }} style={{ width: '100%', height: '100%', borderRadius: 15 }} resizeMode="cover" />
+                    ) : null}
                 </View>
 
                 <View style={styles.Infomações}>
@@ -22,13 +64,13 @@ export default function CardsTrilhas({ NameTrail, Icons }) {
 
                     <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
                         <IconPessoas width={15} height={24} fill="#fff" />
-                        <Text style={{ color: '#FFF', fontSize: 12 }}>40/ 45</Text>
+                        <Text style={{ color: '#FFF', fontSize: 12 }}>45/{vacanciesTrail}</Text>
                     </View>
 
                 </View>
 
                 <View style={styles.FotoIconTrilha}>
-                    <Icons width={24} height={24} fill="#fff" />
+                    <IconComponent width={24} height={24} fill="#fff" />
                 </View>
             </View>
         </View>
@@ -56,7 +98,7 @@ const styles = StyleSheet.create({
     FotoTrilha: {
         width: 50,
         height: 50,
-        backgroundColor: '#FFF',
+        backgroundColor: '#962a2aff',
         borderRadius: 15
     },
     Infomações: {
