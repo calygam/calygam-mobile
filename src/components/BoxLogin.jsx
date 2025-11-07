@@ -94,7 +94,9 @@ export default function BoxLogin() {
         }
 
         try {
-            const response = await axios.post("http://10.0.0.191:8080/auth/login", {
+            // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/login",
+                const response = await axios.post("http://10.0.0.191:8080/auth/login",
+                {
                 userEmail: email,
                 userPassword: senha,
             });

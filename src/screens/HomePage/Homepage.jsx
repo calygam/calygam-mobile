@@ -3,7 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Montanha from "./SvgMontanha/Montanha"
 import Cards from '../../components/CardHomeExplorar/Card';
 import IOTIcon from "../../../assets/svg/IconsCardExplorar/site-alt-1.svg";
-import FigmaIcon from "../../../assets/svg/IconsCardExplorar/group.svg";
+// import FigmaIcon from "../../../assets/svg/IconsCardExplorar/group.svg";
+import FigmaIcon from "../../../assets/svg/IconsCardExplorar/figma.svg";
 import AdobeIcon from "../../../assets/svg/IconsCardExplorar/illustrator-1.svg";
 import ExcelIcon from "../../../assets/svg/IconsCardExplorar/file-excel-1.svg";
 import { useNavigation } from '@react-navigation/native';
