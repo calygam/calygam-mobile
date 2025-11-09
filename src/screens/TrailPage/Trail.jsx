@@ -1,0 +1,291 @@
+import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute } from '@react-navigation/native';
+import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
+import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
+
+export default function Trail() {
+
+    const route = useRoute();
+    const { trailId, trailName } = route.params || {};  // <- AQUI RECEBE
+    const [userName, setUserName] = useState();
+    const [trail, setTrail] = useState();
+
+
+    useEffect(() => {
+        const loadUser = async () => {
+            const data = await AsyncStorage.getItem("userInfo");
+            if (data) {
+                setUserName(JSON.parse(data));
+            }
+        };
+
+        loadUser();
+    }, []);
+
+
+    useEffect(() => {
+        const loadTrail = async () => {
+            if (!trailId) return;
+
+            const token = await AsyncStorage.getItem("userToken");
+
+            const response = await fetch(`http://10.0.0.191:8080/trail/read/${trailId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const fullTrail = await response.json();
+
+            console.log("TRAIL COMPLETA:", fullTrail);
+
+            setTrail(fullTrail);
+
+            await AsyncStorage.setItem("currentTrail", JSON.stringify(fullTrail));
+        };
+
+        loadTrail();
+    }, [trailId]);
+
+
+    if (!trail) {
+        return (
+            <View style={styles.loading}>
+                <Text style={{ color: '#000000ff', justifyContent: 'center', alignItems: 'center' }}>Carregando...</Text>
+            </View>
+        );
+    }
+    // cálculo simples de progresso (exemplo)
+    const maxXP = 100;
+    const progress = userName ? (userName.xp / maxXP) : 0;
+
+    return (
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.container}>
+                {/* Os Textos de Boa Vindo e tal */}
+                <View style={styles.InfoContent}>
+                    <Modal />
+                    <View style={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                        <Text style={styles.title}>Olá, {userName?.displayName}! - {trailName}</Text>
+                        <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Continue de onde parou.</Text>
+                    </View>
+                </View>
+
+                {/* Painel de Recompensas */}
+                <View style={styles.PainelContent}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 11 }}>
+                        <Text style={styles.title}>Painel de Recompensas</Text>
+                        <View style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }}>
+                            <IconCoins width={20} height={20} />
+                            <Text style={{ color: '#FFFFFF', fontSize: 14, }}>Coins: {userName?.money ?? 0}</Text>
+                        </View>
+                    </View>
+
+                    <View style={{ paddingLeft: 5, paddingRight: 5, justifyContent: 'space-between' }}>
+                        <View style={styles.rewardItem}>
+
+                            <View style={styles.rankContainer}>
+                                <Text style={{ color: '#FFFFFF', fontSize: 14 }}> Rank: {userName?.rank}</Text>
+                            </View>
+
+                            <View style={styles.rankContainer}>
+                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}> 25</Text>
+                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Lições </Text>
+                            </View>
+
+                            <View style={styles.rankContainer}>
+                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}>xp: {userName?.xp ?? 0} / {maxXP}</Text>
+                                <View style={styles.progressBarBackground}>
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            { width: `${progress * 100}%` }
+                                        ]}
+                                    />
+                                </View>
+                            </View>
+
+                        </View>
+                    </View>
+
+
+                </View>
+
+
+                {/* Status e recompensar da atividade */}
+                <View style={styles.StatusContainer}>
+                    <View style={styles.Status}>
+                        <Text style={{ color: '#05ff5cff' }}>Facil</Text>
+                    </View>
+
+                    <View style={styles.Recompensa}>
+                        <Text style={{ color: '#FFFFFF', fontSize: 14, }}>Recompensar - Atividade</Text>
+                        <Text style={{ color: '#FFFFFF', fontSize: 14, }}>825 XP</Text>
+                    </View>
+                </View>
+
+                {/* Bolinhas de atividades em formato S */}
+                <View style={{ width: "100%", paddingHorizontal: 20, marginTop: 15 }}>
+                    {trail.activities?.map((activity, index) => {
+
+                        // alternar posição das bolinhas para formar o S
+                        const positionStyle =
+                            index % 2 === 0
+                                ? { alignSelf: "flex-start" }
+                                : { alignSelf: "flex-end" };
+
+                        const unlocked = index === 0; // <- primeira liberada (ajuste quando tiver backend)
+
+                        return (
+                            <View
+                                key={index}
+                                style={[
+                                    {
+                                        marginVertical: 25,
+                                        alignItems: "center"
+                                    },
+                                    positionStyle
+                                ]}
+                            >
+
+                                {/* Bolinha */}
+                                <View
+                                    style={[
+                                        {
+                                            width: 70,
+                                            height: 70,
+                                            borderRadius: 35,
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            shadowColor: "#000",
+                                            shadowOpacity: 0.3,
+                                            shadowRadius: 4,
+                                        },
+                                        unlocked ? { backgroundColor: "#6C63FF" } : { backgroundColor: "#DDD" }
+                                    ]}
+                                >
+                                    {!unlocked && (
+                                        <Text style={{ color: "#666", fontSize: 18 }}>🔒</Text>
+                                    )}
+                                </View>
+
+                                {/* Nome da atividade */}
+                                <Text style={{ color: "#FFF", marginTop: 8, fontSize: 13 }}>
+                                    {activity.activityName}
+                                </Text>
+                            </View>
+                        );
+                    })}
+                </View>
+
+
+            </View>
+        </ScrollView>
+    )
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#021713',
+        gap: 25,
+        paddingTop: 50,
+        paddingBottom: 80
+       
+    },
+    InfoContent: {
+        width: '95%',
+        height: 'auto',
+        backgroundColor: '#1E3D35',
+        borderRadius: 20,
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 15,
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+    PainelContent: {
+        width: '95%',
+        height: 'auto',
+        backgroundColor: '#1E3D35',
+        borderRadius: 20,
+        paddingTop: 15,
+        paddingBottom: 15,
+        paddingHorizontal: 10,
+    },
+    progressBarBackground: {
+        width: '95%',
+        height: 12,
+        backgroundColor: '#f8f8f8ff',
+        borderRadius: 8,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#6C63FF',
+    },
+    rankContainer: {
+        marginBottom: 8,
+        borderRadius: 12,
+        padding: 8,
+        borderColor: '#ffffffff',
+        borderWidth: 2,
+        gap: 4,
+        alignItems: 'center',
+        height: 65,
+        justifyContent: 'center',
+    },
+    rewardItem: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+        width: 'auto',
+        height: 'auto',
+
+
+    },
+    Status: {
+        width: 'auto',
+        height: 40,
+        paddingHorizontal: 15,
+        borderRadius: 40,
+        backgroundColor: '#79f61266',
+        marginTop: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    StatusContainer: {
+        width: '90%',
+        height: 'auto',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+
+    },
+    Recompensa: {
+        width: 'auto',
+        height: 40,
+        paddingHorizontal: 18,
+        borderRadius: 40,
+        backgroundColor: '#6C63FF',
+        marginTop: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    loading: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    }
+})

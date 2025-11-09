@@ -3,8 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Homepage from "../screens/HomePage/Homepage";
 import BibliotecaCursos from "../screens/PageBiblioteca/BibliotecaCursos";
 import ShopPage from "../screens/ShopPage/ShopPage";
-import TesteModal from "../screens/TesteModal/TesteModal";
 import CriarTrilha from "../screens/PageProfessorCriarTrilha/CriarTrilha";
+import Trail from "../screens/TrailPage/Trail";
 import useUserRole from "../hooks/useUserRole";
 
 // Icon Tab Naviagtion
@@ -16,6 +16,12 @@ import IconLivroDesabilitado from '../../assets/svg/IconsTabBottom/livros-1-desa
 
 import IconShopAtivo from '../../assets/svg/IconsTabBottom/comprar-1.svg'
 import IconShopDesabilitado from '../../assets/svg/IconsTabBottom/frame-6.svg'
+
+import IconCreateAtivo from '../../assets/svg/IconsTabBottom/selecionar 1.svg'
+import IconCreateDesabilitado from '../../assets/svg/IconsTabBottom/varinha-magica 1.svg'
+
+import IconTrailAtivo from '../../assets/svg/IconsTabBottom/livroa 1.svg'
+import IconTrailDesabilitado from '../../assets/svg/IconsTabBottom/livro 1.svg'
 
 const Tab = createBottomTabNavigator();
 
@@ -71,13 +77,12 @@ function Routes() {
                     return <IconShopDesabilitado />
                 }
             }} />
-
-            <Tab.Screen name="teste" component={TesteModal} options={{
+            <Tab.Screen name="Trilha" component={Trail} options={{
                 tabBarIcon: ({ color, size, focused }) => {
                     if (focused) {
-                        return <IconShopAtivo />
+                        return <IconTrailAtivo />
                     }
-                    return <IconShopDesabilitado />
+                    return <IconTrailDesabilitado />
                 }
             }} />
 
@@ -86,9 +91,9 @@ function Routes() {
                 <Tab.Screen name="Minhas Trilhas" component={CriarTrilha} options={{
                     tabBarIcon: ({ color, size, focused }) => {
                         if (focused) {
-                            return <IconShopAtivo />
+                            return <IconCreateAtivo />
                         }
-                        return <IconShopDesabilitado />
+                        return <IconCreateDesabilitado />
                     }
                 }} />
             )}

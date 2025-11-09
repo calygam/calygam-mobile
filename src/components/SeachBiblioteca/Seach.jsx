@@ -11,7 +11,7 @@ export default function SearchBar() {
             <IconSeach width={24} height={24} fill="#888" style={styles.icon} />
             <TextInput
                 placeholder="Pesquisar Trilha:"
-                placeholderTextColor="#888"
+                placeholderTextColor="#b4b3b3ff"
                 style={styles.input}
             />
         </View>
@@ -22,20 +22,28 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#fff",
         borderRadius: 20,
         paddingHorizontal: 12,
         paddingVertical: 6,
         height: 50,
-        width: width * 0.7
+        width: width * 0.7,
+        backgroundColor: '#000',
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        flexDirection: 'row',
+        borderColor: '#D9D9D933',
+        borderWidth: 2,
     },
     icon: {
         marginRight: 8,
     },
     input: {
-        flex: 1,
+
         fontSize: 14,
-        color: "#000",
+        color: "#ffffffff",
         fontWeight: '100',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

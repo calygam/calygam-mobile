@@ -1,12 +1,8 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import SearchBar from '../../components/SeachBiblioteca/Seach'
 import CardsTrilhas from '../../components/CardTrilhas/CardsTrilhas'
-// import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
-// import IconBancoDeDados from "../../../assets/svg/IconsInterface/base-de-dados-1.svg";
-// import IconFront from "../../../assets/svg/IconsInterface/codigo-simples-1.svg";
-// import IconJava from "../../../assets/svg/IconsInterface/group.svg";
-// import IconAdobeIllustrador from "../../../assets/svg/IconsInterface/illustrator-1.svg";
+import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import { FlatList } from 'react-native-gesture-handler';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -41,38 +37,44 @@ export default function BibliotecaCursos() {
         fetchTrails();
     }, []);
 
-    const renderHeader = () => (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.containerHeader}>
-                <View style={styles.searchBar}>
-                    <SearchBar />
-                </View>
-            </View>
-
-            {/* Texto - Trilhas Disponiveis */}
-            <View style={styles.TextTrilhas}>
-                <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
-            </View>
-        </View>
-    );
 
     return (
-        <FlatList
-            data={trails}
-            renderItem={({ item }) => (
-                <CardsTrilhas 
-                NameTrail={item.trailName} 
-                Icons={item.icon}
-                vacanciesTrail={item.trailVacancies}
-                ImageTrail={item.trailImage}
+
+        <ScrollView style={{ flex: 1, backgroundColor: '#021713' }} >
+            <View style={styles.container}>
+
+                {/* Header */}
+                <View style={styles.containerHeader}>
+                    <View style={styles.searchBar}>
+                        <Modal />
+                        <SearchBar />
+                    </View>
+                </View>
+
+                {/* Texto - Trilhas Disponiveis */}
+                <View style={styles.TextTrilhas}>
+                    <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
+                    <Text style={{ color: '#D9D9D9', fontSize: 15, textAlign: 'left', fontWeight: '100' }}> Explore novas áreas do conhecimento </Text>
+                </View>
+
+                <FlatList
+                    data={trails}
+                    renderItem={({ item }) => {
+                        const professorName = item.user?.userName ?? 'Desconhecido'
+
+                        return (
+                            <CardsTrilhas
+                                item={item}
+                                professorName={professorName}
+                            />
+                        )
+                    }}
+                    keyExtractor={item => String(item.trailId || item.id || Math.random())}
+                    contentContainerStyle={styles.flatListContainer}
                 />
-                
-            )}
-            keyExtractor={item => item.trailId.toString()}
-            ListHeaderComponent={renderHeader}
-            contentContainerStyle={styles.flatListContainer}
-        />
+
+            </View >
+        </ScrollView>
     )
 }
 
@@ -81,16 +83,26 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         alignItems: 'center',
         backgroundColor: '#021713',
-        paddingTop: 55,
-        gap: 35
+        paddingTop: 50,
+        gap: 35,
+        height: 'auto',
+        flex: 1,
+        paddingBottom: 80
+
+    },
+    containerHeader: {
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     searchBar: {
-        width: 320,
+        width: 'auto',
         height: 60,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
         gap: 18,
+        zIndex: 2,
     },
     perfil: {
         height: 50,
@@ -101,14 +113,18 @@ const styles = StyleSheet.create({
     TextTrilhas: {
         width: '95%',
         height: 50,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        gap: 8
     },
     flatListContainer: {
         flexGrow: 1,
         backgroundColor: '#021713',
         alignItems: 'center',
-        gap: 20,
-        paddingBottom: 20,
-        
+        gap: 25,
+        height: 'auto',
+        flex: 1,
+        paddingTop: 30,
+        marginBottom: 30
+
     }
 })

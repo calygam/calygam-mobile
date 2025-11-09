@@ -7,6 +7,7 @@ import IOTIcon from "../../../assets/svg/IconsCardExplorar/site-alt-1.svg";
 import FigmaIcon from "../../../assets/svg/IconsCardExplorar/figma.svg";
 import AdobeIcon from "../../../assets/svg/IconsCardExplorar/illustrator-1.svg";
 import ExcelIcon from "../../../assets/svg/IconsCardExplorar/file-excel-1.svg";
+import CachorroIcon from "../../../assets/svg/undraw_page-eaten_b2rt 1.svg";
 import { useNavigation } from '@react-navigation/native';
 import CUzinho from "./SvgMontanha/Montanha"
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil';
@@ -96,6 +97,7 @@ export default function Homepage() {
                             <Text style={{ color: '#FFF', fontSize: 18, left: 25, fontWeight: 'bold' }}>Meu Mascote</Text>
                             <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '700' }}>Ops! Você ainda não tem nenhum mascote</Text>
                             <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '200' }}>Conheça os benefícios de ter um pet no seu dia a dia e descubra como adotar seu novo melhor amigo de forma responsável e consciente!</Text>
+                            <CachorroIcon width={150} height={150} style={{ alignSelf: 'center', marginTop: -20 }} />
                             <View>
                                 <TouchableOpacity style={{
                                     width: 103,
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
     },
     background: {
         width: '100%',
-        height: '55%',
+        height: '45%',
         position: 'absolute',
         top: 0
     },
@@ -155,6 +157,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         // backgroundColor: 'red',
         width: '100%',
+        height: '100%',
         
     },
     Titulo: {
@@ -214,23 +217,27 @@ const styles = StyleSheet.create({
     MascoteContainer: {
         // backgroundColor: '#faedcd',
         width: 'auto',
-        height: 360,
-        justifyContent: 'center'
+        height: 'auto',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     VemNenem: {
         // backgroundColor: '#fca311',
         width: 'auto',
-        height: 340,
+        height: 'auto',
         marginTop: 25,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
 
     },
     ProBraçosdoPapai: {
         // backgroundColor: '#219ebc',
+        height: 'auto',
+        width: '100%',
         paddingTop: 20,
         paddingLeft: 2,
         paddingRight: 10,
-        paddingBottom: 20,
+        paddingBottom: 150,
 
     }
 });

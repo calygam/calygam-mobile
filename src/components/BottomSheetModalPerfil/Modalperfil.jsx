@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, Alert, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -10,11 +10,12 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase'; // Ajuste o caminho se necessário
 import jwtDecode from 'jwt-decode';
 import axios from 'axios';
+import CircularLoader from '../LoadingCircular/Loading';
 
 const Modal = () => {
     const navigation = useNavigation();
     // ref
-    const bottomSheetRef = useRef(null);
+    const bottomSheetModalRef = useRef(null);
     const snapPoints = useMemo(() => ["40%", "80%"], [])
 
     const [loading, setLoading] = useState(true);
@@ -24,7 +25,9 @@ const Modal = () => {
     useEffect(() => {
         const loadUser = async () => {
             try {
+                await AsyncStorage.removeItem("userInfo");
                 const userInfo = await AsyncStorage.getItem("userInfo");
+
                 if (userInfo) {
                     setUser(JSON.parse(userInfo));
                     setLoading(false);
@@ -44,31 +47,21 @@ const Modal = () => {
                     });
                     const serverUser = resp.data.user ?? resp.data;
                     const ui = {
-                        uid: serverUser?.id ?? serverUser?.userId ?? null,
-                        displayName: serverUser?.user_name ?? serverUser?.username ?? serverUser?.nome ?? serverUser?.name ?? serverUser?.email ?? 'Usuário',
-                        email: serverUser?.email ?? '',
-                        photoURL: serverUser?.photoURL ?? null,
+                        uid: serverUser?.userId,
+                        displayName: serverUser?.userName || 'Usuário',
+                        email: serverUser?.userEmail || '',
+                        photoURL: serverUser?.userImage || null,
+                        xp: serverUser?.userXp || 0,
+                        rank: serverUser?.userRank || '',
+                        money: serverUser?.userMoney || 0,
+                        food: serverUser?.userFood || 0
                     };
                     setUser(ui);
                     await AsyncStorage.setItem("userInfo", JSON.stringify(ui));
                     setLoading(false);
                     return;
-                } catch (err) {
-                    console.warn('Falha fetch /users/readOne:', err.message);
-                    // fallback: decodifica token e tenta pegar user_name do payload
-                    try {
-                        const decoded = jwtDecode(token);
-                        const ui = {
-                            uid: decoded.userId ?? decoded.id ?? null,
-                            displayName: decoded.user_name ?? decoded.username ?? decoded.name ?? decoded.email ?? 'Usuário',
-                            email: decoded.email ?? '',
-                            photoURL: decoded.picture ?? null,
-                        };
-                        setUser(ui);
-                        await AsyncStorage.setItem("userInfo", JSON.stringify(ui));
-                    } catch (e) {
-                        console.warn('Falha ao decodificar token:', e.message);
-                    }
+                } catch (error) {
+                    console.log("Erro ao buscar usuário do servidor:", error);
                 }
             } catch (error) {
                 Alert.alert("Erro", "Não foi possível carregar os dados do usuário");
@@ -80,13 +73,13 @@ const Modal = () => {
     }, []);
 
 
-    const handleCloseAction = () => bottomSheetRef.current?.close();
-    const handleOpenPress = () => bottomSheetRef.current?.expand();
+    const handleCloseAction = () => bottomSheetModalRef.current?.dismiss();
+    const handleOpenPress = () => bottomSheetModalRef.current?.present();
 
     if (loading) {
         return (
             <GestureHandlerRootView style={styles.container}>
-                <Text>Carregando...</Text>
+                <CircularLoader size={20} strokeWidth={3} color="#007AFF" />
             </GestureHandlerRootView>
         );
     }
@@ -99,8 +92,8 @@ const Modal = () => {
             await GoogleSignin.signOut();
             await signOut(auth); // ← Adicione isso para deslogar do Firebase
             // Limpar o AsyncStorage
-            await AsyncStorage.removeItem("userToken");
-            await AsyncStorage.removeItem("userInfo");
+            // await AsyncStorage.removeItem("userToken");
+            // await AsyncStorage.removeItem("userInfo");
 
             // Remova o navigation.dispatch aqui, pois o Firebase vai cuidar da navegação
             Alert.alert("Sucesso", "Você saiu da sua conta.");
@@ -114,19 +107,19 @@ const Modal = () => {
         <GestureHandlerRootView style={styles.container}>
 
             <TouchableOpacity onPress={handleOpenPress} style={{ width: 50, height: 50, overflow: 'hidden', borderRadius: 100 }}>
-                <Image source={{ uri: user?.photoURL }} style={{ width: '100%', height: '100%' }} />
+                <Image
+                    source={user?.photoURL ? { uri: user.photoURL } : require('../../../assets/image/SemPerfil.jpeg')}
+                    style={{ width: '100%', height: '100%', backgroundColor: '#FFF' }}
+                />
             </TouchableOpacity>
 
 
-            <BottomSheet
-                ref={bottomSheetRef}
+            <BottomSheetModal
+                ref={bottomSheetModalRef}
                 snapPoints={snapPoints}
-                index={-1}
                 enablePanDownToClose={true}
-                enableContentPanningGesture={false}
-                enableContentPanning={false}
+                index={1}
                 backgroundStyle={{ backgroundColor: '#0D141C' }}
-
             >
                 <BottomSheetView style={styles.contentContainer}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20 }}>
@@ -137,7 +130,7 @@ const Modal = () => {
 
                     {/* Profile Info */}
                     <Image
-                        source={{ uri: user?.photoURL || "https://via.placeholder.com/100" }}
+                        source={user?.photoURL ? { uri: user.photoURL } : require('../../../assets/image/SemPerfil.jpeg')}
                         style={styles.profileImage}
                     />
 
@@ -173,19 +166,16 @@ const Modal = () => {
 
 
                 </BottomSheetView>
-            </BottomSheet>
+            </BottomSheetModal>
         </GestureHandlerRootView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%',
-        height: '100%',
-        paddingTop: 60,
-        paddingLeft: 20,
-        position: 'absolute',
-        zIndex: 1,
+        width: 'auto',
+        height: 'auto',
+       
     },
     contentContainer: {
         flex: 1,

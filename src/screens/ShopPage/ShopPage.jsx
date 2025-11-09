@@ -3,7 +3,6 @@ import React, {useEffect, useState} from 'react'
 import { StyleSheet } from 'react-native'
 import IconSeach from "../../../assets/svg/IconsInterface/icon_seach.svg";
 import CardPets from '../../components/CardShop/CardPets';
-import Pet from '../../../assets/image/imageShopPet/image-58.png'
 import SkeletonPetCard from '../../components/SkeletoncomShimmer/SkeletonPetCard';
 
 export default function ShopPage() {

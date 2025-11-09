@@ -3,7 +3,7 @@ import IconVagas from "../../../assets/svg/users-alt rosa.svg";
 import IconLixo from "../../../assets/svg/lixo.svg";
 import IconLapis from "../../../assets/svg/lapis.svg";
 
-export default function CardProf({titulo, professorNome, vagas}) {
+export default function CardProf({titulo, professorNome, vagas, foto, onEdit, item}) {
 
     return (
         <View style={styles.container}>
@@ -19,23 +19,24 @@ export default function CardProf({titulo, professorNome, vagas}) {
 
                 {/* Informações do Professor */}
                 <View style={styles.foto}>
-                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#CCC' }} />
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#CCC' }}>{foto}</View>
                     <Text style={{ color: '#B3B3B3' }}>Prof: {professorNome}</Text>
                 </View>
 
                 {/* Vagas e Inscritos */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '90%' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10}}>
                         <IconVagas width={20} height={20} />
                         <Text style={{ color: '#CE82FF' }}>Vagas: {vagas}</Text>
                     </View>
                     {/* Botoes de editar e excluir */}
-                    <View style={{ flexDirection: 'row', gap: 15}}>
-                        <TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 25}}>
+
+                        <TouchableOpacity onPress={() => onEdit && onEdit(item)}>
                             <IconLapis width={20} height={20} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={() => Alert.alert('Excluir Trilha')}>
                             <IconLixo width={20} height={20} />
                         </TouchableOpacity>
                     </View>
@@ -50,16 +51,16 @@ export default function CardProf({titulo, professorNome, vagas}) {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         justifyContent: 'flex-start',
         alignItems: 'center',
         backgroundColor: '#021713',
-        gap: 35
+        gap: 35,
+        width: '100%'
     },
     Status: {
         width: 'auto',
         height: 40,
-        paddingHorizontal: 15,
+        paddingHorizontal: 25,
         borderRadius: 40,
         backgroundColor: '#f64b1288',
         marginTop: 10,

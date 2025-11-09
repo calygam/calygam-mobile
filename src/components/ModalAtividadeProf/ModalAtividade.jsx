@@ -1,202 +1,182 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import CalygamDropDown from '../InteractiveDropdown/DropDopdwnDificuladade';
 
-// Componente interno reutilizável para o conteúdo do modal
-export function StepBottomSheetContent({ onSave }) {
-    const totalSteps = 2;
-    const [step, setStep] = useState(1);
-    const [form, setForm] = useState({
-        activities: [{ activityName: '', activityDescription: '', activityPoints: '', activityDifficulty: 'easy' }],
+// Versão simplificada pedida
+export function StepBottomSheetContent({ onSave, isEditing, initialActivities }) {
+    const [activities, setActivities] = useState([]);
+    const [current, setCurrent] = useState({
+        activityName: '',
+        activityDescription: '',
+        activityPrice: '',
+        activityDifficulty: 'EASY', // manter formato UPPERCASE compatível com o backend
     });
 
-    const handleInputChange = (name, value) => {
-        const updated = [...form.activities];
-        updated[step - 1][name] = value;
-        setForm({ activities: updated });
-    };
-
-    const handleDifficultyChange = (difficulty) => {
-        handleInputChange('activityDifficulty', difficulty);
-    };
-
-    const handleNext = () => {
-        if (step < totalSteps) setStep(prev => prev + 1);
-    };
-
-    const handleBack = () => {
-        if (step > 1) setStep(prev => prev - 1);
-    };
-
-    const handleSave = () => {
-        if (onSave) {
-            onSave(form.activities);
-        } else {
-            console.log('Form enviado:', form);
+    useEffect(() => {
+        if (isEditing && initialActivities) {
+            setActivities(initialActivities);
         }
+    }, [isEditing, initialActivities]);
+
+    const handleAddActivity = () => {
+        if (!current.activityName || !current.activityDescription || !current.activityPrice) {
+            Alert.alert("Atenção", "Preencha todos os campos da atividade.");
+            return;
+        }
+        const newList = [...activities, current];
+        setActivities(newList);
+        setCurrent({
+            activityName: '',
+            activityDescription: '',
+            activityPrice: '',
+            activityDifficulty: 'EASY',
+        });
+    };
+
+    const handleSaveAll = () => {
+        if (activities.length < 10) {
+            Alert.alert("Atenção", `Crie mais ${10 - activities.length} atividades para liberar a trilha.`);
+            return;
+        }
+        onSave && onSave(activities);
     };
 
     return (
-        <>
-            <Text style={styles.title}>Adicionar Atividade - Etapa {step}</Text>
-
-            {/* Step 1 */}
-            {step === 1 && (
-                <>
+        <BottomSheetScrollView
+            contentContainerStyle={{ paddingBottom: 140, paddingHorizontal: 12 }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator
+            nestedScrollEnabled
+        >
+            <Text style={styles.title}>{isEditing ? 'Editar Atividades' : 'Criar Atividades'}</Text>
+            <TextInput
+                style={styles.input}
+                placeholder="Nome da Atividade"
+                placeholderTextColor="#AAA"
+                value={current.activityName}
+                onChangeText={(v) => setCurrent({ ...current, activityName: v })}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Descrição da Atividade"
+                placeholderTextColor="#AAA"
+                value={current.activityDescription}
+                onChangeText={(v) => setCurrent({ ...current, activityDescription: v })}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Pontos (XP)"
+                placeholderTextColor="#AAA"
+                keyboardType="numeric"
+                value={current.activityPrice}
+                onChangeText={(v) => setCurrent({ ...current, activityPrice: v })}
+            />
+            <CalygamDropDown
+                value={current.activityDifficulty}
+                // Garante que o valor usado no estado e enviado ao back esteja em UPPERCASE
+                onChange={(diff) => setCurrent({ ...current, activityDifficulty: String(diff).toUpperCase() })}
+            />
+            <TouchableOpacity style={styles.addButton} onPress={handleAddActivity}>
+                <Text style={styles.addText}>Adicionar Atividade</Text>
+            </TouchableOpacity>
+            <Text style={styles.subtitle}>Atividades Criadas: {activities.length}</Text>
+            {activities.map((a, i) => (
+                <View key={i} style={styles.listItem}>
                     <TextInput
                         style={styles.input}
                         placeholder="Nome da Atividade"
-                        value={form.activities[step - 1].activityName}
-                        onChangeText={text => handleInputChange('activityName', text)}
+                        placeholderTextColor="#AAA"
+                        value={a.activityName}
+                        onChangeText={(v) => {
+                            const newList = [...activities];
+                            newList[i].activityName = v;
+                            setActivities(newList);
+                        }}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder="Descrição da Atividade"
-                        value={form.activities[step - 1].activityDescription}
-                        onChangeText={text => handleInputChange('activityDescription', text)}
+                        placeholderTextColor="#AAA"
+                        value={a.activityDescription}
+                        onChangeText={(v) => {
+                            const newList = [...activities];
+                            newList[i].activityDescription = v;
+                            setActivities(newList);
+                        }}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Pontos (XP)"
+                        placeholderTextColor="#AAA"
+                        keyboardType="numeric"
+                        value={a.activityPrice ? a.activityPrice.toString() : ''}
+                        onChangeText={(v) => {
+                            const newList = [...activities];
+                            newList[i].activityPrice = v;
+                            setActivities(newList);
+                        }}
                     />
                     <CalygamDropDown
-                        value={form.activities[step - 1].activityDifficulty}
-                        onChange={handleDifficultyChange}
+                        value={a.activityDifficulty}
+                        onChange={(diff) => {
+                            const newList = [...activities];
+                            newList[i].activityDifficulty = String(diff).toUpperCase();
+                            setActivities(newList);
+                        }}
                     />
-                </>
-            )}
-
-            {/* Botões de navegação */}
-            <View style={styles.footer}>
-                {step > 1 && (
-                    <TouchableOpacity onPress={handleBack} style={[styles.button, styles.secondary]}>
-                        <Text style={styles.buttonText}>Voltar</Text>
-                    </TouchableOpacity>
-                )}
-
-                {step < totalSteps ? (
-                    <TouchableOpacity onPress={handleNext} style={styles.button}>
-                        <Text style={styles.buttonText}>Próximo</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity onPress={handleSave} style={styles.button}>
-                        <Text style={styles.buttonText}>{onSave ? 'Salvar e Criar Trilha' : 'Salvar'}</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </>
+                </View>
+            ))}
+            <TouchableOpacity
+                style={[styles.saveButton, activities.length < 10 && { backgroundColor: '#555' }]}
+                disabled={activities.length < 10}
+                onPress={handleSaveAll}
+            >
+                <Text style={styles.saveText}>
+                    {activities.length < 10
+                        ? `Crie mais ${10 - activities.length} atividades`
+                        : isEditing ? 'Salvar Edições' : 'Salvar e Criar Trilha'}
+                </Text>
+            </TouchableOpacity>
+        </BottomSheetScrollView>
     );
 }
 
-export default function StepBottomSheet() {
-    const bottomSheetRef = useRef(null);
-    // const totalSteps = 2;
-    const [step, setStep] = useState(1);
-    const [form, setForm] = useState({
-        activities: [{ activityName: '', activityDescription: '', activityPoints: '', activityDifficulty: 'easy' }],
-    });
-
-    const snapPoints = useMemo(() => ['80%', '100%'], []);
-
-    const handleInputChange = (name, value) => {
-        const updated = [...form.activities];
-        updated[step - 1][name] = value;
-        setForm({ activities: updated });
-    };
-
-    const handleDifficultyChange = (difficulty) => {
-        handleInputChange('activityDifficulty', difficulty);
-    };
-
-    const handleNext = () => {
-        if (step < totalSteps) setStep(prev => prev + 1);
-    };
-
-    const handleBack = () => {
-        if (step > 1) setStep(prev => prev - 1);
-    };
-
-    const handleSave = () => {
-        console.log('Form enviado:', form);
-        bottomSheetRef.current?.close();
-    };
-
-    const openBottomSheet = () => bottomSheetRef.current?.expand();
-
-    return (
-        <GestureHandlerRootView style={{ flex: 1, width: '100%' }}>
-            <View style={styles.screen}>
-                <TouchableOpacity onPress={openBottomSheet} style={styles.openButton}>
-                    <Text style={styles.openText}>Abrir BottomSheet</Text>
-                </TouchableOpacity>
-
-                <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-                    <BottomSheetScrollView style={styles.content}>
-                        <StepBottomSheetContent
-                            form={form}
-                            setForm={setForm}
-                            step={step}
-                            setStep={setStep}
-                            onSave={handleSave}
-                        />
-                    </BottomSheetScrollView>
-                </BottomSheet>
-            </View>
-        </GestureHandlerRootView>
-    );
-}
+export default StepBottomSheetContent;
 
 const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-        backgroundColor: '#f2f2f2',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    openButton: {
-        backgroundColor: '#007AFF',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    openText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    content: {
-        flex: 1,
-        padding: 20,
-    },
-    title: {
-        fontWeight: 'bold',
-        fontSize: 18,
-        marginBottom: 15,
-        color: '#fff',
-    },
+    title: { fontWeight: 'bold', fontSize: 20, marginBottom: 15, color: '#FFF' },
     input: {
         borderWidth: 1,
-        borderColor: '#FFFFFF',
-        color: '#fff',
+        borderColor: '#FFF',
+        color: '#FFF',
         borderRadius: 8,
-        padding: 10,
+        padding: 12,
         marginBottom: 12,
     },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 15,
+    addButton: {
+        backgroundColor: '#6C63FF',
+        padding: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginBottom: 15,
     },
-    button: {
-        flex: 1,
-        backgroundColor: '#007AFF',
-        paddingVertical: 12,
+    addText: { color: '#FFF', fontWeight: 'bold' },
+    listItem: {
+        padding: 10,
+        backgroundColor: '#1E3D35',
         borderRadius: 8,
-        marginHorizontal: 5,
+        marginBottom: 10,
     },
-    secondary: {
-        backgroundColor: '#ccc',
+    subtitle: { color: '#FFF', marginVertical: 10, fontSize: 16 },
+    saveButton: {
+        backgroundColor: '#05FF5C',
+        padding: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 30,
     },
-    buttonText: {
-        color: '#fff',
-        textAlign: 'center',
-        fontWeight: '600',
-    },
+    saveText: { color: '#000', fontWeight: 'bold' },
 });

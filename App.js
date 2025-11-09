@@ -12,6 +12,7 @@ import { View, Text } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/firebase';
 import Modal from './src/components/BottomSheetModalPerfil/Modalperfil';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -36,19 +37,56 @@ const linking = {
     }
 }
 
+function ErrorBoundary({ children }) {
+    const [hasError, setHasError] = useState(false);
+    useEffect(() => {
+        const handler = (error, isFatal) => {
+            console.warn('ErrorBoundary capturou:', error, isFatal);
+            setHasError(true);
+        };
+        const subscription = (ErrorUtils && ErrorUtils.setGlobalHandler)
+            ? ErrorUtils.setGlobalHandler(handler)
+            : null;
+        return () => {
+            if (subscription && ErrorUtils?.setGlobalHandler) {
+                ErrorUtils.setGlobalHandler(null);
+            }
+        };
+    }, []);
+    if (hasError) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#FFF', textAlign: 'center', padding: 20 }}>
+                    Ocorreu um erro inesperado na interface. Tente atualizar a tela.
+                </Text>
+            </View>
+        );
+    }
+    return children;
+}
+
 export default function App() {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true); // pra mostrar splash
+    const [hasBackendToken, setHasBackendToken] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubFirebase = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
-            setLoading(false); // terminou de checar
         });
+        // também considera token do backend para manter usuário na home durante erros/hot reload
+        const loadBackendToken = async () => {
+            try {
+                const t = await AsyncStorage.getItem('userToken');
+                setHasBackendToken(!!t);
+            } catch {}
+            setLoading(false);
+        };
+        loadBackendToken();
 
         // Limpa o listener quando desmontar
-        return () => unsubscribe();
+        return () => unsubFirebase();
     }, []);
 
     if (loading) {
@@ -64,13 +102,22 @@ export default function App() {
         <AuthProvider>
             <SafeAreaProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
-                    <NavigationContainer linking={linking}>
-                        <Stack.Navigator initialRouteName={user ? "home" : "Login"}>
-                            <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
-                            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                            <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
-                        </Stack.Navigator>
-                    </NavigationContainer>
+                    <BottomSheetModalProvider>
+                        <NavigationContainer linking={linking}>
+                            <ErrorBoundary>
+                            <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"}>
+                                {/* Home SEMPRE registrada para que navigation.navigate('home') funcione */}
+                                <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
+                                {!(user || hasBackendToken) && (
+                                    <>
+                                        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+                                        <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
+                                    </>
+                                )}
+                            </Stack.Navigator>
+                            </ErrorBoundary>
+                        </NavigationContainer>
+                    </BottomSheetModalProvider>
                 </GestureHandlerRootView>
             </SafeAreaProvider>
         </AuthProvider>

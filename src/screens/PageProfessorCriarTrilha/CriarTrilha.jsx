@@ -1,369 +1,363 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Image } from 'react-native'
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native'
+import React, { useRef, useState, useMemo } from 'react'
 import { useNavigation } from '@react-navigation/native'
-import api from '../../api/api'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import IconAdicionar from "../../../assets/svg/adicionar.svg";
 import IconImage from "../../../assets/svg/image-plus.svg";
 import IconUpload from "../../../assets/svg/upload-cloud-02.svg";
-import IconAdicionar from "../../../assets/svg/adicionar.svg";
-import CardProf from '../../components/CardProfTrilhas/CardProf'
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import * as ImagePicker from 'expo-image-picker';
-import { jwtDecode } from 'jwt-decode'
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { StepBottomSheetContent } from '../../components/ModalAtividadeProf/ModalAtividade';
-import axios from 'axios';
+import { useTrilhaForm } from '../../hooks/useTrilhaForm'
+import { useTrilhaApi } from '../../hooks/useTrilhaApi'
+import ListarTrilhasCriadas from '../../components/ListarTrilhasCriadas/ListarTrilhasCriadas'
+import IconSelector, { iconMap } from '../../components/IconsModal/Icons'
+import styles from './CriarTrilha.styles'
 
 export default function CriarTrilha() {
     const navigation = useNavigation()
-    const [nome, setNome] = useState('')
-    const [professorId, setProfessorId] = useState('')
-    const [vagas, setVagas] = useState('')
-    const [descricao, setDescricao] = useState('')
-    const [senha, setSenha] = useState('')
-    const [image, setImage] = useState(null)
-    const [userToken, setUserToken] = useState(null)
-    const [userId, setUserId] = useState(null)
-    const [activities, setActivities] = useState([]) // ← Novo estado para atividades
+    const {
+        nome, setNome,
+        senha, setSenha,
+        vagas, setVagas,
+        descricao, setDescricao,
+        image, setImage,
+        activities, setActivities,
+        pickImage,
+        validateForm,
+        resetForm,
+        loadFormData,
+    } = useTrilhaForm()
 
-    const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
-    const [activitySheetOpen, setActivitySheetOpen] = useState(false) // ← Controla modal de atividades
+    const {
+        userId,
+        createdTrails,
+        criarTrilha: apiCriarTrilha,
+        updateTrilha: apiUpdateTrilha,
+        fetchCreatedTrails,
+    } = useTrilhaApi()
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingTrail, setEditingTrail] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedIconName, setSelectedIconName] = useState(null);
 
     const snapPoints = useMemo(() => ['55%', '100%'], [])
     const bottomSheetRef = useRef(null)
-    const activitySheetRef = useRef(null) // ← Ref para modal de atividades
-
-    // ← Novo useEffect para decodificar o token e pegar userId
-    useEffect(() => {
-        const loadUserId = async () => {
-            const token = await AsyncStorage.getItem('userToken');
-            console.log('Token carregado do AsyncStorage:', token);
-            setUserToken(token);  // ← Armazena o token no estado
-
-            if (token) {
-                try {
-                    const decoded = jwtDecode(token);
-                    console.log('payload do token:', decoded);
-                    setUserId(decoded.userId);  // ← Assume que o JWT tem "userId"
-                    setProfessorId(decoded.userId.toString());  // ← Define professorId automaticamente
-                } catch (error) {
-                    console.error('Erro ao decodificar token:', error);
-                }
-            }
-        };
-        loadUserId();
-    }, []);
-
-    // Função para selecionar imagem da galeria
-    const pickImage = async () => {
-        // Solicitar permissão
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-        if (status !== 'granted') {
-            Alert.alert('Permissão necessária', 'Precisamos de acesso à galeria para selecionar imagens.')
-            return
-        }
-
-        // Abrir galeria
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        })
-
-        if (!result.canceled) {
-            setImage(result.assets[0].uri)  // Armazena a URI da imagem selecionada
-        }
-    }
+    const activitySheetRef = useRef(null)
 
     const handleOpenActivityModal = () => {
-        // Valida campos básicos antes de abrir modal de atividades
-        if (!nome || !vagas || !descricao) {
-            Alert.alert('Atenção', 'Por favor, preencha nome, vagas e descrição antes de adicionar atividades.')
-            return
-        }
-        setBottomSheetOpen(false)
+        if (!validateForm()) return;
         bottomSheetRef.current?.close()
         setTimeout(() => {
-            setActivitySheetOpen(true)
             activitySheetRef.current?.expand()
         }, 300)
     }
 
     const handleSaveActivities = (savedActivities) => {
-        setActivities(savedActivities)
-        setActivitySheetOpen(false)
-        activitySheetRef.current?.close()
-        // Agora envia tudo
-        criarTrilha()
-    }
-
-    const criarTrilha = async () => {
-        try {
-            const token = await AsyncStorage.getItem('userToken');
-            console.log('Token usado na requisição:', token);
-
-            if (!token) {
-                Alert.alert('Erro', 'Token de autenticação inválido. Faça login novamente.');
-                return;
-            }
-
-            const professor = userId ?? (professorId ? parseInt(professorId) : null);
-            if (!nome || !vagas || !professor) {
-                Alert.alert('Erro', 'Por favor, preencha todos os campos.')
-                return
-            }
-
-
-            // Monta um objeto "form" com os dados atuais da tela para manter a estrutura do trecho enviado
-            const form = {
-                trailName: nome || '',
-                trailDescription: descricao || '',
-                trailPoints: 0, // ajuste quando houver campo de preço
-                trailImage: image
-                    ? {
-                        uri: image,
-                        name: 'trilha.jpg',
-                        type: 'image/jpeg',
-                    }
-                    : null,
-                trailPassword: senha || '',
-                trailVacancy: vagas || '0',
-                activities: activities, // ← Usa as atividades do estado
-            }
-
-            // Se existir algum código alvo, defina aqui; caso contrário, omitiremos
-            const codeTarget = undefined // ajuste conforme sua lógica
-
-            // ===== Trecho encaixado e válido =====
-            const formData = new FormData();
-            formData.append('trailName', form.trailName.trim());
-            formData.append('trailDescription', form.trailDescription.trim());
-            const rawtrailPts = String(form.trailPoints).replace(/[.,]/g, '');
-            formData.append('trailPrice', Number(rawtrailPts));
-            if (form.trailImage) formData.append('trailFileImage', form.trailImage);
-            formData.append('trailPassword', (form.trailPassword || '').trim());
-            formData.append('trailVacancies', Number(form.trailVacancy));
-            form.activities.forEach((activity, index) => {
-                if (activity.activityId) {
-                    formData.append(`activities[${index}].activityId`, String(activity.activityId));
-                }
-                formData.append(`activities[${index}].activityName`, activity.activityName || '');
-                formData.append(`activities[${index}].activityDescription`, activity.activityDescription || '');
-                const rawActPts = String(activity.activityPoints || 0).replace(/[.,]/g, '');
-                const intValue = parseInt(rawActPts);
-                const validValue = isNaN(intValue) ? 0 : intValue;
-                formData.append(`activities[${index}].activityPrice`, validValue);
-                formData.append(`activities[${index}].activityDifficulty`, activity.activityDifficulty || 'EASY');
-            });
-            if (codeTarget) formData.append('calygamCode', codeTarget);
-            console.log('FormData enviado:', Array.from(formData.entries()));
-
-            const response = await axios.post(
-                // 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/create'
-                'http://10.0.0.191:8080/trail/create',
-                formData,
-                {
-
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data',
-                    },
-                }
-            )
-            console.log('criarTrilha response:', response.data);
-            Alert.alert('Sucesso', 'Trilha criada com sucesso!')
-            setBottomSheetOpen(false)
-            navigation.goBack();
-        } catch (error) {
-            Alert.alert('Erro', 'Não foi possível criar a trilha. Tente novamente mais tarde.')
-            console.error(error)
-            
-
+        setActivities(savedActivities);
+        activitySheetRef.current?.close();
+        if (isEditing) {
+            updateTrilha(savedActivities);
+        } else {
+            criarTrilha(savedActivities);
         }
-    }
+    };
+
+    const criarTrilha = async (activitiesOverride) => {
+        const activitiesToSend = Array.isArray(activitiesOverride) ? activitiesOverride : activities;
+        if (!activitiesToSend || activitiesToSend.length < 10) {
+            Alert.alert('Erro', 'É necessário ter pelo menos 10 atividades antes de criar a trilha.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('trailName', nome.trim());
+        formData.append('trailDescription', descricao.trim());
+        formData.append('trailPrice', 0);
+        
+        // Sempre enviar uma imagem: real ou placeholder
+        let imageToSend;
+        if (image) {
+            imageToSend = {
+                uri: image,
+                name: 'trilha.jpg',
+                type: 'image/jpeg',
+            };
+        } else {
+            // Enviar placeholder quando ícone selecionado ou nada
+            imageToSend = {
+                uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                name: 'placeholder.png',
+                type: 'image/png',
+            };
+        }
+        formData.append('trailFileImage', imageToSend);
+        
+        formData.append('trailIcon', selectedIconName || '');
+        console.log("ICON ENVIADO PRO BACK:", selectedIconName);
+
+        formData.append('trailPassword', (senha || '').trim());
+        formData.append('trailVacancies', Number(vagas));
+        activitiesToSend.forEach((activity, index) => {
+            if (activity.activityId) {
+                formData.append(`activities[${index}].activityId`, String(activity.activityId));
+            }
+            formData.append(`activities[${index}].activityName`, (activity.activityName || '').trim());
+            formData.append(`activities[${index}].activityDescription`, (activity.activityDescription || '').trim());
+            const rawActPts = String(activity.activityPrice || 0).replace(/[^0-9]/g, '');
+            const intValue = parseInt(rawActPts, 10);
+            const validValue = isNaN(intValue) ? 0 : intValue;
+            formData.append(`activities[${index}].activityPrice`, validValue);
+            const difficulty = (activity.activityDifficulty || 'EASY').toString().trim().toUpperCase();
+            formData.append(`activities[${index}].activityDifficulty`, difficulty);
+        });
+
+        const result = await apiCriarTrilha(formData);
+        if (result) {
+            resetForm();
+            navigation.goBack();
+        }
+    };
+
+    const updateTrilha = async (activitiesOverride) => {
+        const activitiesToSend = Array.isArray(activitiesOverride) ? activitiesOverride : activities;
+        if (!activitiesToSend || activitiesToSend.length < 10) {
+            Alert.alert('Erro', 'É necessário ter pelo menos 10 atividades.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('trailName', nome.trim());
+        formData.append('trailDescription', descricao.trim());
+        formData.append('trailPrice', 0);
+        
+        // Sempre enviar uma imagem: real ou placeholder
+        let imageToSend;
+        if (image) {
+            imageToSend = {
+                uri: image,
+                name: 'trilha.jpg',
+                type: 'image/jpeg',
+            };
+        } else {
+            // Enviar placeholder quando ícone selecionado ou nada
+            imageToSend = {
+                uri: Image.resolveAssetSource(require('../../../assets/svg/placeholderOI.png')).uri,
+                name: 'placeholder.png',
+                type: 'image/png',
+            };
+        }
+        formData.append('trailFileImage', imageToSend);
+        
+        formData.append('trailIcon', selectedIconName || '');
+        formData.append('trailPassword', (senha || '').trim());
+        formData.append('trailVacancies', Number(vagas));
+        activitiesToSend.forEach((activity, index) => {
+            if (activity.activityId) {
+                formData.append(`activities[${index}].activityId`, String(activity.activityId));
+            }
+            formData.append(`activities[${index}].activityName`, (activity.activityName || '').trim());
+            formData.append(`activities[${index}].activityDescription`, (activity.activityDescription || '').trim());
+            const rawActPts = String(activity.activityPrice || 0).replace(/[^0-9]/g, '');
+            const intValue = parseInt(rawActPts, 10);
+            const validValue = isNaN(intValue) ? 0 : intValue;
+            formData.append(`activities[${index}].activityPrice`, validValue);
+            const difficulty = (activity.activityDifficulty || 'EASY').toString().trim().toUpperCase();
+            formData.append(`activities[${index}].activityDifficulty`, difficulty);
+        });
+
+        const result = await apiUpdateTrilha(editingTrail.trailId, formData);
+        if (result) {
+            setIsEditing(false);
+            setEditingTrail(null);
+            resetForm();
+            fetchCreatedTrails(userId);
+        }
+    };
 
     const handlePresentModalPress = () => {
-        setBottomSheetOpen(true)
+        setIsEditing(false);
+        setEditingTrail(null);
+        resetForm();
+        setSelectedIconName(null);
         bottomSheetRef.current?.expand()
     }
 
     const handleCloseModal = () => {
-        setBottomSheetOpen(false)
         bottomSheetRef.current?.close()
+        setIsEditing(false);
+        setEditingTrail(null);
     }
+
+    const onEdit = (item) => {
+        setEditingTrail(item);
+        setIsEditing(true);
+        loadFormData(item);
+        setSelectedIconName(item.trailIcon || null); 
+        bottomSheetRef.current?.expand();
+    };
+
 
     return (
+
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <View style={styles.container}>
+            <View style={{ flex: 1, backgroundColor: '#021713' }}>
+                <View style={styles.container}>
+                    {/* Texto Criar Trilha */}
+                    <View style={{ color: '#FFF' }}>
+                        <Text style={{ color: '#FFF' }}>Minhas Trilhas</Text>
+                    </View>
 
-                {/* Texto Criar Trilha */}
-                <View style={{ color: '#FFF' }}>
-                    <Text style={{ color: '#FFF' }}>CriarTrilha</Text>
-                </View>
+                    {/* Se não tiver trilhas criadas, mostrar isso */}
+                    {createdTrails.length === 0 && (
+                    <View
+                        style={{
+                            backgroundColor: '#6b63ff55', // Fundo escuro similar ao da imagem
+                            borderWidth: 1, // Espessura da borda
+                            borderColor: '#736de5ff', // Cor da borda (azul claro; ajuste conforme necessário)
+                            borderStyle: 'dashed', // Estilo tracejado
+                            borderRadius: 10, // Raio para bordas arredondadas
+                            padding: 30, // Espaçamento interno
+                            alignItems: 'center', // Alinhamento central
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Text style={{ color: '#FFFFFF', fontSize: 18, marginBottom: 10 }}>
+                            Nenhuma trilha encontrada
+                        </Text>
+                        <Text style={{ color: '#6C63FF', fontSize: 14, marginBottom: 20 }}>
+                            Clique no + para criar sua primeira!
+                        </Text>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#6C63FF', // Cor do botão +
+                                borderRadius: 50, // Botão circular
+                                width: 40,
+                                height: 40,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '200' }}>+</Text>
+                        </TouchableOpacity>
+                    </View>
+                    )}
+                    
 
-                {/* Card */}
-                <CardProf
-                    titulo="Design de Interfaces Figma"
-                    professorNome="Lucas Correa"
-                    vagas="20"
-                />
+                    {/* Cards de Trilhas Criadas */}
+                    <ListarTrilhasCriadas createdTrails={createdTrails} onEdit={onEdit} />
 
-                {/* Botão de Add */}
-                <View style={{ position: 'absolute', bottom: 110, right: 30 }}>
-                    <TouchableOpacity onPress={handlePresentModalPress} style={{ backgroundColor: '#6C63FF', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' }}>
-                        <IconAdicionar width={20} height={30} />
-                    </TouchableOpacity>
-                </View>
+                    {/* Botão de Add */}
+                    <View style={{ position: 'absolute', bottom: 110, right: 30 }}>
+                        <TouchableOpacity onPress={handlePresentModalPress} style={{ backgroundColor: '#6C63FF', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' }}>
+                            <IconAdicionar width={20} height={30} />
+                        </TouchableOpacity>
+                    </View>
 
-                {/* Modal (BottomSheet) */}
-                <BottomSheet
-                    ref={bottomSheetRef}
-                    snapPoints={snapPoints}
-                    index={-1}
-                    enablePanDownToClose={true}
-                    backgroundStyle={{ backgroundColor: '#0D141C' }}
-                >
-                    <BottomSheetView style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Criar Nova Trilha</Text>
+                    {/* Modal (BottomSheet) */}
+                    <BottomSheet
+                        ref={bottomSheetRef}
+                        snapPoints={snapPoints}
+                        index={-1}
+                        enablePanDownToClose={true}
+                        backgroundStyle={{ backgroundColor: '#0D141C' }}
+                    >
+                        <BottomSheetView style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>{isEditing ? 'Editar Trilha' : 'Criar Nova Trilha'}</Text>
 
-                        <Text style={styles.label}>Nome da Trilha</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ex: Figma "
-                            placeholderTextColor="#888"
-                            value={nome}
-                            onChangeText={setNome}
-                        />
-                        <Text style={styles.label}>Senha da Trilha</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Digite a senha da trilha"
-                            placeholderTextColor="#888"
-                            value={senha}
-                            onChangeText={setSenha}
-                            secureTextEntry={false}  // ← Adicione para ocultar senha
-                        />
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                            <View style={{ width: 60, height: 60, backgroundColor: '#F5F5F5', borderRadius: 100, justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 10, flexDirection: 'row' }}>
-                                {image ? (
-                                    <Image source={{ uri: image }} style={{ width: 60, height: 60, borderRadius: 30 }} />
-                                ) : (
-                                    <IconImage width={40} height={50} />
-                                )}
+                            <Text style={styles.label}>Nome da Trilha</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ex: Figma "
+                                placeholderTextColor="#888"
+                                value={nome}
+                                onChangeText={setNome}
+                            />
+                            <Text style={styles.label}>Senha da Trilha</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Digite a senha da trilha"
+                                placeholderTextColor="#888"
+                                value={senha}
+                                onChangeText={setSenha}
+                                secureTextEntry={false}
+                            />
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                                <View style={{ width: 50, height: 50, backgroundColor: '#F5F5F5', borderRadius: 100, justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 10, flexDirection: 'row' }}>
+                                    {(() => {
+                                        const SelectedIcon = selectedIconName ? iconMap[selectedIconName] : null;
+                                        return SelectedIcon ? (
+                                            <SelectedIcon width={50} height={50} />
+                                        ) : image ? (
+                                            <Image source={{ uri: image }} style={{ width: 50, height: 50, borderRadius: 30 }} />
+                                        ) : (
+                                            IconImage ? <IconImage width={30} height={50} /> : null
+                                        );
+                                    })()}
+                                </View>
+
+                                <View style={{ flexDirection: 'column', gap: 10 }}>
+                                    <TouchableOpacity onPress={() => setModalVisible(true)} style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 5, borderColor: '#FFF', borderWidth: 2, padding: 10, borderRadius: 18 }}>
+                                        {IconUpload ? <IconUpload width={30} height={30} /> : null}
+                                        <Text style={{ color: '#FFF', fontSize: 14 }}>Escolher Ícone</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={async () => {
+                                            await pickImage();
+                                            setSelectedIconName(null); // ✅ limpar ícone quando enviar imagem
+                                        }}
+                                        style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 5, borderColor: '#FFF', borderWidth: 2, padding: 10, borderRadius: 18 }}
+                                    >
+                                        {IconUpload ? <IconUpload width={30} height={30} /> : null}
+                                        <Text style={{ color: '#FFF', fontSize: 14 }}>Adicionar Imagem</Text>
+                                    </TouchableOpacity>
+
+                                </View>
                             </View>
 
-                            {/* Botão de adicionar imagem */}
-                            <TouchableOpacity onPress={pickImage} style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 5, borderColor: '#FFF', borderWidth: 2, padding: 10, borderRadius: 18 }}>
-                                <IconUpload width={30} height={30} />
-                                <Text style={{ color: '#FFF', fontSize: 14 }}>Adicionar Imagem</Text>
+                            <Text style={styles.label}>Número de Vagas</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Número de Vagas"
+                                placeholderTextColor="#888"
+                                value={vagas}
+                                onChangeText={setVagas}
+                                keyboardType="numeric"
+                            />
+                            <Text style={styles.label}>Descrição</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ex: Essa trilha é focada em..."
+                                placeholderTextColor="#888"
+                                value={descricao}
+                                onChangeText={setDescricao}
+                            />
+                            <TouchableOpacity style={styles.confirmButton} onPress={handleOpenActivityModal}>
+                                <Text style={styles.confirmText}>{isEditing ? 'Editar Atividades' : 'Continuar'}</Text>
                             </TouchableOpacity>
-                        </View>
 
-                        <Text style={styles.label}>Número de Vagas</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Número de Vagas"
-                            placeholderTextColor="#888"
-                            value={vagas}
-                            onChangeText={setVagas}
-                            keyboardType="numeric"
-                        />
-                        <Text style={styles.label}>Descrição</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ex: Essa trilha é focada em..."
-                            placeholderTextColor="#888"
-                            value={descricao}
-                            onChangeText={setDescricao}
-                        />
-                        <TouchableOpacity style={styles.confirmButton} onPress={handleOpenActivityModal}>
-                            <Text style={styles.confirmText}>Criar Trilha</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity style={styles.cancelButton} onPress={handleCloseModal}>
+                                <Text style={styles.cancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                        </BottomSheetView>
+                    </BottomSheet>
 
-                        <TouchableOpacity style={styles.cancelButton} onPress={handleCloseModal}>
-                            <Text style={styles.cancelText}>Cancelar</Text>
-                        </TouchableOpacity>
-                    </BottomSheetView>
-                </BottomSheet>
-
-                {/* Modal de Atividades */}
-                <BottomSheet
-                    ref={activitySheetRef}
-                    snapPoints={['40%', '80%']}
-                    index={-1}
-                    enablePanDownToClose={true}
-                    backgroundStyle={{ backgroundColor: '#0D141C' }}
-                >
-                    <BottomSheetView style={styles.modalContent}>
-                        <StepBottomSheetContent onSave={handleSaveActivities} />
-                    </BottomSheetView>
-                </BottomSheet>
-
+                    {/* Modal de Atividades */}
+                    <BottomSheet
+                        ref={activitySheetRef}
+                        snapPoints={['60%', '95%']}
+                        index={-1}
+                        enablePanDownToClose={true}
+                        keyboardBehavior="extend"
+                        keyboardBlurBehavior="restore"
+                        backgroundStyle={{ backgroundColor: '#0D141C' }}
+                    >
+                        <StepBottomSheetContent onSave={handleSaveActivities} isEditing={isEditing} initialActivities={activities} />
+                    </BottomSheet>
+                </View>
             </View>
+            <IconSelector visible={modalVisible} onSelectIcon={(name) => { setSelectedIconName(name); setImage(null); }} onClose={() => setModalVisible(false)} />
         </GestureHandlerRootView>
+
     )
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        backgroundColor: '#021713',
-        paddingTop: 55,
-        color: '#FFF',
-        gap: 35
-    },
-    modalTitle: {
-        fontSize: 24,
-        color: '#FFF',
-        marginBottom: 20,
-        alignSelf: 'center'
-    },
-    input: {
-        backgroundColor: '#FFF',
-        borderRadius: 8,
-        padding: 12,
-        color: '#000',
-        marginBottom: 12,
-        width: '100%',
-        height: 45
-    },
-    confirmButton: {
-        backgroundColor: '#6C63FF',
-        padding: 15,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 10
-    },
-    confirmText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold'
-    },
-    cancelButton: {
-        backgroundColor: '#FF4B4B',
-        padding: 15,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 10
-    },
-    cancelText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold'
-    },
-    modalContent: {
-        flex: 1,
-        padding: 15,
-        color: '#fff',
-        backgroundColor: '#0D141C',
-    },
-    label: {
-        color: '#FFF',
-        marginBottom: 5,
-        marginTop: 10
-    }
-
-})
