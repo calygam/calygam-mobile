@@ -1,14 +1,15 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
 
 export default function Trail() {
 
     const route = useRoute();
-    const { trailId, trailName } = route.params || {};  // <- AQUI RECEBE
+    const navigation = useNavigation();
+    const { trailId, trailName } = route.params || {};  // <- params da trilha selecionada
     const [userName, setUserName] = useState();
     const [trail, setTrail] = useState();
 
@@ -90,10 +91,10 @@ export default function Trail() {
                                 <Text style={{ color: '#FFFFFF', fontSize: 14 }}> Rank: {userName?.rank}</Text>
                             </View>
 
-                            <View style={styles.rankContainer}>
+                            {/* <View style={styles.rankContainer}>
                                 <Text style={{ color: '#FFFFFF', fontSize: 14, }}> 25</Text>
                                 <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Lições </Text>
-                            </View>
+                            </View> */}
 
                             <View style={styles.rankContainer}>
                                 <Text style={{ color: '#FFFFFF', fontSize: 14, }}>xp: {userName?.xp ?? 0} / {maxXP}</Text>
@@ -138,9 +139,28 @@ export default function Trail() {
 
                         const unlocked = index === 0; // <- primeira liberada (ajuste quando tiver backend)
 
+                        const handlePress = () => {
+                            if (!unlocked) {
+                                Alert.alert('Bloqueado', 'Complete as atividades anteriores para desbloquear esta.');
+                                return;
+                            }
+                            navigation.navigate('Atividade', {
+                                activityId: activity.activityId,
+                                activityName: activity.activityName,
+                                activityDescription: activity.activityDescription,
+                                activityPrice: activity.activityPrice,
+                                activityDifficulty: activity.activityDifficulty,
+                                trailId,
+                                trailName,
+                                index
+                            });
+                        };
+
                         return (
-                            <View
+                            <TouchableOpacity
                                 key={index}
+                                onPress={handlePress}
+                                activeOpacity={0.8}
                                 style={[
                                     {
                                         marginVertical: 25,
@@ -149,7 +169,6 @@ export default function Trail() {
                                     positionStyle
                                 ]}
                             >
-
                                 {/* Bolinha */}
                                 <View
                                     style={[
@@ -169,13 +188,15 @@ export default function Trail() {
                                     {!unlocked && (
                                         <Text style={{ color: "#666", fontSize: 18 }}>🔒</Text>
                                     )}
+                                    {unlocked && (
+                                        <Text style={{ color: '#FFF', fontSize: 16 }}>{index + 1}</Text>
+                                    )}
                                 </View>
-
                                 {/* Nome da atividade */}
                                 <Text style={{ color: "#FFF", marginTop: 8, fontSize: 13 }}>
                                     {activity.activityName}
                                 </Text>
-                            </View>
+                            </TouchableOpacity>
                         );
                     })}
                 </View>

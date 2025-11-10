@@ -5,6 +5,7 @@ import Routes from './src/routes/TabNavigatorBottom';
 import Onboarding from './src/screens/OnboardingScreens/Onboarding';
 import LoginScreen from './src/screens/LoginPage/LoginScreen';
 import SignUpScreen from './src/screens/LoginPage/SignUpScreen';
+import PageAtividade from './src/screens/PageActivity/PageAtividade';
 import * as Linking from 'expo-linking'
 import React, { useEffect, useState } from 'react';
 import { AuthContext, AuthProvider } from './src/hooks/AuthContext';
@@ -13,6 +14,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/firebase';
 import Modal from './src/components/BottomSheetModalPerfil/Modalperfil';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -106,14 +108,13 @@ export default function App() {
                         <NavigationContainer linking={linking}>
                             <ErrorBoundary>
                             <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"}>
-                                {/* Home SEMPRE registrada para que navigation.navigate('home') funcione */}
+                                {/* Home SEMPRE registrada */}
                                 <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
-                                {!(user || hasBackendToken) && (
-                                    <>
-                                        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                                        <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
-                                    </>
-                                )}
+                                {/* Telas de auth sempre registradas para permitir reset após logout */}
+                                <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+                                <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
+                                {/* Atividade */}
+                                <Stack.Screen name="Atividade" component={PageAtividade} options={{ headerShown: false }} />
                             </Stack.Navigator>
                             </ErrorBoundary>
                         </NavigationContainer>

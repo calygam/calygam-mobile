@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native'
-import React, { useRef, useState, useMemo } from 'react'
+import { View, Text, TouchableOpacity, TextInput, Image, Alert } from 'react-native'
+import React, { useRef, useState, useMemo, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import IconAdicionar from "../../../assets/svg/adicionar.svg";
 import IconImage from "../../../assets/svg/image-plus.svg";
@@ -12,6 +12,7 @@ import { useTrilhaApi } from '../../hooks/useTrilhaApi'
 import ListarTrilhasCriadas from '../../components/ListarTrilhasCriadas/ListarTrilhasCriadas'
 import IconSelector, { iconMap } from '../../components/IconsModal/Icons'
 import styles from './CriarTrilha.styles'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function CriarTrilha() {
     const navigation = useNavigation()
@@ -40,10 +41,27 @@ export default function CriarTrilha() {
     const [editingTrail, setEditingTrail] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedIconName, setSelectedIconName] = useState(null);
+    const [professorPhoto, setProfessorPhoto] = useState(null);
 
     const snapPoints = useMemo(() => ['55%', '100%'], [])
     const bottomSheetRef = useRef(null)
     const activitySheetRef = useRef(null)
+
+    // Carrega a foto do professor (a mesma do modal de perfil)
+    useEffect(() => {
+        const loadUserPhoto = async () => {
+            try {
+                const info = await AsyncStorage.getItem('userInfo');
+                if (info) {
+                    const parsed = JSON.parse(info);
+                    setProfessorPhoto(parsed?.photoURL || null);
+                }
+            } catch (e) {
+                // silencioso
+            }
+        };
+        loadUserPhoto();
+    }, []);
 
     const handleOpenActivityModal = () => {
         if (!validateForm()) return;
@@ -97,7 +115,8 @@ export default function CriarTrilha() {
         console.log("ICON ENVIADO PRO BACK:", selectedIconName);
 
         formData.append('trailPassword', (senha || '').trim());
-        formData.append('trailVacancies', Number(vagas));
+    // Backend espera "trailVacancy" (singular). Assim, a lista exibirá o valor correto.
+    formData.append('trailVacancy', Number(vagas));
         activitiesToSend.forEach((activity, index) => {
             if (activity.activityId) {
                 formData.append(`activities[${index}].activityId`, String(activity.activityId));
@@ -151,7 +170,8 @@ export default function CriarTrilha() {
         
         formData.append('trailIcon', selectedIconName || '');
         formData.append('trailPassword', (senha || '').trim());
-        formData.append('trailVacancies', Number(vagas));
+    // Backend espera "trailVacancy" (singular)
+    formData.append('trailVacancy', Number(vagas));
         activitiesToSend.forEach((activity, index) => {
             if (activity.activityId) {
                 formData.append(`activities[${index}].activityId`, String(activity.activityId));
@@ -245,7 +265,7 @@ export default function CriarTrilha() {
                     
 
                     {/* Cards de Trilhas Criadas */}
-                    <ListarTrilhasCriadas createdTrails={createdTrails} onEdit={onEdit} />
+                    <ListarTrilhasCriadas createdTrails={createdTrails} onEdit={onEdit} professorPhoto={professorPhoto} />
 
                     {/* Botão de Add */}
                     <View style={{ position: 'absolute', bottom: 110, right: 30 }}>

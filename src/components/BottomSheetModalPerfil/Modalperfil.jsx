@@ -87,18 +87,32 @@ const Modal = () => {
     // Função de logout
     const handleLogout = async () => {
         try {
-            // Limpar o estado do usuário
-            setUser(null);
+            // Desloga dos provedores
             await GoogleSignin.signOut();
-            await signOut(auth); // ← Adicione isso para deslogar do Firebase
-            // Limpar o AsyncStorage
-            // await AsyncStorage.removeItem("userToken");
-            // await AsyncStorage.removeItem("userInfo");
+            await signOut(auth);
 
-            // Remova o navigation.dispatch aqui, pois o Firebase vai cuidar da navegação
-            Alert.alert("Sucesso", "Você saiu da sua conta.");
+            // Limpa storage usado pelo app
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userInfo');
+
+            // Limpa estado local
+            setUser(null);
+
+            // Fecha modal se aberto
+            bottomSheetModalRef.current?.dismiss();
+
+            // Reseta a navegação para tela de Login
+            navigation.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                })
+            );
+
+            Alert.alert('Sucesso', 'Você saiu da sua conta.');
         } catch (error) {
-            Alert.alert("Erro", "Não foi possível sair da conta");
+            console.log('Erro logout', error);
+            Alert.alert('Erro', 'Não foi possível sair da conta');
         }
     };
 

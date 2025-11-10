@@ -2,7 +2,7 @@
   "expo": {
     "name": "Calygam",
     "slug": "Calygam",
-    "scheme": "Calygam",
+    "scheme": "calygam",
     "version": "1.0.0",
     "extra": {
       "eas": {
