@@ -28,10 +28,10 @@ GoogleSignin.configure({
 
 const Stack = createNativeStackNavigator();
 
-const prefix = Linking.createURL('/');
-
+const devPrefix = Linking.createURL('/');
 const linking = {
-    prefixes: [prefix],
+    // Usa prefixo do dev (exp://...) e o esquema nativo estático "Calygam://"
+    prefixes: ['Calygam://', devPrefix],
     config: {
         screens: {
             home: 'home'

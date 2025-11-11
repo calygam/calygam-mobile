@@ -88,9 +88,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.mr_cat.calygam'
+    namespace 'com.mr_cat.Calygam'
     defaultConfig {
-        applicationId 'com.mr_cat.calygam'
+        applicationId 'com.mr_cat.Calygam'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

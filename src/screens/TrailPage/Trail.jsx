@@ -54,7 +54,8 @@ export default function Trail() {
     if (!trail) {
         return (
             <View style={styles.loading}>
-                <Text style={{ color: '#000000ff', justifyContent: 'center', alignItems: 'center' }}>Carregando...</Text>
+                <Text style={{ color: '#ffffffff', justifyContent: 'center', alignItems: 'center' }}>Ops! Algo deu errado....</Text>
+                <Text style={{ color: '#ffffffff', justifyContent: 'center', alignItems: 'center' }}>Confirme se você está em uma trilha!</Text>
             </View>
         );
     }
@@ -68,7 +69,8 @@ export default function Trail() {
                 {/* Os Textos de Boa Vindo e tal */}
                 <View style={styles.InfoContent}>
                     <Modal />
-                    <View style={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    <View style={{
+                        alignItems: 'center', justifyContent: 'center', gap: 8 , flexShrink: 1}}> 
                         <Text style={styles.title}>Olá, {userName?.displayName}! - {trailName}</Text>
                         <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Continue de onde parou.</Text>
                     </View>
@@ -228,11 +230,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         flexDirection: 'row',
         gap: 15,
+        
     },
     title: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexShrink: 1,
+        
     },
     PainelContent: {
         width: '95%',
@@ -307,6 +314,8 @@ const styles = StyleSheet.create({
     loading: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: '#021713',
+        gap: 10,
     }
 })

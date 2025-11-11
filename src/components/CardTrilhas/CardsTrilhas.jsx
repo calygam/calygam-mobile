@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native'
 import { iconMap } from '../IconsModal/Icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import IconPessoas from "../../../assets/svg/IconsInterface/users-alt 2.svg";
 import IconSeta from "../../../assets/svg/IconsCardExplorar/angulo-direito1.svg";
+import TrailPasswordModal from '../TrailPasswordModal/TrailPasswordModal';
 
 // novos imports de ícones (adicione/ajuste conforme seus arquivos)
 // import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
@@ -17,6 +18,7 @@ const { width, height } = Dimensions.get('window')
 
 export default function CardsTrilhas({ item, professorName }) {
     const navigation = useNavigation();
+    const [showPassword, setShowPassword] = useState(false);
 
     const trailName = item?.trailName ?? 'Sem nome'
     const vacancies = item?.vacancies ?? item?.vacanciesTrail ?? item?.vagas ?? 'N/A'
@@ -55,9 +57,6 @@ export default function CardsTrilhas({ item, professorName }) {
     const renderTrailVisual = () => {
         const iconNameRaw = item?.trailIcon || item?.icon || null;
 
-        console.log("=== DEBUG ICONE ===");
-        console.log("Recebido do backend:", iconNameRaw);
-
         // ✅ Se backend não enviou o ícone → cai no fallback
         if (!iconNameRaw) {
             console.log("Nenhum ícone recebido, usando fallback visual.");
@@ -71,7 +70,6 @@ export default function CardsTrilhas({ item, professorName }) {
         const key = iconNameRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
 
         const IconComponent = iconMap[key];
-        console.log("Normalizado:", key, "| Existe no iconMap?", !!IconComponent);
 
         if (IconComponent) {
             return (
@@ -118,8 +116,19 @@ export default function CardsTrilhas({ item, professorName }) {
                     <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
                         onPress={async () => {
-                            await AsyncStorage.setItem("currentTrail", JSON.stringify(item));
-                            navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName })
+                            // Verifica se a trilha já foi desbloqueada neste dispositivo
+                            try {
+                                const unlocked = await AsyncStorage.getItem(`trailUnlocked:${item?.trailId}`);
+                                if (unlocked === 'true') {
+                                    await AsyncStorage.setItem('currentTrail', JSON.stringify(item));
+                                    navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
+                                } else {
+                                    setShowPassword(true);
+                                }
+                            } catch (e) {
+                                // fallback: caso dê erro, mostra o modal
+                                setShowPassword(true);
+                            }
                         }}
                     >
                         <Text style={styles.TextTrilha} > Explorar  </Text>
@@ -128,6 +137,18 @@ export default function CardsTrilhas({ item, professorName }) {
 
                 </View>
 
+                {/* Modal de senha da trilha */}
+                <TrailPasswordModal
+                    visible={showPassword}
+                    onClose={() => setShowPassword(false)}
+                    trailId={item?.trailId}
+                    trailName={item?.trailName}
+                    onSuccess={async (fullTrail) => {
+                        setShowPassword(false);
+                        try { await AsyncStorage.setItem('currentTrail', JSON.stringify(fullTrail || item)); } catch {}
+                        navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
+                    }}
+                />
 
             </View>
         </View>

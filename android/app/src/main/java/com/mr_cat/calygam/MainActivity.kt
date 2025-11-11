@@ -1,4 +1,4 @@
-package com.mr_cat.calygam
+package com.mr_cat.Calygam
 
 import android.os.Build
 import android.os.Bundle

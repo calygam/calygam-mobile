@@ -2,7 +2,6 @@
   "expo": {
     "name": "Calygam",
     "slug": "Calygam",
-    "scheme": "calygam",
     "version": "1.0.0",
     "extra": {
       "eas": {
@@ -10,8 +9,7 @@
       }
     },
     "android": {
-      "package": "com.mr_cat.calygam",
-      "googleServicesFile": "./android/app/google-services.json"
+      "package": "com.mr_cat.Calygam"
     }
   }
 }
