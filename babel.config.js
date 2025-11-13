@@ -6,7 +6,6 @@ module.exports = function (api) {
         ],
         plugins: [
             '@babel/plugin-proposal-export-namespace-from',
-            'react-native-worklets/plugin',
             [
                 "module:react-native-dotenv",
                 {
@@ -18,6 +17,8 @@ module.exports = function (api) {
                     allowUndefined: true,
                 },
             ],
+            // Plugin do Reanimated precisa ser o último para correta inicialização.
+            'react-native-reanimated/plugin',
         ],
 
     };
