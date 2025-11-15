@@ -85,8 +85,10 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
         try {
             const { data } = await api.get(`/trail/read/${trailId}`);
 
+            console.log("[TrailPasswordModal] DATA COMPLETA RECEBIDA:");
+            console.log(JSON.stringify(data, null, 2));
             // Log das chaves recebidas
-            try { console.log('[TrailPasswordModal] keys recebidas:', Object.keys(data || {})); } catch {}
+            // try { console.log('[TrailPasswordModal] keys recebidas:', Object.keys(data || {})); } catch {}
 
             // Tentativa direta primeiro (mais barato):
             let direct = data?.trailPassword ?? data?.trail_password ?? data?.password ?? data?.senha;

@@ -12,9 +12,9 @@ import { AuthContext, AuthProvider } from './src/hooks/AuthContext';
 import { View, Text } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/firebase';
-import Modal from './src/components/BottomSheetModalPerfil/Modalperfil';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -107,14 +107,14 @@ export default function App() {
                     <BottomSheetModalProvider>
                         <NavigationContainer linking={linking}>
                             <ErrorBoundary>
-                            <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"}>
+                                <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"} screenOptions={{ headerShown: false }}>
                                 {/* Home SEMPRE registrada */}
-                                <Stack.Screen name="home" component={Routes} options={{ headerShown: false }} />
+                                <Stack.Screen name="home" component={Routes}/>
                                 {/* Telas de auth sempre registradas para permitir reset após logout */}
-                                <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                                <Stack.Screen name="SignUpScreen" component={SignUpScreen} options={{ headerShown: false }} />
+                                <Stack.Screen name="Login" component={LoginScreen} />
+                                <Stack.Screen name="SignUpScreen" component={SignUpScreen}/>
                                 {/* Atividade */}
-                                <Stack.Screen name="Atividade" component={PageAtividade} options={{ headerShown: false }} />
+                                <Stack.Screen name="Atividade" component={PageAtividade}/>
                             </Stack.Navigator>
                             </ErrorBoundary>
                         </NavigationContainer>

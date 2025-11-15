@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { createStaticNavigation, useNavigation } from '@react-navigation/native';
 import FormGenerico from './FormGenerico';
 import api from '../api/api';
-import axios from 'axios';
+
 
 
 const { width, height } = Dimensions.get('window')
@@ -25,7 +25,7 @@ export default function BoxSignUp() {
         try {
             // Faz a requisição para o seu backend
             // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/register",
-            const response = await axios.post("http://10.0.0.191:8080/auth/register", {
+            const response = await api.post("/auth/register", {
                 userName: nome,
                 userEmail: email,
                 userPassword: senha,

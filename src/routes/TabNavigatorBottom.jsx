@@ -23,6 +23,10 @@ import IconCreateDesabilitado from '../../assets/svg/IconsTabBottom/varinha-magi
 import IconTrailAtivo from '../../assets/svg/IconsTabBottom/livroa 1.svg'
 import IconTrailDesabilitado from '../../assets/svg/IconsTabBottom/livro 1.svg'
 
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'; 
+
+
+
 const Tab = createBottomTabNavigator();
 
 function Routes() {
@@ -33,13 +37,34 @@ function Routes() {
         return null; // or a loading spinner
     }
 
-    const isProfessor = role === "ROLE_INSTRUTOR";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
+    const isProfessor = role === "INSTRUTOR";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
+
+    // Animation Tab Bottom
+    function AnimatedTabIcon({ focused, ActiveIcon, InactiveIcon }) {
+        const animatedStyle = useAnimatedStyle(() => {
+            return {
+                transform: [
+                    { scale: withTiming(focused ? 1.2 : 1, { duration: 200 }) }
+                ],
+                opacity: withTiming(focused ? 1 : 0.6, { duration: 200 })
+            };
+        });
+
+        return (
+            <Animated.View style={animatedStyle}>
+                {focused ? <ActiveIcon /> : <InactiveIcon />}
+            </Animated.View>
+        );
+    }
+
 
     return (
         <Tab.Navigator initialRouteName="home" screenOptions={{
             tabBarActiveTintColor: '#6C63FF',
             tabBarInactiveTintColor: '#676D75',
             headerShown: false,
+            animationEnabled: true,
+            animation: 'shift',
             tabBarStyle: {
                 position: 'absolute',
                 backgroundColor: '#1D1F24',

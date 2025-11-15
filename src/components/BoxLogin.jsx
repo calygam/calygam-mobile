@@ -7,9 +7,8 @@ import { auth } from '../firebase';
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import jwtDecode from 'jwt-decode';
-// import * as jwt from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
+import api from '../api/api';
 
 const { width, height } = Dimensions.get('window')
 
@@ -56,7 +55,7 @@ export default function BoxLogin() {
 
             // ENVIA PARA O BACKEND
             // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google", userInfo);
-            const response = await axios.post("http://10.0.0.191:8080/auth/google", userInfo);
+            const response = await api.post("/auth/google", userInfo);
             console.log('Resposta da API:', response.data);
 
             const { token } = response.data; // ← JWT DO BACKEND
@@ -95,13 +94,14 @@ export default function BoxLogin() {
 
         try {
             // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/login",
-                const response = await axios.post("http://10.0.0.191:8080/auth/login",
+                const response = await api.post("/auth/login",
                 {
                 userEmail: email,
                 userPassword: senha,
             });
 
             console.log("Token decodificado:", JSON.parse(atob(response.data.token.split(".")[1]))); // << importante para debug
+            
 
             if (response.status === 200) {
                 const { token, user } = response.data; // ← JWT DO BACKEND
@@ -110,6 +110,7 @@ export default function BoxLogin() {
                 }
                 // Salvar token e informações do usuário
                 await AsyncStorage.setItem("userToken", token);
+                console.log("TOKEN RECEBIDO DO BACK:", response.data);
 
                 // Criar e salvar userInfo básico
                 const userInfo = {

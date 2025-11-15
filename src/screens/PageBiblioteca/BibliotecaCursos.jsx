@@ -15,17 +15,16 @@ export default function BibliotecaCursos() {
     useEffect(() => {
         const fetchTrails = async () => {
             try {
+                
                 const token = await AsyncStorage.getItem("userToken");
+                console.log("TOKEN NO MOMENTO DA CHAMADA:", token);
                 // const response = await axios.get('https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/read/all-trails'
-                const response = await api.get("http://10.0.0.191:8080/trail/read/all-trails", {
+                const response = await api.get("/trail/read/all-trails", {
                     params: {
                         status: 'ativa', // Exemplo de filtro por status
                         // haveProgress: "HAVE_PROGRESS", // Exemplo de filtro por progresso
                         haveProgress: "NOT_HAVE_PROGRESS"
 
-                    },
-                    headers: {
-                        Authorization: `Bearer ${token}`,
                     },
                 });
                 setTrails(response.data);

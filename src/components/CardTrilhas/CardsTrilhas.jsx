@@ -7,13 +7,6 @@ import IconPessoas from "../../../assets/svg/IconsInterface/users-alt 2.svg";
 import IconSeta from "../../../assets/svg/IconsCardExplorar/angulo-direito1.svg";
 import TrailPasswordModal from '../TrailPasswordModal/TrailPasswordModal';
 
-// novos imports de ícones (adicione/ajuste conforme seus arquivos)
-// import IconReact from "../../../assets/svg/IconsInterface/react-1.svg";
-// import IconBancoDeDados from "../../../assets/svg/IconsInterface/base-de-dados-1.svg";
-// import IconFront from "../../../assets/svg/IconsInterface/codigo-simples-1.svg";
-// import IconGroup from "../../../assets/svg/IconsInterface/group.svg";
-// import IconIllustrator from "../../../assets/svg/IconsInterface/illustrator-1.svg";
-
 const { width, height } = Dimensions.get('window')
 
 export default function CardsTrilhas({ item, professorName }) {
@@ -23,36 +16,6 @@ export default function CardsTrilhas({ item, professorName }) {
     const trailName = item?.trailName ?? 'Sem nome'
     const vacancies = item?.vacancies ?? item?.vacanciesTrail ?? item?.vagas ?? 'N/A'
 
-    // // mapa para converter strings em componentes SVG
-    // const ICONS_MAP = {
-    //     // chaves normalizadas (sem espaços/traços/pontos)
-    //     react: IconReact,
-    //     'react-1': IconReact,
-    //     'base-de-dados': IconBancoDeDados,
-    //     'basededados': IconBancoDeDados,
-    //     banco: IconBancoDeDados,
-    //     db: IconBancoDeDados,
-    //     front: IconFront,
-    //     'codigo-simples': IconFront,
-    //     group: IconGroup,
-    //     java: IconGroup,
-    //     illustrator: IconIllustrator,
-    //     'illustrator-1': IconIllustrator,
-    //     users: IconPessoas,
-    //     'users-alt-1': IconPessoas,
-    // };
-
-    // // resolve o componente de ícone a partir da prop Icons
-    // let IconComponent = IconPessoas; // fallback
-    // if (typeof Icons === 'string') {
-    //     const normalized = Icons.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
-    //     // tenta encontrar pelo nome normalizado ou pelo valor original em lowercase
-    //     IconComponent = ICONS_MAP[normalized] ?? ICONS_MAP[Icons.toLowerCase()] ?? IconPessoas;
-    // } else if (Icons) {
-    //     // se vier um componente React (função/classe), usa direto
-    //     IconComponent = Icons;
-    // }
-
     // Escolha de mídia: prioridade para ÍCONE; senão imagem; senão placeholder estilizado
     const renderTrailVisual = () => {
         const iconNameRaw = item?.trailIcon || item?.icon || null;
@@ -61,8 +24,9 @@ export default function CardsTrilhas({ item, professorName }) {
         if (!iconNameRaw) {
             console.log("Nenhum ícone recebido, usando fallback visual.");
             return (
-                <View style={[styles.FotoIconTrilha, { backgroundColor: '#5217b1ff' }]}>
-                    <Text style={{ color: '#CE82FF', fontSize: 12 }}>Trilha</Text>
+                <View style={[styles.FotoIconTrilha, { backgroundColor: '#fffffff3' }]}>
+                    {/* <Text style={{ color: '#CE82FF', fontSize: 12 }}>Trilha</Text> */}
+                    <Image source={require('../../../assets/image/ImagemSem.png')} style={{ width: 28, height: 28 }} />
                 </View>
             );
         }

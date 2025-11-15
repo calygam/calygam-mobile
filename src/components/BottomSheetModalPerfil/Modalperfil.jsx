@@ -11,6 +11,7 @@ import { auth } from '../../firebase'; // Ajuste o caminho se necessário
 import jwtDecode from 'jwt-decode';
 import axios from 'axios';
 import CircularLoader from '../LoadingCircular/Loading';
+import api from '../../api/api';
 
 const Modal = () => {
     const navigation = useNavigation();
@@ -25,7 +26,6 @@ const Modal = () => {
     useEffect(() => {
         const loadUser = async () => {
             try {
-                await AsyncStorage.removeItem("userInfo");
                 const userInfo = await AsyncStorage.getItem("userInfo");
 
                 if (userInfo) {
@@ -42,7 +42,7 @@ const Modal = () => {
 
                 // Primeiro: tentar buscar o perfil no backend (ajuste endpoint se necessário)
                 try {
-                    const resp = await axios.get("http://10.0.0.191:8080/users/readOne", {
+                    const resp = await api.get("/users/readOne", {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const serverUser = resp.data.user ?? resp.data;

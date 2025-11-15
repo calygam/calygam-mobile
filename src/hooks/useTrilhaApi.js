@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import { jwtDecode } from 'jwt-decode';
+import api from '../api/api';
 
 export const useTrilhaApi = () => {
     const [userToken, setUserToken] = useState(null);
@@ -29,18 +30,11 @@ export const useTrilhaApi = () => {
     const fetchCreatedTrails = async (uid) => {
         try {
             const token = await AsyncStorage.getItem('userToken');
-            const resp = await axios.get('http://10.0.0.191:8080/trail/read/all-trails', {
-                params: {
-                    user: uid,
-                    status: 'ativa',
-                    haveProgress: "NOT_HAVE_PROGRESS"
-                },
-                headers: { Authorization: `Bearer ${token}` }
+            const resp = await api.get('/trail/read/by/teacher', {
+                
             });
-
-            const all = resp.data || [];
-            const mine = all.filter(item => Number(item.user) === Number(uid));
-            setCreatedTrails(mine);
+            console.log('Trilhas criadas (raw):', resp.data);   // DEBUG
+            setCreatedTrails(resp.data);
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível carregar suas trilhas criadas.');
             console.warn('Erro ao buscar trilhas do professor:', error);
@@ -56,13 +50,13 @@ export const useTrilhaApi = () => {
                 return;
             }
 
-            const response = await axios.post('http://10.0.0.191:8080/trail/create', formData, {
+            const response = await api.post('/trail/create', formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',
                 },
             });
             Alert.alert('Sucesso', 'Trilha criada com sucesso!');
+            fetchCreatedTrails(userId);
             return response.data;
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível criar a trilha. Tente novamente mais tarde.');
@@ -79,13 +73,13 @@ export const useTrilhaApi = () => {
                 return;
             }
 
-            const response = await axios.put(`http://10.0.0.191:8080/trail/update/${trailId}`, formData, {
+            const response = await api.put(`/trail/update/${trailId}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',
                 },
             });
             Alert.alert('Sucesso', 'Trilha atualizada com sucesso!');
+            fetchCreatedTrails(userId);
             return response.data;
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível atualizar a trilha. Tente novamente.');
@@ -102,10 +96,7 @@ export const useTrilhaApi = () => {
                 return;
             }
 
-            await axios.delete(`http://10.0.0.191:8080/trail/delete/${trailId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            await api.delete(`/trail/delete/${trailId}`, {
             });
             Alert.alert('Sucesso', 'Trilha deletada com sucesso!');
             fetchCreatedTrails(userId);
@@ -117,7 +108,7 @@ export const useTrilhaApi = () => {
 
     useEffect(() => {
         if (userId) {
-            fetchCreatedTrails(userId);
+            fetchCreatedTrails();
         }
     }, [userId]);
 

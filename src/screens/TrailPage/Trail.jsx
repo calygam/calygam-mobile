@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
+import api from '../../api/api';
 
 export default function Trail() {
 
@@ -32,7 +33,7 @@ export default function Trail() {
 
             const token = await AsyncStorage.getItem("userToken");
 
-            const response = await fetch(`http://10.0.0.191:8080/trail/read/${trailId}`, {
+            const response = await api.get(`/trail/read/${trailId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -92,11 +93,6 @@ export default function Trail() {
                             <View style={styles.rankContainer}>
                                 <Text style={{ color: '#FFFFFF', fontSize: 14 }}> Rank: {userName?.rank}</Text>
                             </View>
-
-                            {/* <View style={styles.rankContainer}>
-                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}> 25</Text>
-                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Lições </Text>
-                            </View> */}
 
                             <View style={styles.rankContainer}>
                                 <Text style={{ color: '#FFFFFF', fontSize: 14, }}>xp: {userName?.xp ?? 0} / {maxXP}</Text>

@@ -115,7 +115,7 @@ export default function CriarTrilha() {
         console.log("ICON ENVIADO PRO BACK:", selectedIconName);
 
         formData.append('trailPassword', (senha || '').trim());
-    // Backend espera "trailVacancy" (singular). Assim, a lista exibirá o valor correto.
+
     formData.append('trailVacancy', Number(vagas));
         activitiesToSend.forEach((activity, index) => {
             if (activity.activityId) {
@@ -170,7 +170,7 @@ export default function CriarTrilha() {
         
         formData.append('trailIcon', selectedIconName || '');
         formData.append('trailPassword', (senha || '').trim());
-    // Backend espera "trailVacancy" (singular)
+
     formData.append('trailVacancy', Number(vagas));
         activitiesToSend.forEach((activity, index) => {
             if (activity.activityId) {
