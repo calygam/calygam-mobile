@@ -16,7 +16,7 @@ export default function Homepage() {
      const navigation = useNavigation();
     return (
         <View style={styles.container}>
-            <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, width: '100%' }} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
 
                 {/* Fundo */}
                 <View style={styles.background}>

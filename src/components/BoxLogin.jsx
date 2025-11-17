@@ -87,6 +87,7 @@ export default function BoxLogin() {
     // Login sem o Google aqui o usuario vem pra cá se ele não quer fazer o login com o Google ai ele vai ter que ser
     // Cadastrar
     const handleLogin = async () => {
+        
         if (!email || !senha) {
             Alert.alert("Atenção", "Preencha todos os campos.");
             return;
@@ -104,29 +105,44 @@ export default function BoxLogin() {
             
 
             if (response.status === 200) {
-                const { token, user } = response.data; // ← JWT DO BACKEND
+                const { token, user } = response.data;
+
+                // ADICIONE ESTE LOG PARA DEPURAR
+                console.log("Objeto 'user' recebido do Backend (Login Manual):", user);
+                console.log("user.userName:", user?.userName);
+
                 if (!token) {
                     throw new Error('Token não encontrado na resposta do login manual.');
                 }
-                // Salvar token e informações do usuário
-                await AsyncStorage.setItem("userToken", token);
-                console.log("TOKEN RECEBIDO DO BACK:", response.data);
 
-                // Criar e salvar userInfo básico
-                const userInfo = {
-                    uid: user?.id || user?.userId,
-                    displayName: user?.user_name ?? user?.name ?? user?.displayName ?? email,
-                    email: user?.email || email,
-                    photoURL: user?.photoURL || null,
-                }
-                await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
-                // Salvar role se disponível (opcional, como no Google)
+                // 1. Decodificar e salvar o Token e a Role
+                await AsyncStorage.setItem("userToken", token);
                 const decoded = jwtDecode(token);
                 const role = decoded.role || 'ALUNO';
-                await AsyncStorage.setItem("userRole", role); // ← Salva a role
+                await AsyncStorage.setItem("userRole", role);
+
+                // BUSCA O PERFIL COMPLETO DO BACKEND
+                const profileResp = await api.get("/users/readOne", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                const serverUser = profileResp.data.user ?? profileResp.data;
+
+                // Cria o userInfo com prioridade para os dados do backend
+                const userInfo = {
+                    uid: serverUser.userId,
+                    displayName: serverUser.userName || email.split("@")[0],
+                    email: serverUser.userEmail || email,
+                    photoURL: serverUser.userImage || null,
+                    xp: serverUser.userXp || 0,
+                    rank: serverUser.userRank || "NOVATO",
+                    money: serverUser.userMoney || 0,
+                    food: serverUser.userFood || 0
+                };
+
+                await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
 
                 Alert.alert("Sucesso", "Login realizado!");
-                // e navegar para a Home
                 navigation.navigate('home');
             }
         } catch (error) {

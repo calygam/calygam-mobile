@@ -123,11 +123,36 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
                 return;
             }
 
-            // Persistir desbloqueio para não perguntar novamente
-            await AsyncStorage.setItem(`trailUnlocked:${trailId}`, 'true');
+            // Persistir desbloqueio para não perguntar novamente (por usuário)
+            let uid = 'anon';
+            try {
+                const rawUser = await AsyncStorage.getItem('userInfo');
+                const parsed = rawUser ? JSON.parse(rawUser) : null;
+                uid = parsed?.uid || parsed?.userId || parsed?.id || parsed?.email || 'anon';
+            } catch {}
+
+            const unlockedKey = `trailUnlocked:${uid}:${trailId}`;
+            try { await AsyncStorage.setItem(unlockedKey, 'true'); } catch {}
 
             // Armazenar trilha atual (opcional)
-            try { await AsyncStorage.setItem('currentTrail', JSON.stringify(data)); } catch { }
+            // Salva trilha atual por usuário
+            try { await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(data)); } catch { }
+
+            // Adiciona a trilha na lista de "em progresso" do usuário (joinedTrails:uid)
+            try {
+                const key = `joinedTrails:${uid}`;
+                const raw = await AsyncStorage.getItem(key);
+                const arr = raw ? JSON.parse(raw) : [];
+                const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(trailId));
+                const newItem = {
+                    trailId: data?.trailId ?? trailId,
+                    trailName: data?.trailName ?? trailName ?? 'Trilha',
+                    // campos auxiliares opcionais
+                    icon: data?.trailIcon || data?.icon || null,
+                };
+                const next = exists ? arr : [...arr, newItem];
+                await AsyncStorage.setItem(key, JSON.stringify(next));
+            } catch {}
 
             resetLocal();
             onSuccess?.(data);

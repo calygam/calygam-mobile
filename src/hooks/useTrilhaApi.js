@@ -52,6 +52,7 @@ export const useTrilhaApi = () => {
 
             const response = await api.post('/trail/create', formData, {
                 headers: {
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',
                 },
             });

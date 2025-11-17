@@ -4,7 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
+import IconAviso from '../../../assets/svg/undraw_access-denied_krem.svg';
 import api from '../../api/api';
+import { Image } from 'react-native';
 
 export default function Trail() {
 
@@ -13,7 +15,7 @@ export default function Trail() {
     const { trailId, trailName } = route.params || {};  // <- params da trilha selecionada
     const [userName, setUserName] = useState();
     const [trail, setTrail] = useState();
-
+    const [completedIndex, setCompletedIndex] = useState(-1);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -29,32 +31,62 @@ export default function Trail() {
 
     useEffect(() => {
         const loadTrail = async () => {
-            if (!trailId) return;
-
-            const token = await AsyncStorage.getItem("userToken");
-
-            const response = await api.get(`/trail/read/${trailId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+            try {
+                if (trailId) {
+                    const token = await AsyncStorage.getItem('userToken');
+                    const response = await api.get(`/trail/read/${trailId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const fullTrail = response.data;
+                    setTrail(fullTrail);
+                    try {
+                        const rawUser = await AsyncStorage.getItem('userInfo');
+                        const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+                        const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+                        await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(fullTrail));
+                    } catch (err) {}
+                    return;
                 }
-            });
 
-            const fullTrail = await response.json();
-
-            console.log("TRAIL COMPLETA:", fullTrail);
-
-            setTrail(fullTrail);
-
-            await AsyncStorage.setItem("currentTrail", JSON.stringify(fullTrail));
+                // Sem params: tenta carregar última trilha usada
+                try {
+                    const rawUser = await AsyncStorage.getItem('userInfo');
+                    const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+                    const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+                    const stored = await AsyncStorage.getItem(`currentTrail:${uid}`);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        setTrail(parsed);
+                    }
+                } catch (err) {}
+            } catch (e) {
+                console.log('Erro ao carregar trilha:', e?.response?.data || e.message);
+            }
         };
-
         loadTrail();
+    }, [trailId]);
+    
+    // Carrega índice de atividade concluída para liberar próxima
+    useEffect(() => {
+        const loadCompleted = async () => {
+            try {
+                if (!trailId) return;
+                const rawUser = await AsyncStorage.getItem('userInfo');
+                const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+                const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+                const key = `completedActivities:${uid}:${trailId}`;
+                const val = await AsyncStorage.getItem(key);
+                setCompletedIndex(val != null ? Number(val) : -1);
+            } catch (err) {}
+        };
+        loadCompleted();
     }, [trailId]);
 
 
     if (!trail) {
         return (
             <View style={styles.loading}>
+                <IconAviso width={180} height={180} />
                 <Text style={{ color: '#ffffffff', justifyContent: 'center', alignItems: 'center' }}>Ops! Algo deu errado....</Text>
                 <Text style={{ color: '#ffffffff', justifyContent: 'center', alignItems: 'center' }}>Confirme se você está em uma trilha!</Text>
             </View>
@@ -62,7 +94,8 @@ export default function Trail() {
     }
     // cálculo simples de progresso (exemplo)
     const maxXP = 100;
-    const progress = userName ? (userName.xp / maxXP) : 0;
+
+    const progress = userName && typeof userName.xp === 'number' ? (userName.xp / maxXP) : 0;
 
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -71,7 +104,8 @@ export default function Trail() {
                 <View style={styles.InfoContent}>
                     <Modal />
                     <View style={{
-                        alignItems: 'center', justifyContent: 'center', gap: 8 , flexShrink: 1}}> 
+                        alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 1
+                    }}>
                         <Text style={styles.title}>Olá, {userName?.displayName}! - {trailName}</Text>
                         <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Continue de onde parou.</Text>
                     </View>
@@ -135,7 +169,7 @@ export default function Trail() {
                                 ? { alignSelf: "flex-start" }
                                 : { alignSelf: "flex-end" };
 
-                        const unlocked = index === 0; // <- primeira liberada (ajuste quando tiver backend)
+                        const unlocked = index <= (completedIndex + 1);
 
                         const handlePress = () => {
                             if (!unlocked) {
@@ -214,7 +248,7 @@ const styles = StyleSheet.create({
         gap: 25,
         paddingTop: 50,
         paddingBottom: 80
-       
+
     },
     InfoContent: {
         width: '95%',
@@ -226,7 +260,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         flexDirection: 'row',
         gap: 15,
-        
+
     },
     title: {
         fontSize: 16,
@@ -235,7 +269,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         flexShrink: 1,
-        
+
     },
     PainelContent: {
         width: '95%',
@@ -313,5 +347,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#021713',
         gap: 10,
-    }
+    },
+    CardProgress: {
+        width: '75%',
+        height:  190,
+        backgroundColor: 'rgba(90, 24, 154, 0.4)',
+        borderWidth: 2,
+        borderColor: '#5A189A',
+        borderRadius: 20,
+        padding: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+    },
+    FotoIconTrilha: {
+        backgroundColor: '#cd82ff3f',
+        height: 45,
+        width: 45,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
 })

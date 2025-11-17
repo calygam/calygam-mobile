@@ -27,7 +27,6 @@ const Modal = () => {
         const loadUser = async () => {
             try {
                 const userInfo = await AsyncStorage.getItem("userInfo");
-
                 if (userInfo) {
                     setUser(JSON.parse(userInfo));
                     setLoading(false);
@@ -40,6 +39,8 @@ const Modal = () => {
                     return;
                 }
 
+                
+
                 // Primeiro: tentar buscar o perfil no backend (ajuste endpoint se necessário)
                 try {
                     const resp = await api.get("/users/readOne", {
@@ -48,7 +49,7 @@ const Modal = () => {
                     const serverUser = resp.data.user ?? resp.data;
                     const ui = {
                         uid: serverUser?.userId,
-                        displayName: serverUser?.userName || 'Usuário',
+                        displayName: serverUser?.userName || serverUser?.userEmail || 'Usuário', // <-- LÓGICA ROBUSTA
                         email: serverUser?.userEmail || '',
                         photoURL: serverUser?.userImage || null,
                         xp: serverUser?.userXp || 0,
@@ -94,6 +95,10 @@ const Modal = () => {
             // Limpa storage usado pelo app
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('userInfo');
+            await AsyncStorage.removeItem("currentTrailId");
+            await AsyncStorage.removeItem("joinedTrail");
+            await AsyncStorage.removeItem("trailProgress");
+
 
             // Limpa estado local
             setUser(null);

@@ -9,7 +9,7 @@ import TrailPasswordModal from '../TrailPasswordModal/TrailPasswordModal';
 
 const { width, height } = Dimensions.get('window')
 
-export default function CardsTrilhas({ item, professorName }) {
+export default function CardsTrilhas({ item, professorName, professorPhotoUrl }) {
     const navigation = useNavigation();
     const [showPassword, setShowPassword] = useState(false);
 
@@ -66,8 +66,11 @@ export default function CardsTrilhas({ item, professorName }) {
 
                 {/* Informações do Professor */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={{ width: 30, height: 30, borderRadius: 20, backgroundColor: '#CCC' }} />
-                    <Text style={{ color: '#B3B3B3' }}>Prof: {professorName ?? 'Desconhecido'}</Text>
+                    <Image
+                        source={professorPhotoUrl ? { uri: professorPhotoUrl } : require('../../../assets/image/ImagemSem.png')}
+                        style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#333' }}
+                    />
+                    <Text style={{ color: '#B3B3B3' }}>Prof. {professorName ?? 'Desconhecido'}</Text>
                 </View>
 
                 <View style={styles.Infomações}>
@@ -82,9 +85,26 @@ export default function CardsTrilhas({ item, professorName }) {
                         onPress={async () => {
                             // Verifica se a trilha já foi desbloqueada neste dispositivo
                             try {
-                                const unlocked = await AsyncStorage.getItem(`trailUnlocked:${item?.trailId}`);
+                                const rawUser = await AsyncStorage.getItem('userInfo');
+                                const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+                                const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+
+                                const unlockedKey = `trailUnlocked:${uid}:${item?.trailId}`;
+                                const unlocked = await AsyncStorage.getItem(unlockedKey);
                                 if (unlocked === 'true') {
-                                    await AsyncStorage.setItem('currentTrail', JSON.stringify(item));
+                                    // Mantém a trilha atual salva (por usuário)
+                                    try {
+                                        await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(item));
+                                        // Garante presença na lista de "em progresso"
+                                        const listKey = `joinedTrails:${uid}`;
+                                        const raw = await AsyncStorage.getItem(listKey);
+                                        const arr = raw ? JSON.parse(raw) : [];
+                                        const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(item?.trailId));
+                                        if (!exists) {
+                                            const newItem = { trailId: item?.trailId, trailName: item?.trailName, icon: item?.trailIcon || item?.icon || null };
+                                            await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
+                                        }
+                                    } catch {}
                                     navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
                                 } else {
                                     setShowPassword(true);
@@ -109,7 +129,23 @@ export default function CardsTrilhas({ item, professorName }) {
                     trailName={item?.trailName}
                     onSuccess={async (fullTrail) => {
                         setShowPassword(false);
-                        try { await AsyncStorage.setItem('currentTrail', JSON.stringify(fullTrail || item)); } catch {}
+                        // Salva a trilha completa retornada pelo backend (preferível) por usuário
+                        try {
+                            const rawUser = await AsyncStorage.getItem('userInfo');
+                            const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+                            const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+                            const full = fullTrail || item;
+                            await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(full));
+                            // Adiciona na lista de "em progresso"
+                            const listKey = `joinedTrails:${uid}`;
+                            const raw = await AsyncStorage.getItem(listKey);
+                            const arr = raw ? JSON.parse(raw) : [];
+                            const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(item?.trailId));
+                            if (!exists) {
+                                const newItem = { trailId: item?.trailId, trailName: item?.trailName, icon: item?.trailIcon || item?.icon || null };
+                                await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
+                            }
+                        } catch {}
                         navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
                     }}
                 />

@@ -1,15 +1,22 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
 import SearchBar from '../../components/SeachBiblioteca/Seach'
 import CardsTrilhas from '../../components/CardTrilhas/CardsTrilhas'
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
+import CardProcessoTrilha from '../../components/CardProcesso/CardProcessoTrilha'
 import { FlatList } from 'react-native-gesture-handler';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Carrossel from '../../components/Carrossel';
+
 
 export default function BibliotecaCursos() {
+    const navigation = useNavigation();
     const [trails, setTrails] = useState([]);
+    const [inProgressTrails, setInProgressTrails] = useState([]); // [{trailId, trailName, progress}]
+    const { width } = Dimensions.get('window');
 
     // Lista de Trilhas com Filtro
     useEffect(() => {
@@ -19,7 +26,7 @@ export default function BibliotecaCursos() {
                 const token = await AsyncStorage.getItem("userToken");
                 console.log("TOKEN NO MOMENTO DA CHAMADA:", token);
                 // const response = await axios.get('https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/read/all-trails'
-                const response = await api.get("/trail/read/all-trails", {
+                const response = await api.get("trail/read/all-trails", {
                     params: {
                         status: 'ativa', // Exemplo de filtro por status
                         // haveProgress: "HAVE_PROGRESS", // Exemplo de filtro por progresso
@@ -36,6 +43,39 @@ export default function BibliotecaCursos() {
         fetchTrails();
     }, []);
 
+    // Carrega trilhas em progresso do usuário atual
+    const loadInProgress = useCallback(async () => {
+        try {
+            const rawUser = await AsyncStorage.getItem('userInfo');
+            const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+            const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+            const listKey = `joinedTrails:${uid}`;
+            const rawList = await AsyncStorage.getItem(listKey);
+            const list = rawList ? JSON.parse(rawList) : [];
+            // Anexa progresso (se existir) por chave trailProgress:uid:trailId (0..100)
+            const withProgress = [];
+            for (const t of Array.isArray(list) ? list : []) {
+                try {
+                    const pRaw = await AsyncStorage.getItem(`trailProgress:${uid}:${t.trailId}`);
+                    const p = pRaw ? Number(pRaw) : 0;
+                    withProgress.push({ ...t, progress: isNaN(p) ? 0 : p });
+                } catch {
+                    withProgress.push({ ...t, progress: 0 });
+                }
+            }
+            setInProgressTrails(withProgress);
+        } catch (e) {
+            setInProgressTrails([]);
+        }
+    }, []);
+
+    // Sempre que a tela ganhar foco, recarrega
+    useFocusEffect(
+        useCallback(() => {
+            loadInProgress();
+        }, [loadInProgress])
+    );
+
 
     return (
 
@@ -50,6 +90,32 @@ export default function BibliotecaCursos() {
                     </View>
                 </View>
 
+                {inProgressTrails.length > 0 && (
+                    <View style={styles.CardProcessoTrilha}>
+                        {/* Card de progresso da trilha que o usuario está participando */}
+                        <View style={styles.TextTrilhas}>
+                            <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas em Procresso</Text>
+                        </View>
+                        {/* Carrossel Horizontal */}
+                        <Carrossel
+                            data={inProgressTrails}
+                            keyExtractor={(t) => String(t.trailId)}
+                            renderItem={({ item: t }) => (
+                                // Você só se preocupa em RENDERIZAR o card.
+                                // O Carrossel.js cuida do tamanho e da margem.
+                                <CardProcessoTrilha
+                                    title={t.trailName}
+                                    progress={t.progress ?? 0}
+                                    iconKey={t.icon || t.trailIcon || t.iconName || null}
+                                    iconSource={t.iconUri ? { uri: t.iconUri } : null}
+                                    onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
+                                />
+                            )}
+                        />
+                    </View>
+                )}
+                
+
                 {/* Texto - Trilhas Disponiveis */}
                 <View style={styles.TextTrilhas}>
                     <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
@@ -59,12 +125,24 @@ export default function BibliotecaCursos() {
                 <FlatList
                     data={trails}
                     renderItem={({ item }) => {
-                        const professorName = item.user?.userName ?? 'Desconhecido'
+                        // Normaliza os dados do professor vindos do backend
+                        const professor = item.user || item.professor || item.teacher || {};
+                        const professorName = professor?.userName ?? professor?.name ?? professor?.displayName ?? 'Desconhecido';
+                        const professorPhotoUrl =
+                            professor?.photoUrl ||
+                            professor?.photoURL ||
+                            professor?.avatarUrl ||
+                            professor?.avatar ||
+                            professor?.profileImageUrl ||
+                            professor?.imageUrl ||
+                            professor?.picture ||
+                            null;
 
                         return (
                             <CardsTrilhas
                                 item={item}
                                 professorName={professorName}
+                                professorPhotoUrl={professorPhotoUrl}
                             />
                         )
                     }}
@@ -125,5 +203,11 @@ const styles = StyleSheet.create({
         paddingTop: 30,
         marginBottom: 30
 
+    },
+    CardProcessoTrilha: {
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        gap: 12,
     }
 })
