@@ -74,7 +74,8 @@ function Routes() {
                 marginRight: 20,
                 elevation: 0,
                 borderRadius: 20,
-                height: 60
+                height: 60,
+                zIndex: 1 // manter baixo para modais (zIndex > 10) aparecerem por cima
             }
 
         }}>

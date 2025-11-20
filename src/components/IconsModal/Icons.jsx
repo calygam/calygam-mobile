@@ -20,34 +20,21 @@ const iconNames = [
 const iconMap = {
     // Figma
     figma: IconFigma,
-    figma3: IconFigma,
     // React / React Native
     react: IconReact,
-    reactnative: IconReact,
-    'react-native': IconReact,
-    'react_native': IconReact,
-    rn: IconReact,
+
     // Banco de Dados / Database
     banco: IconBanco,
-    basededados: IconBanco,
-    'base-de-dados': IconBanco,
-    database: IconBanco,
-    db: IconBanco,
+
     // Illustrator
     illustrator: IconIllustrador,
-    'illustrator1': IconIllustrador,
-    ai: IconIllustrador,
+
     // IoT / Site Alt
     iot: IconIOT,
-    site: IconIOT,
-    sitealt: IconIOT,
-    'site-alt': IconIOT,
+
     // Código / Frontend
     codigo: IconCodigo,
-    code: IconCodigo,
-    front: IconCodigo,
-    codigosimples: IconCodigo,
-    'codigo-simples': IconCodigo,
+
 };
 
 const IconSelector = ({ visible, onSelectIcon, onClose }) => {
@@ -68,7 +55,7 @@ const IconSelector = ({ visible, onSelectIcon, onClose }) => {
                                     }}
                                     style={{ margin: 10, alignItems: 'center' }}
                                 >
-                                    <IconComponent width={30} height={30} />
+                                    <IconComponent width={25} height={25} />
                                 </TouchableOpacity>
                             );
                         }}

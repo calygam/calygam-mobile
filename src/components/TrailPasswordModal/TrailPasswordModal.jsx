@@ -123,6 +123,16 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
                 return;
             }
 
+            // Chama JOIN para criar progresso no backend (idempotente)
+            try {
+                await api.post(`/progress/join/${trailId}`, null, {
+                    params: { trailPassword: serverPassword || '' },
+                });
+            } catch (joinErr) {
+                // Se já estiver atribuído ou senha não for mais necessária, apenas seguimos
+                console.log('[TrailPasswordModal] join erro/ignorado:', joinErr?.response?.status, joinErr?.response?.data || joinErr.message);
+            }
+
             // Persistir desbloqueio para não perguntar novamente (por usuário)
             let uid = 'anon';
             try {

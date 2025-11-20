@@ -88,6 +88,29 @@ export const useTrilhaApi = () => {
         }
     };
 
+    // Publicar trilha (apenas mudar status via calygamCode)
+    const publishTrilha = async (trailId, calygamCode) => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) {
+                Alert.alert('Erro', 'Token inválido. Faça login novamente.');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('calygamCode', calygamCode);
+            // backend só altera para ENABLE se calygamCode == "calygam up trail"
+            const response = await api.put(`/trail/update/${trailId}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            Alert.alert('Sucesso', 'Trilha publicada!');
+            fetchCreatedTrails(userId);
+            return response.data;
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível publicar a trilha.');
+            console.error(error);
+        }
+    };
+
     // Função de deletar uma trilha
     const deleteTrilha = async (trailId) => {
         try {
@@ -120,6 +143,7 @@ export const useTrilhaApi = () => {
         fetchCreatedTrails,
         criarTrilha,
         updateTrilha,
+        publishTrilha,
         deleteTrilha,
     };
 };

@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native'
 import IconPessoas from "../../../assets/svg/IconsInterface/users-alt 2.svg";
 import IconSeta from "../../../assets/svg/IconsCardExplorar/angulo-direito1.svg";
 import TrailPasswordModal from '../TrailPasswordModal/TrailPasswordModal';
+import api from '../../api/api';
 
 const { width, height } = Dimensions.get('window')
 
@@ -104,6 +105,16 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                                             const newItem = { trailId: item?.trailId, trailName: item?.trailName, icon: item?.trailIcon || item?.icon || null };
                                             await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
                                         }
+                                        // JOIN automático se ainda não marcado
+                                        const joinedFlag = await AsyncStorage.getItem(`progressJoined:${uid}:${item?.trailId}`);
+                                        if (!joinedFlag) {
+                                            try {
+                                                await api.post(`/progress/join/${item?.trailId}`);
+                                                await AsyncStorage.setItem(`progressJoined:${uid}:${item?.trailId}`, 'true');
+                                            } catch (joinErr) {
+                                                console.log('[CardsTrilhas] join falhou/ignorado:', joinErr?.response?.status, joinErr?.response?.data || joinErr.message);
+                                            }
+                                        }
                                     } catch {}
                                     navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
                                 } else {
@@ -145,6 +156,8 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                                 const newItem = { trailId: item?.trailId, trailName: item?.trailName, icon: item?.trailIcon || item?.icon || null };
                                 await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
                             }
+                            // Marca que o JOIN já foi feito para evitar chamadas repetidas
+                            try { await AsyncStorage.setItem(`progressJoined:${uid}:${item?.trailId}`, 'true'); } catch {}
                         } catch {}
                         navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
                     }}

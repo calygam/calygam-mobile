@@ -17,7 +17,7 @@ export default function BibliotecaCursos() {
     const [trails, setTrails] = useState([]);
     const [inProgressTrails, setInProgressTrails] = useState([]); // [{trailId, trailName, progress}]
     const { width } = Dimensions.get('window');
-
+    
     // Lista de Trilhas com Filtro
     useEffect(() => {
         const fetchTrails = async () => {
@@ -28,13 +28,18 @@ export default function BibliotecaCursos() {
                 // const response = await axios.get('https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/read/all-trails'
                 const response = await api.get("trail/read/all-trails", {
                     params: {
-                        status: 'ativa', // Exemplo de filtro por status
                         // haveProgress: "HAVE_PROGRESS", // Exemplo de filtro por progresso
                         haveProgress: "NOT_HAVE_PROGRESS"
 
                     },
                 });
-                setTrails(response.data);
+                const data = Array.isArray(response.data) ? response.data : [];
+                // Filtra para mostrar apenas trilhas ATIVAS (ENABLE)
+                const onlyEnabled = data.filter(t => {
+                    const raw = String(t.trailStatus || "").toUpperCase().trim();
+                    return raw === "ENABLE";
+                });
+                setTrails(onlyEnabled);
             } catch (error) {
                 Alert.alert('Erro', 'Não foi possível carregar as trilhas.');
                 console.error('Erro ao buscar trilhas:', error);

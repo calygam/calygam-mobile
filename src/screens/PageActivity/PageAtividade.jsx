@@ -25,11 +25,36 @@ export default function PageAtividade() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [ensuringProgress, setEnsuringProgress] = useState(false);
 
     const filePreviewIsImage = useMemo(() => {
         const mt = file?.mimeType || '';
         return mt.startsWith('image/');
     }, [file]);
+
+    // ajuda simples para inferir mime pela extensão quando o picker não retorna
+    const inferMimeTypeFromName = (name = '') => {
+        const ext = name.split('.').pop()?.toLowerCase();
+        switch (ext) {
+            case 'jpg':
+            case 'jpeg':
+                return 'image/jpeg';
+            case 'png':
+                return 'image/png';
+            case 'gif':
+                return 'image/gif';
+            case 'pdf':
+                return 'application/pdf';
+            case 'zip':
+                return 'application/zip';
+            case 'doc':
+                return 'application/msword';
+            case 'docx':
+                return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            default:
+                return 'application/octet-stream';
+        }
+    };
 
     const handlePickFile = async () => {
         try {
@@ -51,20 +76,29 @@ export default function PageAtividade() {
                     }
                 } catch {}
             }
-
             const res = await DocumentPicker.getDocumentAsync({
                 type: ['image/*', 'application/pdf', 'application/zip', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
                 multiple: false,
                 copyToCacheDirectory: true,
             });
-            if (res.type === 'success') {
-                setFile({
-                    uri: res.uri,
-                    name: res.name || 'arquivo',
-                    mimeType: res.mimeType || 'application/octet-stream',
-                    size: res.size || 0,
-                });
+            let asset = null;
+            // SDK 49+ (expo-document-picker >= 14): { canceled, assets: [...] }
+            if (res && typeof res === 'object' && 'canceled' in res) {
+                if (res.canceled) return;
+                asset = Array.isArray(res.assets) && res.assets.length > 0 ? res.assets[0] : null;
+            } else if (res && typeof res === 'object') {
+                // Legado: { type: 'success' | 'cancel', uri, name, size, mimeType }
+                if (res.type === 'success') asset = res;
             }
+
+            if (!asset) return;
+
+            setFile({
+                uri: asset.uri,
+                name: asset.name || 'arquivo',
+                mimeType: asset.mimeType || inferMimeTypeFromName(asset.name),
+                size: asset.size || 0,
+            });
         } catch (e) {
             console.log('Erro ao carregar/usar DocumentPicker:', e?.message || e);
             // Feedback amigável quando o módulo nativo não está presente no binário atual
@@ -72,29 +106,62 @@ export default function PageAtividade() {
         }
     };
 
+    // Garante que exista um registro de progresso (JOIN) antes de submeter
+    const ensureProgressInitialized = async () => {
+        if (!trailId) return;
+        try {
+            setEnsuringProgress(true);
+            await api.post(`/progress/join/${trailId}`);
+        } catch (e) {
+            // Pode retornar erro se já estiver atribuído; mantemos log e seguimos
+            console.log('ensureProgressInitialized:', e?.response?.status, e?.response?.data || e.message);
+        } finally {
+            setEnsuringProgress(false);
+        }
+        return true;
+    };
+
     const submitActivity = async () => {
         if (!file || !trailId || !activityId) return;
+
         setUploading(true);
+
         try {
+            // garante progresso na trilha antes do submit
+            await ensureProgressInitialized();
+
             const form = new FormData();
-            form.append('file', {
-                uri: file.uri,
-                name: file.name,
-                type: file.mimeType || 'application/octet-stream',
+
+            form.append("file", {
+                uri: file.uri.startsWith("file://") ? file.uri : file.uri.replace("content://", "file://"),
+                name: file.name || `arquivo.${file.mimeType?.split("/")[1] || "bin"}`,
+                type: file.mimeType || inferMimeTypeFromName(file.name),
             });
 
-            await api.put(`/progress/submit/trail/${trailId}/activity/${activityId}`,
+            console.log("Enviando:", {
+                uri: file.uri,
+                name: file.name,
+                type: file.mimeType,
+            });
+
+            await api.put(
+                `/progress/submit/trail/${trailId}/activity/${activityId}`,
                 form,
-                { headers: { 'Content-Type': 'multipart/form-data' } }
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        "Accept": "*/*"
+                    }
+                }
             );
 
-            // Atualiza progresso local para Biblioteca (trailProgress:uid:trailId)
+            // Atualiza progresso local para Biblioteca e desbloqueio da próxima
             try {
                 const rawUser = await AsyncStorage.getItem('userInfo');
                 const parsed = rawUser ? JSON.parse(rawUser) : null;
                 const uid = parsed?.uid || parsed?.userId || parsed?.id || parsed?.email || 'anon';
 
-                // Calcula percentual com base no index atual e total
+                // Recalcula percentual com base no index atual e total
                 let total = 0;
                 try {
                     const stored = await AsyncStorage.getItem(`currentTrail:${uid}`);
@@ -104,7 +171,7 @@ export default function PageAtividade() {
                 const percent = total > 0 ? Math.round(((Number(index) + 1) / total) * 100) : 0;
                 await AsyncStorage.setItem(`trailProgress:${uid}:${trailId}`, String(percent));
 
-                // Guarda maior índice concluído para destravar próxima (completedActivities:uid:trailId)
+                // Guarda maior índice concluído para destravar próxima
                 try {
                     const key = `completedActivities:${uid}:${trailId}`;
                     const current = await AsyncStorage.getItem(key);
@@ -116,9 +183,11 @@ export default function PageAtividade() {
 
             setShowConfirm(false);
             setShowSuccess(true);
+
         } catch (e) {
-            console.log('Falha ao enviar atividade:', e?.response?.data || e.message);
-            setShowConfirm(false);
+            const errMsg = e?.response?.data || e?.message || e;
+            console.log("Falha upload:", errMsg);
+            alert(`Erro ao enviar arquivo.\n\n${typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg)}`);
         } finally {
             setUploading(false);
         }
@@ -150,7 +219,7 @@ export default function PageAtividade() {
                     {file && filePreviewIsImage ? (
                         <Image source={{ uri: file.uri }} style={{ width: 120, height: 120, borderRadius: 8 }} />
                     ) : (
-                        <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#6C63FF', width: 56, height: 56, borderRadius: 100 }}>
+                        <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffffff', width: 56, height: 56, borderRadius: 100 }}>
                             <IconUpload width={25} height={25} fill="#FFF" />
                         </View>
                     )}
@@ -184,8 +253,8 @@ export default function PageAtividade() {
                         <Text style={styles.modalTitle}>Deseja Entregar?</Text>
                         <Text style={styles.modalSubtitle}>Após a confirmação você não poderá cancelar o envio dessa atividade novamente.</Text>
                         <View style={{ gap: 10, marginTop: 12 }}>
-                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#6C63FF' }]} onPress={submitActivity} disabled={uploading}>
-                                {uploading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.modalBtnText}>Confirmar</Text>}
+                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#6C63FF' }]} onPress={submitActivity} disabled={uploading || ensuringProgress}>
+                                {(uploading || ensuringProgress) ? <ActivityIndicator color="#FFF" /> : <Text style={styles.modalBtnText}>Confirmar</Text>}
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#3A3F4A' }]} onPress={() => setShowConfirm(false)} disabled={uploading}>
                                 <Text style={styles.modalBtnText}>Cancelar</Text>

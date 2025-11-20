@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 export default function FormTrilha({
     styles,
     isEditing,
     nome, setNome,
     senha, setSenha,
+    status, setStatus,
     image, pickImage,
     IconImage, IconUpload,
     vagas, setVagas,
@@ -47,6 +49,20 @@ export default function FormTrilha({
                     {IconUpload ? <IconUpload width={30} height={30} /> : null}
                     <Text style={{ color: '#FFF', fontSize: 14 }}>Adicionar Imagem</Text>
                 </TouchableOpacity>
+            </View>
+
+            <Text style={styles.label}>Status da Trilha</Text>
+            <View style={{ borderWidth: 1, borderColor: '#888', borderRadius: 10, overflow: 'hidden', marginBottom: 10 }}>
+                <Picker
+                    selectedValue={status}
+                    onValueChange={(val) => setStatus(val)}
+                    dropdownIconColor="#FFF"
+                    style={{ color: '#FFF', backgroundColor: 'transparent' }}
+                >
+                    <Picker.Item label="Ativa" value="ENABLE" color="#3DDC84" />
+                    <Picker.Item label="Desativada" value="DESABLED" color="#FF5A5F" />
+                    <Picker.Item label="Construindo" value="BUILDING" color="#FFC107" />
+                </Picker>
             </View>
 
             <Text style={styles.label}>Número de Vagas</Text>

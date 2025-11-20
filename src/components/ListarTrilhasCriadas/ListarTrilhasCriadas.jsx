@@ -4,7 +4,7 @@ import CardProf from '../CardProfTrilhas/CardProf';
 
 // professorPhoto: URL da foto do professor (perfil) que deve aparecer no círculo.
 // Se não houver foto do professor, usa placeholder local.
-export default function ListarTrilhasCriadas({ createdTrails, onEdit, professorPhoto }) {
+export default function ListarTrilhasCriadas({ createdTrails, onEdit, onPublish, professorPhoto }) {
     return (
         <FlatList
             data={createdTrails}
@@ -24,6 +24,7 @@ export default function ListarTrilhasCriadas({ createdTrails, onEdit, professorP
                         />
                     }
                     onEdit={onEdit}
+                    onPublish={onPublish}
                     item={item}
                 />
             )}

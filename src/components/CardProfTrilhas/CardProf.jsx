@@ -3,17 +3,46 @@ import IconVagas from "../../../assets/svg/users-alt rosa.svg";
 import IconLixo from "../../../assets/svg/lixo.svg";
 import IconLapis from "../../../assets/svg/lapis.svg";
 
-export default function CardProf({titulo, professorNome, vagas, foto, onEdit, item}) {
+export default function CardProf({titulo, professorNome, vagas, foto, onEdit, onPublish, item}) {
+
+    const getStatusInfo = () => {
+        const raw = String(item?.trailStatus ?? item?.status ?? "").toUpperCase();
+
+        if (raw === "DESABLED") {
+            return {
+                label: "Desativada",
+                bg: "#f64b1288",
+                color: "#FE1A59"
+            };
+        }
+
+        if (raw === "BUILDING") {
+            return {
+                label: "Em construção",
+                bg: "#ffca2844",
+                color: "#FFC107"
+            };
+        }
+
+        // Default → ENABLE
+        return {
+            label: "Ativa",
+            bg: "#2e7d3244",
+            color: "#2E7D32"
+        };
+    };
+
+    const statusInfo = getStatusInfo();
 
     return (
         <View style={styles.container}>
             {/* Card */}
             <View style={styles.card}>
                 {/* Nome da Trilha e Status */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                    <Text style={{ color: '#021713', width: '55%', fontSize: 16 }}>{titulo}</Text>
-                    <View style={styles.Status}>
-                        <Text style={{ color: '#FE1A59' }}>Desativado</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <Text style={{ color: '#021713', width: '50%', fontSize: 16 }}>{titulo}</Text>
+                    <View style={[styles.Status, { backgroundColor: statusInfo.bg }]}>
+                        <Text style={{ color: statusInfo.color }}>{statusInfo.label}</Text>
                     </View>
                 </View>
 
@@ -31,6 +60,12 @@ export default function CardProf({titulo, professorNome, vagas, foto, onEdit, it
                     </View>
                     {/* Botoes de editar e excluir */}
                     <View style={{ flexDirection: 'row', gap: 25}}>
+
+                        {String(item?.trailStatus).toUpperCase() !== 'ENABLE' && (
+                            <TouchableOpacity onPress={() => onPublish && onPublish(item)}>
+                                <Text style={{ color: '#8A51E8', fontSize: 12 }}>Publicar</Text>
+                            </TouchableOpacity>
+                        )}
 
                         <TouchableOpacity onPress={() => onEdit && onEdit(item)}>
                             <IconLapis width={20} height={20} />
@@ -60,7 +95,7 @@ const styles = StyleSheet.create({
     Status: {
         width: 'auto',
         height: 40,
-        paddingHorizontal: 25,
+        paddingHorizontal: 20,
         borderRadius: 40,
         backgroundColor: '#f64b1288',
         marginTop: 10,
@@ -79,7 +114,7 @@ const styles = StyleSheet.create({
         paddingLeft: 20,
         paddingTop: 15,
         paddingBottom: 25,
-
+        
     },
     foto: {
         borderRadius: 20,
