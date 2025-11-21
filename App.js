@@ -6,6 +6,7 @@ import Onboarding from './src/screens/OnboardingScreens/Onboarding';
 import LoginScreen from './src/screens/LoginPage/LoginScreen';
 import SignUpScreen from './src/screens/LoginPage/SignUpScreen';
 import PageAtividade from './src/screens/PageActivity/PageAtividade';
+import Trail from './src/screens/TrailPage/Trail';
 import * as Linking from 'expo-linking'
 import React, { useEffect, useState } from 'react';
 import { AuthContext, AuthProvider } from './src/hooks/AuthContext';
@@ -108,6 +109,7 @@ export default function App() {
                         <NavigationContainer linking={linking}>
                             <ErrorBoundary>
                                 <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"} screenOptions={{ headerShown: false }}>
+                                <Stack.Screen name="Trilha" component={Trail} />
                                 {/* Home SEMPRE registrada */}
                                 <Stack.Screen name="home" component={Routes}/>
                                 {/* Telas de auth sempre registradas para permitir reset após logout */}

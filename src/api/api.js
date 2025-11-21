@@ -22,4 +22,34 @@ api.interceptors.request.use(
     (error) => Promise.reject(error) // Se deu algun erro antes de mandar ele ja rejeita na hora 
 )
 
+api.interceptors.response.use(
+    res => res,
+    err => {
+        if (err?.response?.status === 403) {
+            // opcional: limpar token, enviar evento de logout
+            // AsyncStorage.removeItem('userToken');
+        }
+        if (err?.response) {
+            const status = err.response.status;
+            const data = err.response.data;
+            let msg = 'Erro inesperado. Tente novamente mais tarde.';
+            if (data && (data.message || data.error)) {
+                msg = data.message || data.error;
+            }
+            if (status === 500) {
+                msg = 'Erro interno do servidor. Tente novamente mais tarde.';
+            } else if (status === 400) {
+                msg = data?.message || 'Requisição inválida.';
+            } else if (status === 403) {
+                msg = 'Acesso negado. Faça login novamente.';
+            }
+            // Adicionar msg ao erro para uso posterior
+            err.userMessage = msg;
+        } else {
+            err.userMessage = 'Sem conexão com o servidor.';
+        }
+        return Promise.reject(err);
+    }
+)
+
 export default api;

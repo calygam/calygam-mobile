@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Carrossel from '../../components/Carrossel';
+import { useTrilhaApi } from '../../hooks/useTrilhaApi';
 
 
 export default function BibliotecaCursos() {
@@ -17,6 +18,7 @@ export default function BibliotecaCursos() {
     const [trails, setTrails] = useState([]);
     const [inProgressTrails, setInProgressTrails] = useState([]); // [{trailId, trailName, progress}]
     const { width } = Dimensions.get('window');
+    const { handleEnterInTrailMobile } = useTrilhaApi();
     
     // Lista de Trilhas com Filtro
     useEffect(() => {
@@ -80,7 +82,7 @@ export default function BibliotecaCursos() {
             loadInProgress();
         }, [loadInProgress])
     );
-
+    
 
     return (
 
@@ -130,6 +132,21 @@ export default function BibliotecaCursos() {
                 <FlatList
                     data={trails}
                     renderItem={({ item }) => {
+
+                        // dentro do render do FlatList (no CardsTrilhas)
+                        const onEnterTrail = async (trailId, trailPassword) => {
+                            try {
+                                // feedback UI opcional
+                                await handleEnterInTrailMobile(trailId, trailPassword);
+                                // depois que join OK, navega pra tela da trilha
+                                navigation.navigate('Trilha', { trailId, trailName: item.trailName });
+                            } catch (err) {
+                                console.log("Erro ao entrar na trilha:", err?.response?.data || err);
+                                Alert.alert('Erro', typeof err?.response?.data === 'string' ? err.response.data : 'Não foi possível entrar na trilha.');
+                            }
+                        };
+
+
                         // Normaliza os dados do professor vindos do backend
                         const professor = item.user || item.professor || item.teacher || {};
                         const professorName = professor?.userName ?? professor?.name ?? professor?.displayName ?? 'Desconhecido';
@@ -148,6 +165,8 @@ export default function BibliotecaCursos() {
                                 item={item}
                                 professorName={professorName}
                                 professorPhotoUrl={professorPhotoUrl}
+                                onEnter={() => onEnterTrail(item.trailId, item.trailPassword)}
+                                
                             />
                         )
                     }}

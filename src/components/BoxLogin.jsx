@@ -44,18 +44,16 @@ export default function BoxLogin() {
 
             const user = userCredential.user;
 
-            const userInfo = {
+            console.log("Usuário logado:", user.email);
+
+            // ENVIA PARA O BACKEND
+            // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google", userInfo);
+            const response = await api.post("/auth/google", {
                 uid: user.uid,
                 displayName: user.displayName || user.email.split("@")[0],
                 email: user.email,
                 photoURL: user.photoURL,
-            }
-
-            console.log("Usuário logado:", userInfo);
-
-            // ENVIA PARA O BACKEND
-            // const response = await axios.post("https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/auth/google", userInfo);
-            const response = await api.post("/auth/google", userInfo);
+            });
             console.log('Resposta da API:', response.data);
 
             const { token } = response.data; // ← JWT DO BACKEND
@@ -70,7 +68,29 @@ export default function BoxLogin() {
 
             if (response.status === 200 || response.status === 201) {
                 await AsyncStorage.setItem("userToken", token);
-                await AsyncStorage.setItem("userRole", role); // ← Salva a role
+                const decoded = jwtDecode(token);
+                const role = decoded.role || 'ALUNO';
+                await AsyncStorage.setItem("userRole", role);
+
+                // BUSCA O PERFIL COMPLETO DO BACKEND
+                const profileResp = await api.get("/users/readOne", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                const serverUser = profileResp.data.user ?? profileResp.data;
+
+                // Cria o userInfo com prioridade para os dados do backend
+                const userInfo = {
+                    uid: serverUser.userId,
+                    userName: serverUser.userName || user.displayName || user.email.split("@")[0],
+                    email: serverUser.userEmail || user.email,
+                    photoURL: serverUser.userImage || user.photoURL,
+                    userXp: serverUser.userXp || 0,
+                    userRank: serverUser.userRank || "NOVATO",
+                    userMoney: serverUser.userMoney || 0,
+                    userFood: serverUser.userFood || 0
+                };
+
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
                 navigation.replace("home");
             }
@@ -131,13 +151,13 @@ export default function BoxLogin() {
                 // Cria o userInfo com prioridade para os dados do backend
                 const userInfo = {
                     uid: serverUser.userId,
-                    displayName: serverUser.userName || email.split("@")[0],
+                    userName: serverUser.userName || email.split("@")[0],
                     email: serverUser.userEmail || email,
                     photoURL: serverUser.userImage || null,
-                    xp: serverUser.userXp || 0,
-                    rank: serverUser.userRank || "NOVATO",
-                    money: serverUser.userMoney || 0,
-                    food: serverUser.userFood || 0
+                    userXp: serverUser.userXp || 0,
+                    userRank: serverUser.userRank || "NOVATO",
+                    userMoney: serverUser.userMoney || 0,
+                    userFood: serverUser.userFood || 0
                 };
 
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));

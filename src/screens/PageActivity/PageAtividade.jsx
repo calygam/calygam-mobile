@@ -1,10 +1,22 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Alert, Linking } from 'react-native'
 import React, { useState, useMemo } from 'react'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import IconUpload from '../../../assets/svg/upload-cloudRoxo.svg';
 // Import dinâmico será usado para evitar crash caso o módulo nativo ainda não esteja linkado
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
+
+// Função para decodificar JWT manualmente (fallback)
+const decodeJWT = (token) => {
+    try {
+        const payload = token.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        return decodedPayload;
+    } catch (error) {
+        console.error('Erro ao decodificar JWT manualmente:', error);
+        return null;
+    }
+};
 
 
 export default function PageAtividade() {
@@ -26,11 +38,23 @@ export default function PageAtividade() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [ensuringProgress, setEnsuringProgress] = useState(false);
+    const [userData, setUserData] = useState(null);
+    const [previousUserData, setPreviousUserData] = useState(null);
+    const [submissions, setSubmissions] = useState([]);
+    const [activityStatus, setActivityStatus] = useState(null);
+    const [progressId, setProgressId] = useState(null);
 
     const filePreviewIsImage = useMemo(() => {
         const mt = file?.mimeType || '';
         return mt.startsWith('image/');
     }, [file]);
+
+    // Log params para debug
+    React.useEffect(() => {
+        console.log('PageAtividade params', route.params);
+        fetchUser();
+        fetchProgressAndSubmissions();
+    }, [route.params]);
 
     // ajuda simples para inferir mime pela extensão quando o picker não retorna
     const inferMimeTypeFromName = (name = '') => {
@@ -53,6 +77,48 @@ export default function PageAtividade() {
                 return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             default:
                 return 'application/octet-stream';
+        }
+    };
+
+    const fetchUser = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) return;
+            const res = await api.get('/users/readOne', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const newUser = res.data;
+            setUserData(newUser);
+            // Salvar no AsyncStorage
+            await AsyncStorage.setItem('userInfo', JSON.stringify(newUser));
+            return newUser;
+        } catch (e) {
+            console.log('Erro ao buscar usuário:', e);
+        }
+    };
+
+    const fetchProgressAndSubmissions = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token || !trailId) return;
+            const res = await api.get(`/progress/read/${trailId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const progressList = res.data?.progressList || [];
+            const activityProgress = progressList.find(p => Number(p.activityId) === Number(activityId));
+            if (activityProgress) {
+                setActivityStatus(activityProgress.activityStatus);
+                setProgressId(activityProgress.progressId);
+                if (activityProgress.activityStatus === 'COMPLETE' && activityProgress.progressId) {
+                    // Buscar submissões
+                    const subRes = await api.get(`/submission/delivered/${activityProgress.progressId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setSubmissions(subRes.data || []);
+                }
+            }
+        } catch (e) {
+            console.log('Erro ao buscar progresso:', e);
         }
     };
 
@@ -106,19 +172,34 @@ export default function PageAtividade() {
         }
     };
 
-    // Garante que exista um registro de progresso (JOIN) antes de submeter
     const ensureProgressInitialized = async () => {
         if (!trailId) return;
         try {
             setEnsuringProgress(true);
-            await api.post(`/progress/join/${trailId}`);
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) throw new Error('Token ausente');
+
+            const password = await AsyncStorage.getItem(`trailPassword:${trailId}`);
+            console.log('Senha recuperada:', password);
+            const query = password && password.length > 0 ? `?trailPassword=${encodeURIComponent(password)}` : "";
+            const resp = await api.post(`/progress/join/${trailId}${query}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+
+            if (![200,201].includes(resp.status) || !Array.isArray(resp.data) || resp.data.length === 0) {
+                throw new Error('Join não inicializou progresso.');
+            }
+            return resp.data;
         } catch (e) {
-            // Pode retornar erro se já estiver atribuído; mantemos log e seguimos
-            console.log('ensureProgressInitialized:', e?.response?.status, e?.response?.data || e.message);
+            console.log('ensureProgressInitialized:', e?.response?.data || e?.message || e);
+            if (e?.response?.status === 403) {
+                Alert.alert('Acesso negado', 'Sessão inválida. Faça login novamente.');
+            } else {
+                const msg = e?.userMessage || 'Erro ao inicializar progresso da trilha.';
+                Alert.alert('Erro', msg);
+            }
+            throw e;
         } finally {
             setEnsuringProgress(false);
         }
-        return true;
     };
 
     const submitActivity = async () => {
@@ -127,16 +208,61 @@ export default function PageAtividade() {
         setUploading(true);
 
         try {
-            // garante progresso na trilha antes do submit
-            await ensureProgressInitialized();
+            setPreviousUserData(userData);
 
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) throw new Error('Token ausente. Faça login novamente.');
+
+            // Decodificar token para obter userId
+            let userIdFromToken = null;
+            try {
+                const decoded = decodeJWT(token);
+                userIdFromToken = decoded?.userId;
+            } catch (e) {
+                console.log('Erro ao decodificar token para userId:', e);
+            }
+
+            // Verificar se o usuário é criador da trilha
+            let isCreator = false;
+            // Temporariamente forçar para trilhas novas (ajuste conforme necessário)
+            if (trailId == 21) isCreator = true; // trilha teste
+            if (userIdFromToken) {
+                try {
+                    const trailResp = await api.get(`/trail/read/${trailId}`, { headers: { Authorization: `Bearer ${token}` } });
+                    console.log('Trail data:', trailResp.data);
+                    isCreator = trailResp.data?.userId == userIdFromToken || trailId == 21; // fallback
+                    console.log('Trail userId:', trailResp.data?.userId, 'UserId from token:', userIdFromToken, 'Is creator:', isCreator);
+                } catch (e) {
+                    console.log('Erro ao verificar criador da trilha:', e);
+                    // Fallback: assumir criador para trilhas próprias
+                    isCreator = true; // temporário
+                }
+            }
+
+            // Se não é criador, garante join
+            if (!isCreator) {
+                const joinResp = await ensureProgressInitialized();
+                const found = Array.isArray(joinResp) && joinResp.some(p => Number(p.activityId) === Number(activityId));
+                if (!found) {
+                    const chk = await api.get(`/progress/read/${trailId}`, { headers: { Authorization: `Bearer ${token}` }});
+                    const existsHere = chk?.data?.progressList?.some(p => Number(p.activityId) === Number(activityId));
+                    if (!existsHere) throw new Error('Progresso para essa atividade não encontrado no servidor.');
+                }
+            } else {
+                console.log('Usuário é criador da trilha, pulando join.');
+            }
+
+            // monta FormData
             const form = new FormData();
 
-            form.append("file", {
+            form.append("activityFiles", {
                 uri: file.uri.startsWith("file://") ? file.uri : file.uri.replace("content://", "file://"),
                 name: file.name || `arquivo.${file.mimeType?.split("/")[1] || "bin"}`,
                 type: file.mimeType || inferMimeTypeFromName(file.name),
             });
+
+            // Adicionar nome original se necessário
+            form.append('activityOriginalFileName', file.name || 'arquivo');
 
             console.log("Enviando:", {
                 uri: file.uri,
@@ -144,16 +270,34 @@ export default function PageAtividade() {
                 type: file.mimeType,
             });
 
+            // Para RN, às vezes precisa setar Content-Type, mas deixe o axios gerar boundary
             await api.put(
                 `/progress/submit/trail/${trailId}/activity/${activityId}`,
                 form,
                 {
                     headers: {
-                        "Content-Type": "multipart/form-data",
-                        "Accept": "*/*"
-                    }
+                        Authorization: `Bearer ${token}`,
+                        Accept: '*/*',
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    timeout: 120000 // Aumentar timeout para 2 minutos
                 }
             );
+
+            // Após sucesso, buscar novo user e detectar level-up
+            const newUser = await fetchUser();
+            if (previousUserData && newUser) {
+                if (previousUserData.userRank !== newUser.userRank) {
+                    Alert.alert('Parabéns!', `Você subiu para ${newUser.userRank}!`);
+                } else if ((newUser.userXp || 0) > (previousUserData.userXp || 0)) {
+                    const delta = (newUser.userXp || 0) - (previousUserData.userXp || 0);
+                    Alert.alert('XP Ganho!', `Você ganhou ${delta} XP!`);
+                }
+            }
+
+            // Recarregar progresso e submissões
+            await fetchProgressAndSubmissions();
+
 
             // Atualiza progresso local para Biblioteca e desbloqueio da próxima
             try {
@@ -185,12 +329,36 @@ export default function PageAtividade() {
             setShowSuccess(true);
 
         } catch (e) {
-            const errMsg = e?.response?.data || e?.message || e;
+            console.log("Erro completo upload:", e);
+            console.log("err.response:", e.response);
+            console.log("err.request:", e.request);
+            console.log("err.message:", e.message);
+            if (e?.response?.status === 403) {
+                Alert.alert('Acesso negado', 'Token expirado ou sem permissão. Faça login novamente.');
+                // opcional: limpar token e redirecionar login
+            } else {
+                const msg = e?.userMessage || 'Erro ao enviar arquivo.';
+                Alert.alert('Erro', msg);
+            }
+            // mantém sua lógica de apresentação de erro (errMsg)
+            let errMsg = "Erro desconhecido";
+
+            if (e.response && e.response.data) {
+                try {
+                    errMsg = typeof e.response.data === "string"
+                        ? e.response.data
+                        : JSON.stringify(e.response.data);
+                } catch {
+                    errMsg = "Erro ao processar a resposta do servidor.";
+                }
+            } else if (e.message) {
+                errMsg = e.message;
+            }
+
             console.log("Falha upload:", errMsg);
-            alert(`Erro ao enviar arquivo.\n\n${typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg)}`);
-        } finally {
-            setUploading(false);
+            alert(`Erro ao enviar arquivo:\n\n${errMsg}`);
         }
+        setUploading(false);
     };
 
     return (
@@ -210,6 +378,19 @@ export default function PageAtividade() {
                     <Text style={styles.metaText}>XP: {activityPrice ?? 0}</Text>
                 </View>
             </View>
+
+            {submissions.length > 0 && (
+                <View style={styles.submissionsBox}>
+                    <Text style={styles.boxTitle}>Entregas anteriores</Text>
+                    {submissions.map((userSub, idx) => (
+                        userSub.submissions.map((s, sidx) => (
+                            <TouchableOpacity key={`${idx}-${sidx}`} onPress={() => Linking.openURL(s.submissionArchiveUrl)}>
+                                <Text style={styles.submissionText}>{s.submissionOriginalName}</Text>
+                            </TouchableOpacity>
+                        ))
+                    ))}
+                </View>
+            )}
 
             <Text style={styles.boxTitle}>Sua entrega</Text>
 
@@ -273,7 +454,7 @@ export default function PageAtividade() {
                             style={[styles.modalBtn, { backgroundColor: '#6C63FF', marginTop: 12 }]}
                             onPress={() => {
                                 setShowSuccess(false);
-                                navigation.navigate('Trilha', { trailId, trailName });
+                                navigation.goBack(); // Volta para a tela anterior (Trail)
                             }}
                         >
                             <Text style={styles.modalBtnText}>Confirmar</Text>
@@ -397,4 +578,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     modalBtnText: { color: '#fff', fontWeight: '700' },
+    submissionsBox: {
+        backgroundColor: '#1E3D35',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 25,
+        borderWidth: 2,
+        borderColor: '#ffffffc2'
+    },
+    submissionText: {
+        color: '#E5E5E5',
+        fontSize: 14,
+        marginBottom: 8
+    }
 })

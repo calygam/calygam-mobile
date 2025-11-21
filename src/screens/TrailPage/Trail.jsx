@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
 import IconAviso from '../../../assets/svg/undraw_access-denied_krem.svg';
@@ -82,6 +82,35 @@ export default function Trail() {
         loadCompleted();
     }, [trailId]);
 
+    // Recarrega dados quando a tela ganha foco (ex: após voltar de atividade)
+    useFocusEffect(
+        React.useCallback(() => {
+            const loadData = async () => {
+                // Recarregar userData
+                const data = await AsyncStorage.getItem("userInfo");
+                if (data) {
+                    setUserName(JSON.parse(data));
+                }
+
+                // Recarregar progresso da trilha para atualizar completedIndex
+                if (trailId) {
+                    const token = await AsyncStorage.getItem('userToken');
+                    try {
+                        const progressRes = await api.get(`/progress/read/${trailId}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const progressList = progressRes.data?.progressList || [];
+                        const maxCompleted = progressList.filter(p => p.activityStatus === 'COMPLETE').length - 1;
+                        setCompletedIndex(maxCompleted);
+                    } catch (e) {
+                        console.log('Erro ao recarregar progresso:', e);
+                    }
+                }
+            };
+            loadData();
+        }, [trailId])
+    );
+
 
     if (!trail) {
         return (
@@ -95,7 +124,7 @@ export default function Trail() {
     // cálculo simples de progresso (exemplo)
     const maxXP = 100;
 
-    const progress = userName && typeof userName.xp === 'number' ? (userName.xp / maxXP) : 0;
+    const progress = userName && typeof userName.userXp === 'number' ? (userName.userXp / maxXP) : 0;
 
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -106,7 +135,7 @@ export default function Trail() {
                     <View style={{
                         alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 1
                     }}>
-                        <Text style={styles.title}>Olá, {userName?.displayName}! - {trailName}</Text>
+                        <Text style={styles.title}>Olá, {userName?.userName}! - {trailName}</Text>
                         <Text style={{ color: '#FFFFFF', fontSize: 14, }}> Continue de onde parou.</Text>
                     </View>
                 </View>
@@ -117,7 +146,7 @@ export default function Trail() {
                         <Text style={styles.title}>Painel de Recompensas</Text>
                         <View style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }}>
                             <IconCoins width={20} height={20} />
-                            <Text style={{ color: '#FFFFFF', fontSize: 14, }}>Coins: {userName?.money ?? 0}</Text>
+                            <Text style={{ color: '#FFFFFF', fontSize: 14, }}>Coins: {userName?.userMoney ?? 0}</Text>
                         </View>
                     </View>
 
@@ -125,11 +154,11 @@ export default function Trail() {
                         <View style={styles.rewardItem}>
 
                             <View style={styles.rankContainer}>
-                                <Text style={{ color: '#FFFFFF', fontSize: 14 }}> Rank: {userName?.rank}</Text>
+                                <Text style={{ color: '#FFFFFF', fontSize: 14 }}> Rank: {userName?.userRank}</Text>
                             </View>
 
                             <View style={styles.rankContainer}>
-                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}>xp: {userName?.xp ?? 0} / {maxXP}</Text>
+                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}>xp: {userName?.userXp ?? 0} / {maxXP}</Text>
                                 <View style={styles.progressBarBackground}>
                                     <View
                                         style={[

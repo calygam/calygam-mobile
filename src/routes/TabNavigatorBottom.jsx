@@ -37,7 +37,7 @@ function Routes() {
         return null; // or a loading spinner
     }
 
-    const isProfessor = role === "INSTRUTOR";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
+    const isProfessor = role === "INSTRUTOR" || role === "instrutor";  // ← Mude de "professor" para "INSTRUTOR" para corresponder ao valor do backend
 
     // Animation Tab Bottom
     function AnimatedTabIcon({ focused, ActiveIcon, InactiveIcon }) {

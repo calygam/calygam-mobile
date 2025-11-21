@@ -10,7 +10,17 @@
       }
     },
     "android": {
-      "package": "com.mr_cat.Calygam"
+      "package": "com.mr_cat.Calygam",
+      "networkSecurityConfig": {
+        "domainConfig": [
+          {
+            "domain": "10.0.0.191",
+            "configuration": {
+              "cleartextTrafficPermitted": true
+            }
+          }
+        ]
+      }
     }
   }
 }
