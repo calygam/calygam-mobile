@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react'
 import { StyleSheet } from 'react-native'
 import IconSeach from "../../../assets/svg/IconsInterface/icon_seach.svg";
 import CardPets from '../../components/CardShop/CardPets';
-import SkeletonPetCard from '../../components/SkeletoncomShimmer/SkeletonPetCard';
+import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
 
 export default function ShopPage() {
 
@@ -18,7 +18,7 @@ export default function ShopPage() {
     return () => clearTimeout(timer);
   }, []);
   if (loading) {
-    return <SkeletonPetCard />;
+    return <LoadingSkeletonShimmer type="cards" count={4} />;
   }
 
   return (
@@ -42,7 +42,7 @@ export default function ShopPage() {
         <ScrollView>
         <View style={styles.containerCard}>
           {loading ? (
-            <SkeletonPetCard/>
+            <LoadingSkeletonShimmer type="cards" count={4} />
           ) : (
           <View style={styles.card}>
             <CardPets nome='Raposa Foz' preco='12.000' imagem={require('../../../assets/image/imageShopPet/image-58.png')} />

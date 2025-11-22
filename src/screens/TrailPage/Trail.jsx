@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
+import RankBadge from '../../components/RankBadge';
+import { computeRankProgress } from '../../utils/rankUtils';
 import IconAviso from '../../../assets/svg/undraw_access-denied_krem.svg';
 import api from '../../api/api';
 import { Image } from 'react-native';
@@ -121,10 +123,9 @@ export default function Trail() {
             </View>
         );
     }
-    // cálculo simples de progresso (exemplo)
-    const maxXP = 100;
-
-    const progress = userName && typeof userName.userXp === 'number' ? (userName.userXp / maxXP) : 0;
+    // Cálculo de progresso real baseado nos thresholds (barra mostra avanço dentro do rank atual)
+    const xp = userName?.userXp ?? 0;
+    const { current, next, progress } = computeRankProgress(xp);
 
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -140,7 +141,7 @@ export default function Trail() {
                     </View>
                 </View>
 
-                {/* Painel de Recompensas */}
+                {/* Painel de Recompensas (refatorado com RankBadge) */}
                 <View style={styles.PainelContent}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 11 }}>
                         <Text style={styles.title}>Painel de Recompensas</Text>
@@ -149,30 +150,10 @@ export default function Trail() {
                             <Text style={{ color: '#FFFFFF', fontSize: 14, }}>Coins: {userName?.userMoney ?? 0}</Text>
                         </View>
                     </View>
-
-                    <View style={{ paddingLeft: 5, paddingRight: 5, justifyContent: 'space-between' }}>
-                        <View style={styles.rewardItem}>
-
-                            <View style={styles.rankContainer}>
-                                <Text style={{ color: '#FFFFFF', fontSize: 14 }}> Rank: {userName?.userRank}</Text>
-                            </View>
-
-                            <View style={styles.rankContainer}>
-                                <Text style={{ color: '#FFFFFF', fontSize: 14, }}>xp: {userName?.userXp ?? 0} / {maxXP}</Text>
-                                <View style={styles.progressBarBackground}>
-                                    <View
-                                        style={[
-                                            styles.progressBarFill,
-                                            { width: `${progress * 100}%` }
-                                        ]}
-                                    />
-                                </View>
-                            </View>
-
-                        </View>
-                    </View>
-
-
+                    <RankBadge xp={xp} rankName={userName?.userRank} />
+                    {next && (
+                        <Text style={{ color:'#B7B7B7', fontSize:12, marginTop:6, textAlign:'center' }}>Avanço dentro de {current.name}: {Math.round(progress*100)}%</Text>
+                    )}
                 </View>
 
 

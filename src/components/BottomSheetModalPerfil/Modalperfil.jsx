@@ -7,9 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../firebase'; // Ajuste o caminho se necessário
-import jwtDecode from 'jwt-decode';
-import axios from 'axios';
+import { auth } from '../../firebase';
 import CircularLoader from '../LoadingCircular/Loading';
 import api from '../../api/api';
 
@@ -47,18 +45,8 @@ const Modal = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const serverUser = resp.data.user ?? resp.data;
-                    const ui = {
-                        uid: serverUser?.userId,
-                        displayName: serverUser?.userName || serverUser?.userEmail || 'Usuário', // <-- LÓGICA ROBUSTA
-                        email: serverUser?.userEmail || '',
-                        photoURL: serverUser?.userImage || null,
-                        xp: serverUser?.userXp || 0,
-                        rank: serverUser?.userRank || '',
-                        money: serverUser?.userMoney || 0,
-                        food: serverUser?.userFood || 0
-                    };
-                    setUser(ui);
-                    await AsyncStorage.setItem("userInfo", JSON.stringify(ui));
+                    setUser(serverUser);
+                    await AsyncStorage.setItem("userInfo", JSON.stringify(serverUser));
                     setLoading(false);
                     return;
                 } catch (error) {
@@ -127,7 +115,7 @@ const Modal = () => {
 
             <TouchableOpacity onPress={handleOpenPress} style={{ width: 50, height: 50, overflow: 'hidden', borderRadius: 100 }}>
                 <Image
-                    source={user?.photoURL ? { uri: user.photoURL } : require('../../../assets/image/SemPerfil.jpeg')}
+                    source={user?.userImage ? { uri: user.userImage } : require('../../../assets/image/SemPerfil.jpeg')}
                     style={{ width: '100%', height: '100%', backgroundColor: '#FFF' }}
                 />
             </TouchableOpacity>
@@ -139,6 +127,7 @@ const Modal = () => {
                 enablePanDownToClose={true}
                 index={1}
                 backgroundStyle={{ backgroundColor: '#0D141C' }}
+                handleIndicatorStyle={{ backgroundColor: '#FFF' }}
             >
                 <BottomSheetView style={styles.contentContainer}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20 }}>
@@ -149,12 +138,12 @@ const Modal = () => {
 
                     {/* Profile Info */}
                     <Image
-                        source={user?.photoURL ? { uri: user.photoURL } : require('../../../assets/image/SemPerfil.jpeg')}
+                        source={user?.userImage ? { uri: user.userImage } : require('../../../assets/image/SemPerfil.jpeg')}
                         style={styles.profileImage}
                     />
 
-                    <Text style={styles.userName}>Nome: {user?.displayName || 'Usuário'}</Text>
-                    <Text style={styles.userEmail}>Email: {user?.email || 'Não disponível'}</Text>
+                    <Text style={styles.userName}>Nome: {user?.userName || user?.userEmail || 'Usuário'}</Text>
+                    <Text style={styles.userEmail}>Email: {user?.userEmail || 'Não disponível'}</Text>
 
                     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                         <Text style={styles.logoutText}>Sair da conta</Text>
@@ -166,19 +155,19 @@ const Modal = () => {
                     {/* Status */}
                     <View style={styles.statsContainer}>
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{user?.xp || 40}</Text>
+                            <Text style={styles.statValue}>{user?.userXp || 0}</Text>
                             <Text style={styles.statLabel}>XP</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{user?.rank || "NOVATO"}</Text>
+                            <Text style={styles.statValue}>{user?.userRank || "NOVATO"}</Text>
                             <Text style={styles.statLabel}>Rank</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{user?.money || 0}</Text>
+                            <Text style={styles.statValue}>{user?.userMoney || 0}</Text>
                             <Text style={styles.statLabel}>Dinheiro</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{user?.food || 0}</Text>
+                            <Text style={styles.statValue}>{user?.userFood || 0}</Text>
                             <Text style={styles.statLabel}>Comida</Text>
                         </View>
                     </View>

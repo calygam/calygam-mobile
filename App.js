@@ -15,6 +15,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/firebase';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertProvider } from './src/components/ModaisAlertas/AlertProvider';
 
 
 
@@ -106,20 +107,22 @@ export default function App() {
             <SafeAreaProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <BottomSheetModalProvider>
-                        <NavigationContainer linking={linking}>
-                            <ErrorBoundary>
-                                <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"} screenOptions={{ headerShown: false }}>
-                                <Stack.Screen name="Trilha" component={Trail} />
-                                {/* Home SEMPRE registrada */}
-                                <Stack.Screen name="home" component={Routes}/>
-                                {/* Telas de auth sempre registradas para permitir reset após logout */}
-                                <Stack.Screen name="Login" component={LoginScreen} />
-                                <Stack.Screen name="SignUpScreen" component={SignUpScreen}/>
-                                {/* Atividade */}
-                                <Stack.Screen name="Atividade" component={PageAtividade}/>
-                            </Stack.Navigator>
-                            </ErrorBoundary>
-                        </NavigationContainer>
+                        <AlertProvider>
+                          <NavigationContainer linking={linking}>
+                              <ErrorBoundary>
+                                  <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"} screenOptions={{ headerShown: false }}>
+                                  <Stack.Screen name="Trilha" component={Trail} />
+                                  {/* Home SEMPRE registrada */}
+                                  <Stack.Screen name="home" component={Routes}/>
+                                  {/* Telas de auth sempre registradas para permitir reset após logout */}
+                                  <Stack.Screen name="Login" component={LoginScreen} />
+                                  <Stack.Screen name="SignUpScreen" component={SignUpScreen}/>
+                                  {/* Atividade */}
+                                  <Stack.Screen name="Atividade" component={PageAtividade}/>
+                              </Stack.Navigator>
+                              </ErrorBoundary>
+                          </NavigationContainer>
+                        </AlertProvider>
                     </BottomSheetModalProvider>
                 </GestureHandlerRootView>
             </SafeAreaProvider>

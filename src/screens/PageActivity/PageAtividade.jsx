@@ -1,10 +1,12 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Alert, Linking } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking } from 'react-native'
 import React, { useState, useMemo } from 'react'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import IconUpload from '../../../assets/svg/upload-cloudRoxo.svg';
 // Import dinâmico será usado para evitar crash caso o módulo nativo ainda não esteja linkado
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
+import ModalEntrega from '../../components/ModalEntrega&Sucesso/ModalEntrega';
+import ModalSucessoEntrega from '../../components/ModalEntrega&Sucesso/ModalSucessoEntrega';
 
 // Função para decodificar JWT manualmente (fallback)
 const decodeJWT = (token) => {
@@ -428,40 +430,22 @@ export default function PageAtividade() {
             </View>
 
             {/* Modal de confirmação */}
-            <Modal visible={showConfirm} transparent animationType="fade" onRequestClose={() => setShowConfirm(false)}>
-                <View style={styles.modalBackdrop}>
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Deseja Entregar?</Text>
-                        <Text style={styles.modalSubtitle}>Após a confirmação você não poderá cancelar o envio dessa atividade novamente.</Text>
-                        <View style={{ gap: 10, marginTop: 12 }}>
-                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#6C63FF' }]} onPress={submitActivity} disabled={uploading || ensuringProgress}>
-                                {(uploading || ensuringProgress) ? <ActivityIndicator color="#FFF" /> : <Text style={styles.modalBtnText}>Confirmar</Text>}
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#3A3F4A' }]} onPress={() => setShowConfirm(false)} disabled={uploading}>
-                                <Text style={styles.modalBtnText}>Cancelar</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <ModalEntrega
+                visible={showConfirm}
+                onClose={() => setShowConfirm(false)}
+                onConfirm={submitActivity}
+                loading={uploading || ensuringProgress}
+            />
 
             {/* Modal de sucesso */}
-            <Modal visible={showSuccess} transparent animationType="fade" onRequestClose={() => setShowSuccess(false)}>
-                <View style={styles.modalBackdrop}>
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Atividade entregue!</Text>
-                        <TouchableOpacity
-                            style={[styles.modalBtn, { backgroundColor: '#6C63FF', marginTop: 12 }]}
-                            onPress={() => {
-                                setShowSuccess(false);
-                                navigation.goBack(); // Volta para a tela anterior (Trail)
-                            }}
-                        >
-                            <Text style={styles.modalBtnText}>Confirmar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <ModalSucessoEntrega
+                visible={showSuccess}
+                onClose={() => setShowSuccess(false)}
+                onConfirm={() => {
+                    setShowSuccess(false);
+                    navigation.goBack(); // Volta para a tela anterior (Trail)
+                }}
+            />
 
         </ScrollView>
     )
@@ -546,38 +530,6 @@ const styles = StyleSheet.create({
         // borderWidth: 1,
         // borderColor: '#6C63FF55'
     },
-    modalBackdrop: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    modalCard: {
-        width: '100%',
-        backgroundColor: '#0f1219',
-        borderRadius: 14,
-        padding: 18,
-        borderWidth: 1,
-        borderColor: '#2A2F3A',
-    },
-    modalTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 6,
-    },
-    modalSubtitle: {
-        color: '#bfc3c9',
-        fontSize: 13,
-    },
-    modalBtn: {
-        height: 44,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalBtnText: { color: '#fff', fontWeight: '700' },
     submissionsBox: {
         backgroundColor: '#1E3D35',
         borderRadius: 12,

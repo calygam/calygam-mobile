@@ -88,7 +88,8 @@ export default function BoxLogin() {
                     userXp: serverUser.userXp || 0,
                     userRank: serverUser.userRank || "NOVATO",
                     userMoney: serverUser.userMoney || 0,
-                    userFood: serverUser.userFood || 0
+                    userFood: serverUser.userFood || 0,
+                    userNextRankPoints: serverUser.userRankPoints || null
                 };
 
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
@@ -157,7 +158,8 @@ export default function BoxLogin() {
                     userXp: serverUser.userXp || 0,
                     userRank: serverUser.userRank || "NOVATO",
                     userMoney: serverUser.userMoney || 0,
-                    userFood: serverUser.userFood || 0
+                    userFood: serverUser.userFood || 0,
+                    userNextRankPoints: serverUser.userRankPoints || null
                 };
 
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));

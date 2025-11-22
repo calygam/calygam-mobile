@@ -5,7 +5,6 @@ import IconAdicionar from "../../../assets/svg/adicionar.svg";
 import IconImage from "../../../assets/svg/image-plus.svg";
 import IconUpload from "../../../assets/svg/upload-cloud-02.svg";
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import { StepBottomSheetContent } from '../../components/ModalAtividadeProf/ModalAtividade';
 import { useTrilhaForm } from '../../hooks/useTrilhaForm'
@@ -16,7 +15,7 @@ import IconsDropdown from '../../components/IconsModal/IconsDropdown'
 import IconSelector, { iconMap } from '../../components/IconsModal/Icons'
 import styles from './CriarTrilha.styles'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Picker } from '@react-native-picker/picker'
+
 
 export default function CriarTrilha() {
     const navigation = useNavigation()
@@ -102,7 +101,7 @@ export default function CriarTrilha() {
         formData.append('trailName', nome.trim());
         formData.append('trailDescription', descricao.trim());
         formData.append('trailPrice', 0);
-        
+
 
         // Sempre enviar uma imagem: real ou placeholder
         let imageToSend;
@@ -428,29 +427,29 @@ export default function CriarTrilha() {
                     </BottomSheetModal>
                 </View>
             </View>
-                                    <IconSelector visible={modalVisible} onSelectIcon={(name) => { setSelectedIconName(name); setImage(null); }} onClose={() => setModalVisible(false)} />
+            <IconSelector visible={modalVisible} onSelectIcon={(name) => { setSelectedIconName(name); setImage(null); }} onClose={() => setModalVisible(false)} />
 
-                                    {/* Modal Publicar Trilha (overlay) */}
-                                    <ModalPublicandoTrilha
-                                        visible={publishVisible}
-                                        trail={publishingTrail}
-                                        onClose={() => { setPublishVisible(false); setPublishingTrail(null); }}
-                                        onPublish={async (code) => {
-                                            if (!publishingTrail) return;
-                                            try {
-                                                const formData = new FormData();
-                                                formData.append('calygamCode', code);
-                                                const result = await apiUpdateTrilha(publishingTrail.trailId, formData);
-                                                if (result) {
-                                                    await fetchCreatedTrails(userId);
-                                                    setPublishVisible(false);
-                                                    setPublishingTrail(null);
-                                                }
-                                            } catch (e) {
-                                                Alert.alert('Erro','Falha ao publicar trilha');
-                                            }
-                                        }}
-                                    />
+            {/* Modal Publicar Trilha (overlay) */}
+            <ModalPublicandoTrilha
+                visible={publishVisible}
+                trail={publishingTrail}
+                onClose={() => { setPublishVisible(false); setPublishingTrail(null); }}
+                onPublish={async (code) => {
+                    if (!publishingTrail) return;
+                    try {
+                        const formData = new FormData();
+                        formData.append('calygamCode', code);
+                        const result = await apiUpdateTrilha(publishingTrail.trailId, formData);
+                        if (result) {
+                            await fetchCreatedTrails(userId);
+                            setPublishVisible(false);
+                            setPublishingTrail(null);
+                        }
+                    } catch (e) {
+                        Alert.alert('Erro', 'Falha ao publicar trilha');
+                    }
+                }}
+            />
         </GestureHandlerRootView>
 
     )

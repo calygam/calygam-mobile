@@ -10,19 +10,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Carrossel from '../../components/Carrossel';
-import { useTrilhaApi } from '../../hooks/useTrilhaApi';
+import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
+import useTrilhaApi from '../../hooks/useTrilhaApi';
 
 
 export default function BibliotecaCursos() {
     const navigation = useNavigation();
     const [trails, setTrails] = useState([]);
     const [inProgressTrails, setInProgressTrails] = useState([]); // [{trailId, trailName, progress}]
+    const [loading, setLoading] = useState(true);
     const { width } = Dimensions.get('window');
     const { handleEnterInTrailMobile } = useTrilhaApi();
     
     // Lista de Trilhas com Filtro
     useEffect(() => {
         const fetchTrails = async () => {
+            setLoading(true);
             try {
                 
                 const token = await AsyncStorage.getItem("userToken");
@@ -45,6 +48,8 @@ export default function BibliotecaCursos() {
             } catch (error) {
                 Alert.alert('Erro', 'Não foi possível carregar as trilhas.');
                 console.error('Erro ao buscar trilhas:', error);
+            } finally {
+                setLoading(false);
             }
         }
         fetchTrails();
@@ -85,96 +90,101 @@ export default function BibliotecaCursos() {
     
 
     return (
-
         <ScrollView style={{ flex: 1, backgroundColor: '#021713' }} >
-            <View style={styles.container}>
-
-                {/* Header */}
-                <View style={styles.containerHeader}>
-                    <View style={styles.searchBar}>
-                        <Modal />
-                        <SearchBar />
-                    </View>
+            {loading ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#021713', paddingTop: 100 }}>
+                    <LoadingSkeletonShimmer type="list" count={5} />
                 </View>
+            ) : (
+                <View style={styles.container}>
 
-                {inProgressTrails.length > 0 && (
-                    <View style={styles.CardProcessoTrilha}>
-                        {/* Card de progresso da trilha que o usuario está participando */}
-                        <View style={styles.TextTrilhas}>
-                            <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas em Procresso</Text>
+                    {/* Header */}
+                    <View style={styles.containerHeader}>
+                        <View style={styles.searchBar}>
+                            <Modal />
+                            <SearchBar />
                         </View>
-                        {/* Carrossel Horizontal */}
-                        <Carrossel
-                            data={inProgressTrails}
-                            keyExtractor={(t) => String(t.trailId)}
-                            renderItem={({ item: t }) => (
-                                // Você só se preocupa em RENDERIZAR o card.
-                                // O Carrossel.js cuida do tamanho e da margem.
-                                <CardProcessoTrilha
-                                    title={t.trailName}
-                                    progress={t.progress ?? 0}
-                                    iconKey={t.icon || t.trailIcon || t.iconName || null}
-                                    iconSource={t.iconUri ? { uri: t.iconUri } : null}
-                                    onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
-                                />
-                            )}
-                        />
                     </View>
-                )}
-                
 
-                {/* Texto - Trilhas Disponiveis */}
-                <View style={styles.TextTrilhas}>
-                    <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
-                    <Text style={{ color: '#D9D9D9', fontSize: 15, textAlign: 'left', fontWeight: '100' }}> Explore novas áreas do conhecimento </Text>
-                </View>
-
-                <FlatList
-                    data={trails}
-                    renderItem={({ item }) => {
-
-                        // dentro do render do FlatList (no CardsTrilhas)
-                        const onEnterTrail = async (trailId, trailPassword) => {
-                            try {
-                                // feedback UI opcional
-                                await handleEnterInTrailMobile(trailId, trailPassword);
-                                // depois que join OK, navega pra tela da trilha
-                                navigation.navigate('Trilha', { trailId, trailName: item.trailName });
-                            } catch (err) {
-                                console.log("Erro ao entrar na trilha:", err?.response?.data || err);
-                                Alert.alert('Erro', typeof err?.response?.data === 'string' ? err.response.data : 'Não foi possível entrar na trilha.');
-                            }
-                        };
-
-
-                        // Normaliza os dados do professor vindos do backend
-                        const professor = item.user || item.professor || item.teacher || {};
-                        const professorName = professor?.userName ?? professor?.name ?? professor?.displayName ?? 'Desconhecido';
-                        const professorPhotoUrl =
-                            professor?.photoUrl ||
-                            professor?.photoURL ||
-                            professor?.avatarUrl ||
-                            professor?.avatar ||
-                            professor?.profileImageUrl ||
-                            professor?.imageUrl ||
-                            professor?.picture ||
-                            null;
-
-                        return (
-                            <CardsTrilhas
-                                item={item}
-                                professorName={professorName}
-                                professorPhotoUrl={professorPhotoUrl}
-                                onEnter={() => onEnterTrail(item.trailId, item.trailPassword)}
-                                
+                    {inProgressTrails.length > 0 && (
+                        <View style={styles.CardProcessoTrilha}>
+                            {/* Card de progresso da trilha que o usuario está participando */}
+                            <View style={styles.TextTrilhas}>
+                                <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas em Procresso</Text>
+                            </View>
+                            {/* Carrossel Horizontal */}
+                            <Carrossel
+                                data={inProgressTrails}
+                                keyExtractor={(t) => String(t.trailId)}
+                                renderItem={({ item: t }) => (
+                                    // Você só se preocupa em RENDERIZAR o card.
+                                    // O Carrossel.js cuida do tamanho e da margem.
+                                    <CardProcessoTrilha
+                                        title={t.trailName}
+                                        progress={t.progress ?? 0}
+                                        iconKey={t.icon || t.trailIcon || t.iconName || null}
+                                        iconSource={t.iconUri ? { uri: t.iconUri } : null}
+                                        onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
+                                    />
+                                )}
                             />
-                        )
-                    }}
-                    keyExtractor={item => String(item.trailId || item.id || Math.random())}
-                    contentContainerStyle={styles.flatListContainer}
-                />
+                        </View>
+                    )}
+                    
 
-            </View >
+                    {/* Texto - Trilhas Disponiveis */}
+                    <View style={styles.TextTrilhas}>
+                        <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
+                        <Text style={{ color: '#D9D9D9', fontSize: 15, textAlign: 'left', fontWeight: '100' }}> Explore novas áreas do conhecimento </Text>
+                    </View>
+
+                    <FlatList
+                        data={trails}
+                        renderItem={({ item }) => {
+
+                            // dentro do render do FlatList (no CardsTrilhas)
+                            const onEnterTrail = async (trailId, trailPassword) => {
+                                try {
+                                    // feedback UI opcional
+                                    await handleEnterInTrailMobile(trailId, trailPassword);
+                                    // depois que join OK, navega pra tela da trilha
+                                    navigation.navigate('Trilha', { trailId, trailName: item.trailName });
+                                } catch (err) {
+                                    console.log("Erro ao entrar na trilha:", err?.response?.data || err);
+                                    Alert.alert('Erro', typeof err?.response?.data === 'string' ? err.response.data : 'Não foi possível entrar na trilha.');
+                                }
+                            };
+
+
+                            // Normaliza os dados do professor vindos do backend
+                            const professor = item.user || item.professor || item.teacher || {};
+                            const professorName = professor?.userName ?? professor?.name ?? professor?.displayName ?? 'Desconhecido';
+                            const professorPhotoUrl =
+                                professor?.photoUrl ||
+                                professor?.photoURL ||
+                                professor?.avatarUrl ||
+                                professor?.avatar ||
+                                professor?.profileImageUrl ||
+                                professor?.imageUrl ||
+                                professor?.picture ||
+                                null;
+
+                            return (
+                                <CardsTrilhas
+                                    item={item}
+                                    professorName={professorName}
+                                    professorPhotoUrl={professorPhotoUrl}
+                                    onEnter={() => onEnterTrail(item.trailId, item.trailPassword)}
+                                    
+                                />
+                            )
+                        }}
+                        keyExtractor={item => String(item.trailId || item.id || Math.random())}
+                        contentContainerStyle={styles.flatListContainer}
+                    />
+
+                </View >
+            )}
         </ScrollView>
     )
 }

@@ -1,9 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { useAlert } from '../ModaisAlertas/AlertProvider'
 import IconVagas from "../../../assets/svg/users-alt rosa.svg";
 import IconLixo from "../../../assets/svg/lixo.svg";
 import IconLapis from "../../../assets/svg/lapis.svg";
 
 export default function CardProf({titulo, professorNome, vagas, foto, onEdit, onPublish, item}) {
+    const alert = useAlert();
 
     const getStatusInfo = () => {
         const raw = String(item?.trailStatus ?? item?.status ?? "").toUpperCase();
@@ -71,7 +73,7 @@ export default function CardProf({titulo, professorNome, vagas, foto, onEdit, on
                             <IconLapis width={20} height={20} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => Alert.alert('Excluir Trilha')}>
+                        <TouchableOpacity onPress={() => alert.warning('Excluir Trilha', 'Funcionalidade ainda não implementada.')}>
                             <IconLixo width={20} height={20} />
                         </TouchableOpacity>
                     </View>

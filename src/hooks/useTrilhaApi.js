@@ -17,7 +17,7 @@ const decodeJWT = (token) => {
     }
 };
 
-export const useTrilhaApi = () => {
+const useTrilhaApi = () => {
     const [userToken, setUserToken] = useState(null);
     const [userId, setUserId] = useState(null);
     const [createdTrails, setCreatedTrails] = useState([]);
@@ -55,7 +55,7 @@ export const useTrilhaApi = () => {
         try {
             const token = await AsyncStorage.getItem('userToken');
             const resp = await api.get('/trail/read/by/teacher', {
-                
+
             });
             console.log('Trilhas criadas (raw):', resp.data);   // DEBUG
             setCreatedTrails(resp.data);
@@ -227,3 +227,5 @@ export const useTrilhaApi = () => {
         handleEnterInTrailMobile
     };
 };
+
+export default useTrilhaApi;
