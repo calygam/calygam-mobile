@@ -181,7 +181,7 @@ export default function PageAtividade() {
             
             const query = password && password.length > 0 ? `?trailPassword=${encodeURIComponent(password)}` : "";
             // O interceptor já adiciona Authorization
-            const resp = await api.post(`/progress/join/${trailId}${query}`, {});
+            const resp = await api.post(`/progress/join/${trailId}${query}`);
 
             console.log('[ensureProgress] JOIN SUCCESS - status:', resp.status);
             console.log('[ensureProgress] JOIN SUCCESS - data length:', resp.data?.length);
@@ -297,34 +297,53 @@ export default function PageAtividade() {
             // monta FormData
             const form = new FormData();
 
+            // Garantir que URI está no formato correto para React Native
+            let fileUri = file.uri;
+            // No Android, URIs podem vir sem file:// ou como content://
+            // Para upload, geralmente funciona melhor manter a URI original
+            if (fileUri && !fileUri.startsWith('file://') && !fileUri.startsWith('content://')) {
+                fileUri = `file://${fileUri}`;
+            }
+
+            const fileName = file.name || `arquivo_${Date.now()}.${file.mimeType?.split("/")[1] || "bin"}`;
+            const fileType = file.mimeType || inferMimeTypeFromName(file.name);
+
+            console.log('[submitActivity] ===== PREPARANDO UPLOAD =====');
+            console.log('[submitActivity] URI original:', file.uri);
+            console.log('[submitActivity] URI processada:', fileUri);
+            console.log('[submitActivity] Nome:', fileName);
+            console.log('[submitActivity] Tipo:', fileType);
+            console.log('[submitActivity] Tamanho:', file.size);
+
+            // IMPORTANTE: usar exatamente o nome "activityFiles" (backend espera isso)
             form.append("activityFiles", {
-                uri: file.uri.startsWith("file://") ? file.uri : file.uri.replace("content://", "file://"),
-                name: file.name || `arquivo.${file.mimeType?.split("/")[1] || "bin"}`,
-                type: file.mimeType || inferMimeTypeFromName(file.name),
+                uri: fileUri,
+                name: fileName,
+                type: fileType,
             });
 
-            // Adicionar nome original se necessário
-            form.append('activityOriginalFileName', file.name || 'arquivo');
+            console.log('[submitActivity] FormData criado, verificando...');
+            console.log('[submitActivity] FormData instanceof FormData?', form instanceof FormData);
 
-            console.log("Enviando:", {
-                uri: file.uri,
-                name: file.name,
-                type: file.mimeType,
+
+            // Upload direto via fetch para evitar header incorreto aplicado pelo axios em alguns ambientes RN
+            console.log('[submitActivity] Enviando PUT (fetch) para /progress/submit/trail/', trailId, '/activity/', activityId);
+            const tokenFetch = await AsyncStorage.getItem('userToken');
+            const fetchResp = await fetch(`${api.defaults.baseURL}/progress/submit/trail/${trailId}/activity/${activityId}` , {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${tokenFetch}`
+                    // Sem Content-Type para permitir boundary automático
+                },
+                body: form
             });
-
-            // Para RN, às vezes precisa setar Content-Type, mas deixe o axios gerar boundary
-            // Não defina manualmente 'Content-Type' para multipart/form-data (boundary é necessário).
-            // Confie no interceptor de `api` para adicionar Authorization. Mantemos Accept e timeout.
-            await api.put(
-                `/progress/submit/trail/${trailId}/activity/${activityId}`,
-                form,
-                {
-                    headers: {
-                        Accept: '*/*',
-                    },
-                    timeout: 120000 // Aumentar timeout para 2 minutos
-                }
-            );
+            console.log('[submitActivity] Fetch status upload:', fetchResp.status);
+            if (!fetchResp.ok) {
+                const txtErr = await fetchResp.text();
+                throw new Error(`Falha upload (fetch) status=${fetchResp.status} body=${txtErr}`);
+            }
+            const txtOk = await fetchResp.text();
+            console.log('[submitActivity] ✅ Upload bem-sucedido (fetch) body:', txtOk);
 
             // Após sucesso, buscar novo user e detectar level-up
             const newUser = await fetchUser();
@@ -332,7 +351,8 @@ export default function PageAtividade() {
                 if (previousUserData.userRank !== newUser.userRank) {
                     Alert.alert('Parabéns!', `Você subiu para ${newUser.userRank}!`);
                 } else if ((newUser.userXp || 0) > (previousUserData.userXp || 0)) {
-                    const delta = (newUser.userXp || 0) - (previousUserData.userXp || 0);
+                    const delta = (newUser.userXp || 0) - (previousUserData.userXp |3
+                        | 0);
                     Alert.alert('XP Ganho!', `Você ganhou ${delta} XP!`);
                 }
             }
@@ -371,10 +391,10 @@ export default function PageAtividade() {
             setShowSuccess(true);
 
         } catch (e) {
-            console.log("Erro completo upload:", e);
-            console.log("err.response:", e.response);
-            console.log("err.request:", e.request);
-            console.log("err.message:", e.message);
+            console.log('[submitActivity] ❌ ERRO NO UPLOAD');
+            console.log('[submitActivity] Erro completo:', e);
+            // Sem fallback axios agora; fetch já é caminho principal
+            
             if (e?.response?.status === 403) {
                 Alert.alert('Acesso negado', 'Token expirado ou sem permissão. Faça login novamente.');
                 // opcional: limpar token e redirecionar login

@@ -131,27 +131,79 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
                 console.log('[TrailPasswordModal] Erro ao salvar senha:', storageErr);
             }
 
-            // Chama JOIN para criar progresso no backend (idempotente)
+            // Chama JOIN para criar progresso no backend
+            let joinSuccess = false;
             try {
-                console.log('[TrailPasswordModal] Chamando POST /progress/join/', trailId, 'com senha');
-                const joinResp = await api.post(`/progress/join/${trailId}?trailPassword=${encodeURIComponent(serverPassword)}`);
-                console.log('[TrailPasswordModal] JOIN SUCCESS - criou', joinResp.data?.length || 0, 'registros de progresso');
+                console.log('[TrailPasswordModal] ===== INICIANDO JOIN =====');
+                console.log('[TrailPasswordModal] TrailId:', trailId);
+                console.log('[TrailPasswordModal] Senha:', serverPassword);
+                console.log('[TrailPasswordModal] URL completa:', `/progress/join/${trailId}?trailPassword=${encodeURIComponent(serverPassword)}`);
+                
+                // IMPORTANTE: POST sem body, apenas query param trailPassword
+                // Não enviar Content-Type quando não há body
+                const joinResp = await api.post(
+                    `/progress/join/${trailId}?trailPassword=${encodeURIComponent(serverPassword)}`
+                );
+                
+                console.log('[TrailPasswordModal] JOIN RESPONSE status:', joinResp.status);
+                console.log('[TrailPasswordModal] JOIN RESPONSE headers:', JSON.stringify(joinResp.headers, null, 2));
+                console.log('[TrailPasswordModal] JOIN RESPONSE data type:', typeof joinResp.data);
+                console.log('[TrailPasswordModal] JOIN RESPONSE data:', JSON.stringify(joinResp.data, null, 2));
+                
+                if (joinResp.status === 201 && Array.isArray(joinResp.data) && joinResp.data.length > 0) {
+                    console.log('[TrailPasswordModal] ✅ JOIN SUCCESS - criou', joinResp.data.length, 'registros de progresso');
+                    joinSuccess = true;
+                } else {
+                    console.log('[TrailPasswordModal] ⚠️ JOIN retornou status', joinResp.status, 'mas sem dados válidos');
+                }
             } catch (joinErr) {
                 const status = joinErr?.response?.status;
                 const data = joinErr?.response?.data;
-                console.log('[TrailPasswordModal] JOIN ERROR:', status, data || joinErr.message);
+                const responseText = typeof data === 'string' ? data : JSON.stringify(data);
                 
-                // Se for 400 pode ser que já existe progresso - isso é OK, seguimos
+                console.log('[TrailPasswordModal] ❌ JOIN ERROR status:', status);
+                console.log('[TrailPasswordModal] ❌ JOIN ERROR data:', responseText);
+                console.log('[TrailPasswordModal] ❌ JOIN ERROR message:', joinErr.message);
+                
+                // Se for 400, pode ser que já existe progresso
                 if (status === 400) {
-                    console.log('[TrailPasswordModal] Erro 400 - provavelmente usuário já está na trilha. Continuando...');
+                    // Verificar se a mensagem diz que já está na trilha
+                    const msg = typeof data === 'string' ? data : JSON.stringify(data);
+                    if (msg.includes('já') || msg.includes('existe')) {
+                        console.log('[TrailPasswordModal] Usuário já está na trilha');
+                        joinSuccess = true; // considerar como sucesso
+                    } else {
+                        setError(`Erro ao entrar na trilha: ${msg}`);
+                        setLoading(false);
+                        return;
+                    }
                 } else if (status === 403) {
-                    // 403 é erro real de autenticação
                     setError('Acesso negado. Faça login novamente.');
                     setLoading(false);
                     return;
                 } else {
-                    // Outros erros podemos logar mas continuar (a senha está correta)
-                    console.log('[TrailPasswordModal] Erro ao criar progresso, mas senha validada. Continuando...');
+                    setError('Erro ao criar progresso na trilha. Tente novamente.');
+                    setLoading(false);
+                    return;
+                }
+            }
+            
+            // Verificar se progresso foi criado (fazer GET /progress/read)
+            if (joinSuccess) {
+                try {
+                    console.log('[TrailPasswordModal] Verificando se progresso foi criado...');
+                    const checkResp = await api.get(`/progress/read/${trailId}`);
+                    const progressList = checkResp.data?.progressList || [];
+                    console.log('[TrailPasswordModal] Progresso encontrado:', progressList.length, 'atividades');
+                    
+                    if (progressList.length === 0) {
+                        setError('Erro: progresso não foi criado no servidor. Tente novamente.');
+                        setLoading(false);
+                        return;
+                    }
+                } catch (checkErr) {
+                    console.log('[TrailPasswordModal] Erro ao verificar progresso:', checkErr?.response?.data || checkErr.message);
+                    // Se deu erro na verificação mas join deu certo, continuar
                 }
             }
 

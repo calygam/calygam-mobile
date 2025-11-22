@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AlertProvider } from './src/components/ModaisAlertas/AlertProvider';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { navigationRef } from './src/utils/RootNavigation';
 
 // Configure Google Signin
 GoogleSignin.configure({
@@ -105,7 +106,7 @@ export default function App() {
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <BottomSheetModalProvider>
                         <AlertProvider>
-                          <NavigationContainer linking={linking}>
+                          <NavigationContainer linking={linking} ref={navigationRef}>
                               <ErrorBoundary>
                                   <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"} screenOptions={{ headerShown: false }}>
                                   <Stack.Screen name="Trilha" component={Trail} />

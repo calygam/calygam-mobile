@@ -74,11 +74,11 @@ const useTrilhaApi = () => {
                 return;
             }
 
+            // Não definir Content-Type manualmente para permitir boundary automático
             const response = await api.post('/trail/create', formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                    'Authorization': `Bearer ${token}`
+                }
             });
             Alert.alert('Sucesso', 'Trilha criada com sucesso!');
             fetchCreatedTrails(userId);
@@ -100,8 +100,8 @@ const useTrilhaApi = () => {
 
             const response = await api.put(`/trail/update/${trailId}`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                    // Sem Content-Type para permitir multipart correto
+                }
             });
             Alert.alert('Sucesso', 'Trilha atualizada com sucesso!');
             fetchCreatedTrails(userId);
@@ -124,7 +124,7 @@ const useTrilhaApi = () => {
             formData.append('calygamCode', calygamCode);
             // backend só altera para ENABLE se calygamCode == "calygam up trail"
             const response = await api.put(`/trail/update/${trailId}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+                headers: { }
             });
             Alert.alert('Sucesso', 'Trilha publicada!');
             fetchCreatedTrails(userId);
