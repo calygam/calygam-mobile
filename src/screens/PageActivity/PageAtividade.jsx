@@ -1,14 +1,12 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Alert } from 'react-native'
 import React, { useState, useMemo } from 'react'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import IconUpload from '../../../assets/svg/upload-cloudRoxo.svg';
-// Import dinâmico será usado para evitar crash caso o módulo nativo ainda não esteja linkado
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
 import ModalEntrega from '../../components/ModalEntrega&Sucesso/ModalEntrega';
 import ModalSucessoEntrega from '../../components/ModalEntrega&Sucesso/ModalSucessoEntrega';
 
-// Função para decodificar JWT manualmente (fallback)
 const decodeJWT = (token) => {
     try {
         const payload = token.split('.')[1];
@@ -86,9 +84,8 @@ export default function PageAtividade() {
         try {
             const token = await AsyncStorage.getItem('userToken');
             if (!token) return;
-            const res = await api.get('/users/readOne', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            // O interceptor já adiciona Authorization
+            const res = await api.get('/users/readOne');
             const newUser = res.data;
             setUserData(newUser);
             // Salvar no AsyncStorage
@@ -103,19 +100,16 @@ export default function PageAtividade() {
         try {
             const token = await AsyncStorage.getItem('userToken');
             if (!token || !trailId) return;
-            const res = await api.get(`/progress/read/${trailId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            // O interceptor já adiciona Authorization
+            const res = await api.get(`/progress/read/${trailId}`);
             const progressList = res.data?.progressList || [];
             const activityProgress = progressList.find(p => Number(p.activityId) === Number(activityId));
             if (activityProgress) {
                 setActivityStatus(activityProgress.activityStatus);
                 setProgressId(activityProgress.progressId);
                 if (activityProgress.activityStatus === 'COMPLETE' && activityProgress.progressId) {
-                    // Buscar submissões
-                    const subRes = await api.get(`/submission/delivered/${activityProgress.progressId}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                    // Buscar submissões (interceptor adiciona Authorization)
+                    const subRes = await api.get(`/submission/delivered/${activityProgress.progressId}`);
                     setSubmissions(subRes.data || []);
                 }
             }
@@ -182,18 +176,44 @@ export default function PageAtividade() {
             if (!token) throw new Error('Token ausente');
 
             const password = await AsyncStorage.getItem(`trailPassword:${trailId}`);
-            console.log('Senha recuperada:', password);
+            console.log('[ensureProgress] Senha recuperada:', password);
+            console.log('[ensureProgress] Tentando join na trilha:', trailId);
+            
             const query = password && password.length > 0 ? `?trailPassword=${encodeURIComponent(password)}` : "";
-            const resp = await api.post(`/progress/join/${trailId}${query}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            // O interceptor já adiciona Authorization
+            const resp = await api.post(`/progress/join/${trailId}${query}`, {});
 
+            console.log('[ensureProgress] JOIN SUCCESS - status:', resp.status);
+            console.log('[ensureProgress] JOIN SUCCESS - data length:', resp.data?.length);
+            
             if (![200,201].includes(resp.status) || !Array.isArray(resp.data) || resp.data.length === 0) {
                 throw new Error('Join não inicializou progresso.');
             }
             return resp.data;
         } catch (e) {
-            console.log('ensureProgressInitialized:', e?.response?.data || e?.message || e);
+            console.log('========== ensureProgressInitialized ERROR ==========');
+            console.log('  status:', e?.response?.status);
+            console.log('  statusText:', e?.response?.statusText);
+            console.log('  data:', e?.response?.data);
+            console.log('  headers:', e?.response?.headers);
+            console.log('  message:', e?.message);
+            console.log('  full error:', JSON.stringify(e, null, 2));
+            console.log('=====================================================');
+            
             if (e?.response?.status === 403) {
                 Alert.alert('Acesso negado', 'Sessão inválida. Faça login novamente.');
+            } else if (e?.response?.status === 400) {
+                // Tentar extrair mensagem do servidor de várias formas
+                let serverMsg = 'Erro desconhecido (servidor não retornou detalhes)';
+                if (e?.response?.data) {
+                    if (typeof e?.response?.data === 'string' && e.response.data.length > 0) {
+                        serverMsg = e.response.data;
+                    } else if (typeof e?.response?.data === 'object') {
+                        serverMsg = JSON.stringify(e.response.data);
+                    }
+                }
+                console.log('[ensureProgress] Mensagem de erro do servidor:', serverMsg);
+                Alert.alert('Erro ao entrar na trilha', `${serverMsg}\n\nSe você já está na trilha ou é o criador, pode tentar enviar a atividade mesmo assim.`);
             } else {
                 const msg = e?.userMessage || 'Erro ao inicializar progresso da trilha.';
                 Alert.alert('Erro', msg);
@@ -230,7 +250,8 @@ export default function PageAtividade() {
             if (trailId == 21) isCreator = true; // trilha teste
             if (userIdFromToken) {
                 try {
-                    const trailResp = await api.get(`/trail/read/${trailId}`, { headers: { Authorization: `Bearer ${token}` } });
+                    // O interceptor já adiciona Authorization
+                    const trailResp = await api.get(`/trail/read/${trailId}`);
                     console.log('Trail data:', trailResp.data);
                     isCreator = trailResp.data?.userId == userIdFromToken || trailId == 21; // fallback
                     console.log('Trail userId:', trailResp.data?.userId, 'UserId from token:', userIdFromToken, 'Is creator:', isCreator);
@@ -241,17 +262,36 @@ export default function PageAtividade() {
                 }
             }
 
-            // Se não é criador, garante join
+            // Verificar se o progresso já existe (join deve ter sido feito ao entrar na trilha)
             if (!isCreator) {
-                const joinResp = await ensureProgressInitialized();
-                const found = Array.isArray(joinResp) && joinResp.some(p => Number(p.activityId) === Number(activityId));
-                if (!found) {
-                    const chk = await api.get(`/progress/read/${trailId}`, { headers: { Authorization: `Bearer ${token}` }});
-                    const existsHere = chk?.data?.progressList?.some(p => Number(p.activityId) === Number(activityId));
-                    if (!existsHere) throw new Error('Progresso para essa atividade não encontrado no servidor.');
+                console.log('[submitActivity] Verificando se progresso existe para atividade', activityId);
+                try {
+                    const chk = await api.get(`/progress/read/${trailId}`);
+                    const progressList = chk?.data?.progressList || [];
+                    const existsHere = progressList.some(p => Number(p.activityId) === Number(activityId));
+                    
+                    if (!existsHere) {
+                        // Progresso não existe - tentar criar via join
+                        console.log('[submitActivity] Progresso não encontrado, tentando join...');
+                        const password = await AsyncStorage.getItem(`trailPassword:${trailId}`);
+                        if (!password) {
+                            throw new Error('Você precisa entrar na trilha com a senha antes de enviar atividades.');
+                        }
+                        
+                        const joinResp = await ensureProgressInitialized();
+                        const found = Array.isArray(joinResp) && joinResp.some(p => Number(p.activityId) === Number(activityId));
+                        if (!found) {
+                            throw new Error('Não foi possível inicializar o progresso. Entre na trilha novamente.');
+                        }
+                    } else {
+                        console.log('[submitActivity] Progresso encontrado, pode enviar atividade');
+                    }
+                } catch (checkErr) {
+                    console.log('[submitActivity] Erro ao verificar progresso:', checkErr.message);
+                    throw checkErr;
                 }
             } else {
-                console.log('Usuário é criador da trilha, pulando join.');
+                console.log('Usuário é criador da trilha, pulando verificação de join.');
             }
 
             // monta FormData
@@ -273,14 +313,14 @@ export default function PageAtividade() {
             });
 
             // Para RN, às vezes precisa setar Content-Type, mas deixe o axios gerar boundary
+            // Não defina manualmente 'Content-Type' para multipart/form-data (boundary é necessário).
+            // Confie no interceptor de `api` para adicionar Authorization. Mantemos Accept e timeout.
             await api.put(
                 `/progress/submit/trail/${trailId}/activity/${activityId}`,
                 form,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         Accept: '*/*',
-                        'Content-Type': 'multipart/form-data'
                     },
                     timeout: 120000 // Aumentar timeout para 2 minutos
                 }

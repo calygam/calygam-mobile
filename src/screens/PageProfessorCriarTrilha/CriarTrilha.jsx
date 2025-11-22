@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import { StepBottomSheetContent } from '../../components/ModalAtividadeProf/ModalAtividade';
 import { useTrilhaForm } from '../../hooks/useTrilhaForm'
-import { useTrilhaApi } from '../../hooks/useTrilhaApi'
+import useTrilhaApi from '../../hooks/useTrilhaApi'
 import ListarTrilhasCriadas from '../../components/ListarTrilhasCriadas/ListarTrilhasCriadas'
 import ModalPublicandoTrilha from '../../components/ModalPublicandoTrilha/ModalPublicandoTrilha'
 import IconsDropdown from '../../components/IconsModal/IconsDropdown'

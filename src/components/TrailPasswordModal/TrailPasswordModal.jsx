@@ -123,14 +123,36 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
                 return;
             }
 
+            // Salvar senha no AsyncStorage para usar no submit de atividades
+            try {
+                await AsyncStorage.setItem(`trailPassword:${trailId}`, serverPassword);
+                console.log('[TrailPasswordModal] Senha salva no AsyncStorage para trail:', trailId);
+            } catch (storageErr) {
+                console.log('[TrailPasswordModal] Erro ao salvar senha:', storageErr);
+            }
+
             // Chama JOIN para criar progresso no backend (idempotente)
             try {
-                await api.post(`/progress/join/${trailId}`, null, {
-                    params: { trailPassword: serverPassword || '' },
-                });
+                console.log('[TrailPasswordModal] Chamando POST /progress/join/', trailId, 'com senha');
+                const joinResp = await api.post(`/progress/join/${trailId}?trailPassword=${encodeURIComponent(serverPassword)}`);
+                console.log('[TrailPasswordModal] JOIN SUCCESS - criou', joinResp.data?.length || 0, 'registros de progresso');
             } catch (joinErr) {
-                // Se já estiver atribuído ou senha não for mais necessária, apenas seguimos
-                console.log('[TrailPasswordModal] join erro/ignorado:', joinErr?.response?.status, joinErr?.response?.data || joinErr.message);
+                const status = joinErr?.response?.status;
+                const data = joinErr?.response?.data;
+                console.log('[TrailPasswordModal] JOIN ERROR:', status, data || joinErr.message);
+                
+                // Se for 400 pode ser que já existe progresso - isso é OK, seguimos
+                if (status === 400) {
+                    console.log('[TrailPasswordModal] Erro 400 - provavelmente usuário já está na trilha. Continuando...');
+                } else if (status === 403) {
+                    // 403 é erro real de autenticação
+                    setError('Acesso negado. Faça login novamente.');
+                    setLoading(false);
+                    return;
+                } else {
+                    // Outros erros podemos logar mas continuar (a senha está correta)
+                    console.log('[TrailPasswordModal] Erro ao criar progresso, mas senha validada. Continuando...');
+                }
             }
 
             // Persistir desbloqueio para não perguntar novamente (por usuário)

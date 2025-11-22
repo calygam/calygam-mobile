@@ -16,9 +16,6 @@ import { auth } from './src/firebase';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AlertProvider } from './src/components/ModaisAlertas/AlertProvider';
-
-
-
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
