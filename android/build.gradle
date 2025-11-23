@@ -22,11 +22,3 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
-
-// Define compatibilidade Java baseline (17) para todas as subprojetos.
-subprojects { subproj ->
-  tasks.withType(JavaCompile).configureEach {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-  }
-}
