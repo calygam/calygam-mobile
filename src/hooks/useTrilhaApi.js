@@ -37,7 +37,7 @@ const useTrilhaApi = () => {
                     setUserId(decoded?.userId || decoded?.sub);
                 } catch (error) {
                     console.error('Erro ao decodificar token:', error);
-                    // Fallback: tentar decodificar manualmente
+                    
                     try {
                         const decoded = decodeJWT(token);
                         setUserId(decoded?.userId || decoded?.sub);
@@ -57,7 +57,7 @@ const useTrilhaApi = () => {
             const resp = await api.get('/trail/read/by/teacher', {
 
             });
-            console.log('Trilhas criadas (raw):', resp.data);   // DEBUG
+            console.log('Trilhas criadas (raw):', resp.data);
             setCreatedTrails(resp.data);
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível carregar suas trilhas criadas.');
@@ -66,6 +66,7 @@ const useTrilhaApi = () => {
     };
 
     // Função De criação de trilha
+    // Usa fetch diretamente para evitar problemas com FormData no axios no React Native
     const criarTrilha = async (formData) => {
         try {
             const token = await AsyncStorage.getItem('userToken');
@@ -74,22 +75,48 @@ const useTrilhaApi = () => {
                 return;
             }
 
-            // Não definir Content-Type manualmente para permitir boundary automático
-            const response = await api.post('/trail/create', formData, {
+            // Monta URL completa usando baseURL do api
+            const baseURL = api.defaults?.baseURL || 'http://10.0.0.191:8080';
+            const url = `${baseURL}/trail/create`;
+
+            console.log('[CRIAR] Enviando via fetch para:', url);
+
+            // Usa fetch diretamente (padrão usado em outros uploads do projeto)
+            const response = await fetch(url, {
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                    // NÃO definir Content-Type - fetch gera automaticamente com boundary correto
+                },
+                body: formData
             });
+
+            console.log('[CRIAR] Fetch status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => 'Erro desconhecido');
+                console.error('[CRIAR] Erro HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('[CRIAR] Trilha criada com sucesso:', data);
             Alert.alert('Sucesso', 'Trilha criada com sucesso!');
             fetchCreatedTrails(userId);
-            return response.data;
+            return data;
         } catch (error) {
+            console.log('ERRO CRIAR TRILHA:', {
+                message: error?.message,
+                name: error?.name,
+            });
+            console.log('ERRO raw:', error);
             Alert.alert('Erro', 'Não foi possível criar a trilha. Tente novamente mais tarde.');
-            console.error(error);
+            return null;
         }
     };
 
     // Função De atualização de trilha
+    // Usa fetch diretamente para evitar problemas com FormData no axios no React Native
     const updateTrilha = async (trailId, formData) => {
         try {
             const token = await AsyncStorage.getItem('userToken');
@@ -98,17 +125,43 @@ const useTrilhaApi = () => {
                 return;
             }
 
-            const response = await api.put(`/trail/update/${trailId}`, formData, {
+            // Monta URL completa usando baseURL do api
+            const baseURL = api.defaults?.baseURL || 'http://10.0.0.191:8080';
+            const url = `${baseURL}/trail/update/${trailId}`;
+
+            console.log('[UPDATE] Enviando via fetch para:', url);
+
+            // Usa fetch diretamente (padrão usado em outros uploads do projeto)
+            const response = await fetch(url, {
+                method: 'PUT',
                 headers: {
-                    // Sem Content-Type para permitir multipart correto
-                }
+                    'Authorization': `Bearer ${token}`
+                    // NÃO definir Content-Type - fetch gera automaticamente com boundary correto
+                },
+                body: formData
             });
+
+            console.log('[UPDATE] Fetch status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => 'Erro desconhecido');
+                console.error('[UPDATE] Erro HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('[UPDATE] Trilha atualizada com sucesso:', data);
             Alert.alert('Sucesso', 'Trilha atualizada com sucesso!');
             fetchCreatedTrails(userId);
-            return response.data;
+            return data;
         } catch (error) {
+            console.log('ERRO UPDATE TRILHA:', {
+                message: error?.message,
+                name: error?.name,
+            });
+            console.error('ERRO raw:', error);
             Alert.alert('Erro', 'Não foi possível atualizar a trilha. Tente novamente.');
-            console.error(error);
+            return null;
         }
     };
 
@@ -122,16 +175,34 @@ const useTrilhaApi = () => {
             }
             const formData = new FormData();
             formData.append('calygamCode', calygamCode);
+            
+            // Monta URL completa usando baseURL do api
+            const baseURL = api.defaults?.baseURL || 'http://10.0.0.191:8080';
+            const url = `${baseURL}/trail/update/${trailId}`;
+
             // backend só altera para ENABLE se calygamCode == "calygam up trail"
-            const response = await api.put(`/trail/update/${trailId}`, formData, {
-                headers: { }
+            // Usa fetch diretamente para FormData
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
             });
+
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => 'Erro desconhecido');
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
             Alert.alert('Sucesso', 'Trilha publicada!');
             fetchCreatedTrails(userId);
-            return response.data;
+            return data;
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível publicar a trilha.');
             console.error(error);
+            return null;
         }
     };
 

@@ -39,7 +39,7 @@ export default function RankBadge({ xp = 0, rankName }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1E3D35',
+    // backgroundColor: '#1E3D35',
     borderRadius: 16,
     padding: 14,
     width: '100%',

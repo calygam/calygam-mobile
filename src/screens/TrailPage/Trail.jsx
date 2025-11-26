@@ -8,7 +8,7 @@ import RankBadge from '../../components/RankBadge';
 import { computeRankProgress } from '../../utils/rankUtils';
 import IconAviso from '../../../assets/svg/undraw_access-denied_krem.svg';
 import api from '../../api/api';
-import { Image } from 'react-native';
+
 
 export default function Trail() {
 

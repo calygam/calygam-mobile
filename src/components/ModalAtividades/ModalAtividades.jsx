@@ -12,6 +12,7 @@ export default function ModalAtividades({ activitySheetRef, handleSaveActivities
             keyboardBehavior="extend"
             keyboardBlurBehavior="restore"
             backgroundStyle={{ backgroundColor: '#0D141C' }}
+            handleIndicatorStyle={{ backgroundColor: '#ffffffff' }}
         >
             <StepBottomSheetContent onSave={handleSaveActivities} isEditing={isEditing} initialActivities={activities} />
         </BottomSheet>

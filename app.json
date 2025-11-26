@@ -9,18 +9,9 @@
         "projectId": "a9bd4283-889c-4997-a058-2698fcbf4905"
       }
     },
+    "plugins": [],
     "android": {
-      "package": "com.mr_cat.Calygam",
-      "networkSecurityConfig": {
-        "domainConfig": [
-          {
-            "domain": "10.0.0.191",
-            "configuration": {
-              "cleartextTrafficPermitted": true
-            }
-          }
-        ]
-      }
+      "package": "com.mr_cat.Calygam"
     }
   }
 }

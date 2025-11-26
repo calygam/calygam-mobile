@@ -9,7 +9,6 @@ export function StepBottomSheetContent({ onSave, isEditing, initialActivities })
     const [current, setCurrent] = useState({
         activityName: '',
         activityDescription: '',
-        activityPrice: '',
         activityDifficulty: 'EASY', // manter formato UPPERCASE compatível com o backend
     });
 
@@ -20,8 +19,8 @@ export function StepBottomSheetContent({ onSave, isEditing, initialActivities })
     }, [isEditing, initialActivities]);
 
     const handleAddActivity = () => {
-        if (!current.activityName || !current.activityDescription || !current.activityPrice) {
-            Alert.alert("Atenção", "Preencha todos os campos da atividade.");
+        if (!current.activityName || !current.activityDescription) {
+            Alert.alert("Atenção!", "Preencha todos os campos da atividade.");
             return;
         }
         const newList = [...activities, current];
@@ -29,14 +28,13 @@ export function StepBottomSheetContent({ onSave, isEditing, initialActivities })
         setCurrent({
             activityName: '',
             activityDescription: '',
-            activityPrice: '',
             activityDifficulty: 'EASY',
         });
     };
 
     const handleSaveAll = () => {
-        if (activities.length < 10) {
-            Alert.alert("Atenção", `Crie mais ${10 - activities.length} atividades para liberar a trilha.`);
+        if (activities.length < 1) {
+            Alert.alert("Atenção", `Crie mais ${1 - activities.length} atividades para liberar a trilha.`);
             return;
         }
         onSave && onSave(activities);
@@ -64,14 +62,6 @@ export function StepBottomSheetContent({ onSave, isEditing, initialActivities })
                 placeholderTextColor="#AAA"
                 value={current.activityDescription}
                 onChangeText={(v) => setCurrent({ ...current, activityDescription: v })}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Pontos (XP)"
-                placeholderTextColor="#AAA"
-                keyboardType="numeric"
-                value={current.activityPrice}
-                onChangeText={(v) => setCurrent({ ...current, activityPrice: v })}
             />
             <CalygamDropDown
                 value={current.activityDifficulty}
@@ -106,18 +96,6 @@ export function StepBottomSheetContent({ onSave, isEditing, initialActivities })
                             setActivities(newList);
                         }}
                     />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Pontos (XP)"
-                        placeholderTextColor="#AAA"
-                        keyboardType="numeric"
-                        value={a.activityPrice ? a.activityPrice.toString() : ''}
-                        onChangeText={(v) => {
-                            const newList = [...activities];
-                            newList[i].activityPrice = v;
-                            setActivities(newList);
-                        }}
-                    />
                     <CalygamDropDown
                         value={a.activityDifficulty}
                         onChange={(diff) => {
@@ -129,13 +107,13 @@ export function StepBottomSheetContent({ onSave, isEditing, initialActivities })
                 </View>
             ))}
             <TouchableOpacity
-                style={[styles.saveButton, activities.length < 10 && { backgroundColor: '#555' }]}
-                disabled={activities.length < 10}
+                style={[styles.saveButton, activities.length < 1 && { backgroundColor: '#555' }]}
+                disabled={activities.length < 1}
                 onPress={handleSaveAll}
             >
                 <Text style={styles.saveText}>
-                    {activities.length < 10
-                        ? `Crie mais ${10 - activities.length} atividades`
+                    {activities.length < 1
+                        ? `Crie mais ${1 - activities.length} atividades`
                         : isEditing ? 'Salvar Edições' : 'Salvar e Criar Trilha'}
                 </Text>
             </TouchableOpacity>

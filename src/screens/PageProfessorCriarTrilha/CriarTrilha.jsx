@@ -15,6 +15,8 @@ import IconsDropdown from '../../components/IconsModal/IconsDropdown'
 import IconSelector, { iconMap } from '../../components/IconsModal/Icons'
 import styles from './CriarTrilha.styles'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as FileSystem from 'expo-file-system';
+
 
 
 export default function CriarTrilha() {
@@ -53,7 +55,7 @@ export default function CriarTrilha() {
     const bottomSheetRef = useRef(null) // modal de criar/editar
     const activitySheetRef = useRef(null) // modal de atividades
 
-    // Carrega a foto do professor (a mesma do modal de perfil)
+    // Carrega a foto do professor 
     useEffect(() => {
         const loadUserPhoto = async () => {
             try {
@@ -63,7 +65,7 @@ export default function CriarTrilha() {
                     setProfessorPhoto(parsed?.photoURL || null);
                 }
             } catch (e) {
-                // silencioso
+             
             }
         };
         loadUserPhoto();
@@ -88,128 +90,179 @@ export default function CriarTrilha() {
         }
     };
 
+    const getLocalImageUri = async (pickedUri) => {
+        if (!pickedUri) return null;
+        if (pickedUri.startsWith('file://') || pickedUri.startsWith('content://')) return pickedUri;
+       
+        const filename = 'placeholder_trail.png';
+        const dest = FileSystem.cacheDirectory + filename;
+        try {
+            await FileSystem.downloadAsync(pickedUri, dest);
+            return dest;
+        } catch (e) {
+            console.log('[IMG] Falha ao baixar asset para cache:', e);
+            return null;
+        }
+    };
+
     const criarTrilha = async (activitiesOverride) => {
-        // DEBUG: garantir que o status atual é o que o usuário escolheu antes de montar o FormData
-        console.log('[CRIAR] status state antes de enviar:', status);
+        console.log('[CRIAR] Iniciando criação de trilha');
+
+        // Validações básicas
+        if (!nome || nome.trim() === '') {
+            Alert.alert('Erro', 'O nome da trilha é obrigatório.');
+            return;
+        }
+        if (!selectedIconName && !image) {
+            Alert.alert('Erro', 'Selecione um ícone ou adicione uma imagem para a trilha.');
+            return;
+        }
+
         const activitiesToSend = Array.isArray(activitiesOverride) ? activitiesOverride : activities;
-        if (!activitiesToSend || activitiesToSend.length < 10) {
-            Alert.alert('Erro', 'É necessário ter pelo menos 10 atividades antes de criar a trilha.');
+        if (!activitiesToSend || activitiesToSend.length < 1) {
+            Alert.alert('Erro', 'É necessário ter pelo menos 1 atividade antes de criar a trilha.');
             return;
         }
 
         const formData = new FormData();
+
+        // Campos obrigatórios
         formData.append('trailName', nome.trim());
-        formData.append('trailDescription', descricao.trim());
-        formData.append('trailPrice', 0);
-
-
-        // Sempre enviar uma imagem: real ou placeholder
-        let imageToSend;
-        if (image) {
-            imageToSend = {
-                uri: image,
-                name: 'trilha.jpg',
-                type: 'image/jpeg',
-            };
-        } else {
-            // Enviar placeholder quando ícone selecionado ou nada
-            imageToSend = {
-                uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-                name: 'placeholder.png',
-                type: 'image/png',
-            };
-        }
-        formData.append('trailFileImage', imageToSend);
-
+        formData.append('trailDescription', descricao.trim() || '');
         formData.append('trailIcon', selectedIconName || '');
-        console.log("ICON ENVIADO PRO BACK:", selectedIconName);
+        formData.append('trailVacancies', Number(vagas) || 0);
 
-        formData.append('trailPassword', (senha || '').trim());
+        // Campos opcionais
+        if (senha && senha.trim() !== '') {
+            formData.append('trailPassword', senha.trim());
+        }
 
-        formData.append('trailVacancy', Number(vagas));
+        // Imagem
+        if (image) {
+            const resolvedUri = await getLocalImageUri(image);
+            if (resolvedUri) {
+                formData.append('trailFileImage', {
+                    uri: resolvedUri,
+                    name: 'trilha.jpg',
+                    type: 'image/jpeg'
+                });
+                console.log('[CRIAR] Imagem enviada:', resolvedUri);
+            } else {
+                console.log('[CRIAR] Falha ao resolver URI da imagem');
+            }
+        } else {
+            console.log('[CRIAR] Nenhuma imagem selecionada, criando trilha sem imagem');
+        }
         activitiesToSend.forEach((activity, index) => {
             if (activity.activityId) {
                 formData.append(`activities[${index}].activityId`, String(activity.activityId));
             }
             formData.append(`activities[${index}].activityName`, (activity.activityName || '').trim());
             formData.append(`activities[${index}].activityDescription`, (activity.activityDescription || '').trim());
-            const rawActPts = String(activity.activityPrice || 0).replace(/[^0-9]/g, '');
-            const intValue = parseInt(rawActPts, 10);
-            const validValue = isNaN(intValue) ? 0 : intValue;
-            formData.append(`activities[${index}].activityPrice`, validValue);
             const difficulty = (activity.activityDifficulty || 'EASY').toString().trim().toUpperCase();
             formData.append(`activities[${index}].activityDifficulty`, difficulty);
         });
 
+        console.log('[CRIAR] Campos enviados:', {
+            trailName: nome.trim(),
+            trailDescription: descricao.trim() || '',
+            trailIcon: selectedIconName || '',
+            trailVacancies: Number(vagas) || 0,
+            trailPassword: senha && senha.trim() !== '' ? '[SET]' : '[NOT SET]',
+            hasImage: !!image,
+            activitiesCount: activitiesToSend.length
+        });
+        console.log('[CRIAR] FormData preparado, enviando para API');
         const result = await apiCriarTrilha(formData);
         if (result) {
+            console.log('[CRIAR] Trilha criada com sucesso');
             resetForm();
             navigation.goBack();
+        } else {
+            console.log('[CRIAR] Falha na criação da trilha');
         }
     };
 
     const updateTrilha = async (activitiesOverride) => {
-        console.log('[UPDATE] status state antes de enviar:', status);
+        console.log('[UPDATE] Iniciando atualização de trilha');
+
+        // Validações básicas
+        if (!nome || nome.trim() === '') {
+            Alert.alert('Erro', 'O nome da trilha é obrigatório.');
+            return;
+        }
+        if (!selectedIconName && !image) {
+            Alert.alert('Erro', 'Selecione um ícone ou adicione uma imagem para a trilha.');
+            return;
+        }
+
         const activitiesToSend = Array.isArray(activitiesOverride) ? activitiesOverride : activities;
-        if (!activitiesToSend || activitiesToSend.length < 10) {
-            Alert.alert('Erro', 'É necessário ter pelo menos 10 atividades.');
+        if (!activitiesToSend || activitiesToSend.length < 1) {
+            Alert.alert('Erro', 'É necessário ter pelo menos 1 atividade.');
             return;
         }
 
         const formData = new FormData();
+
+        // Campos obrigatórios
         formData.append('trailName', nome.trim());
-        formData.append('trailDescription', descricao.trim());
-        formData.append('trailPrice', 0);
-        // formData.append('trailStatus', String(status).toUpperCase());
-        // Manda de 3 jeitos diferentes — um deles VAI pegar
-        formData.append('trailStatus', status);
-        formData.append('status', status);
-        formData.append('trailStatus', status.toUpperCase());
-        console.log('[UPDATE] trailStatus enviado no FormData:', String(status).toUpperCase());
-
-
-        // Sempre enviar uma imagem: real ou placeholder
-        let imageToSend;
-        if (image) {
-            imageToSend = {
-                uri: image,
-                name: 'trilha.jpg',
-                type: 'image/jpeg',
-            };
-        } else {
-            // Enviar placeholder quando ícone selecionado ou nada
-            imageToSend = {
-                uri: Image.resolveAssetSource(require('../../../assets/svg/placeholderOI.png')).uri,
-                name: 'placeholder.png',
-                type: 'image/png',
-            };
-        }
-        formData.append('trailFileImage', imageToSend);
-
+        formData.append('trailDescription', descricao.trim() || '');
         formData.append('trailIcon', selectedIconName || '');
-        formData.append('trailPassword', (senha || '').trim());
+        formData.append('trailVacancies', Number(vagas) || 0);
+        formData.append('trailStatus', status.toUpperCase());
 
-        formData.append('trailVacancy', Number(vagas));
+        // Campos opcionais
+        if (senha && senha.trim() !== '') {
+            formData.append('trailPassword', senha.trim());
+        }
+
+        // Imagem opcional: só enviar se houver imagem selecionada (para atualização, só altera se enviada)
+        if (image) {
+            const resolvedUri = await getLocalImageUri(image);
+            if (resolvedUri) {
+                formData.append('trailFileImage', {
+                    uri: resolvedUri,
+                    name: 'trilha.jpg',
+                    type: 'image/jpeg'
+                });
+                console.log('[UPDATE] Imagem enviada:', resolvedUri);
+            } else {
+                console.log('[UPDATE] Falha ao resolver URI da imagem');
+            }
+        } else {
+            console.log('[UPDATE] Nenhuma imagem selecionada, mantendo imagem existente');
+        }
         activitiesToSend.forEach((activity, index) => {
             if (activity.activityId) {
                 formData.append(`activities[${index}].activityId`, String(activity.activityId));
             }
             formData.append(`activities[${index}].activityName`, (activity.activityName || '').trim());
             formData.append(`activities[${index}].activityDescription`, (activity.activityDescription || '').trim());
-            const rawActPts = String(activity.activityPrice || 0).replace(/[^0-9]/g, '');
-            const intValue = parseInt(rawActPts, 10);
-            const validValue = isNaN(intValue) ? 0 : intValue;
-            formData.append(`activities[${index}].activityPrice`, validValue);
             const difficulty = (activity.activityDifficulty || 'EASY').toString().trim().toUpperCase();
             formData.append(`activities[${index}].activityDifficulty`, difficulty);
         });
 
+        console.log('[UPDATE] Campos enviados:', {
+            trailId: editingTrail.trailId,
+            trailName: nome.trim(),
+            trailDescription: descricao.trim() || '',
+            trailIcon: selectedIconName || '',
+            trailVacancies: Number(vagas) || 0,
+            trailStatus: status.toUpperCase(),
+            trailPassword: senha && senha.trim() !== '' ? '[SET]' : '[NOT SET]',
+            hasImage: !!image,
+            activitiesCount: activitiesToSend.length
+        });
+        console.log('[UPDATE] FormData preparado, enviando para API');
         const result = await apiUpdateTrilha(editingTrail.trailId, formData);
         if (result) {
+            console.log('[UPDATE] Trilha atualizada com sucesso');
             setIsEditing(false);
             setEditingTrail(null);
             resetForm();
             fetchCreatedTrails(userId);
+        } else {
+            console.log('[UPDATE] Falha na atualização da trilha');
         }
     };
 
@@ -256,7 +309,7 @@ export default function CriarTrilha() {
         console.log("[onEdit] Status resolvido:", correctStatus);
         setStatus(correctStatus);
 
-        // **AQUI ESTÁ A CORREÇÃO FUNDAMENTAL**
+
         setTimeout(() => {
             bottomSheetRef.current?.present();
         }, 200);
@@ -372,7 +425,7 @@ export default function CriarTrilha() {
                                     <TouchableOpacity
                                         onPress={async () => {
                                             await pickImage();
-                                            setSelectedIconName(null); // ✅ limpar ícone quando enviar imagem
+                                            setSelectedIconName(null); 
                                         }}
                                         style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 5, borderColor: '#FFF', borderWidth: 2, padding: 10, borderRadius: 18 }}
                                     >

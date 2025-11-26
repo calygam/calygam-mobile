@@ -39,6 +39,7 @@ export default function ModalCriarTrilha(props) {
                 enablePanDownToClose={true}
                 backgroundStyle={{ backgroundColor: '#0D141C' }}
                 style={{ zIndex: 100 }}
+                handleIndicatorStyle={{ backgroundColor: '#ffffffff' }}
             >
                 <BottomSheetScrollView contentContainerStyle={{ paddingBottom: 60 }}>
                     <FormTrilha

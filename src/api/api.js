@@ -1,4 +1,3 @@
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Alert } from "react-native";
@@ -17,12 +16,9 @@ if (axios.defaults.headers) {
     }
 }
 
-
-
 const api = axios.create({
     baseURL: "http://10.0.0.191:8080",
     // baseURL: 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net'
-    timeout: 30000,  // Aumentado para 30s
 })
 
 api.interceptors.request.use(
