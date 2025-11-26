@@ -16,7 +16,6 @@ import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
 import RankIcon from '../../components/RankIcon';
 import { computeRankProgress } from '../../utils/rankUtils';
 import React, { useState, useEffect, } from 'react';
-import api from '../../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readProgress } from '../../services/progressService';
 
@@ -217,19 +216,20 @@ export default function Homepage() {
                             Explorar Trilha
                         </Text>
                     </View>
+                    
 
                     <View style={styles.Card}>
                         {/* Cards */}
-                        <View style={{ top: 5, flexDirection: 'row', }}>
+                        <View style={{  }}>
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={{
-                                    gap: recentTrails.length > 0 ? 20 : 30,
-                                    width: recentTrails.length > 0 ? 'auto' : 415,
-                                    height: 150,
-                                    justifyContent: 'center',
-                                    alignItems: 'center'
+                                    gap: 15,
+                                    paddingVertical: 20,
+                                    paddingHorizontal: 10,
+                                    
+                                    
                                 }}
                             >
                                 {recentTrails.length > 0 ? (
@@ -266,10 +266,11 @@ export default function Homepage() {
                 <View style={styles.MascoteContainer}>
                     <View style={styles.VemNenem}>
                         <View style={styles.ProBraçosdoPapai}>
+                            
                             <Text style={{ color: '#FFF', fontSize: 18, left: 25, fontWeight: 'bold' }}>Meu Mascote</Text>
                             <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '700' }}>Ops! Você ainda não tem nenhum mascote</Text>
                             <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '200' }}>Conheça os benefícios de ter um pet no seu dia a dia e descubra como adotar seu novo melhor amigo de forma responsável e consciente!</Text>
-                            <CachorroIcon width={150} height={150} style={{ alignSelf: 'center', marginTop: -20 }} />
+                            
                             <View>
                                 <TouchableOpacity style={{
                                     width: 103,
@@ -287,7 +288,6 @@ export default function Homepage() {
                     </View>
 
                 </View>
-
 
             </ScrollView>
         </View>
@@ -370,24 +370,18 @@ const styles = StyleSheet.create({
         // backgroundColor: '#1A374D'
     },
     Card: {
-        width: '90%',
-        flex: 1,
-        // backgroundColor: '#FFF',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 30,
-        padding: 5,
-
+        height: '80%',
+        
     },
     MascoteContainer: {
-        // backgroundColor: '#faedcd',
         width: 'auto',
         height: 'auto',
         justifyContent: 'center',
         alignItems: 'center',
     },
     VemNenem: {
-        // backgroundColor: '#fca311',
         width: 'auto',
         height: 'auto',
         marginTop: 25,
@@ -396,13 +390,13 @@ const styles = StyleSheet.create({
 
     },
     ProBraçosdoPapai: {
-        // backgroundColor: '#219ebc',
         height: 'auto',
         width: '100%',
         paddingTop: 20,
         paddingLeft: 2,
         paddingRight: 10,
         paddingBottom: 150,
+        zIndex: -0,
 
     },
 

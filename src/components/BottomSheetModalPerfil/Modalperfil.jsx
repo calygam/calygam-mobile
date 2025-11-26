@@ -256,7 +256,7 @@ const Modal = () => {
                 enablePanDownToClose={true}
                 index={1}
                 backgroundStyle={{ backgroundColor: '#0D141C' }}
-                handleIndicatorStyle={{ backgroundColor: '#FFF' }}
+                handleIndicatorStyle={{ backgroundColor: '#adb5bd' }}
             >
                 <BottomSheetView style={styles.contentContainer}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20 }}>
