@@ -2,9 +2,9 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import IconCoin from "../../../assets/svg/IconsInterface/coin.svg";
 
-export default function CardPets({ nome, preco, imagem }) {
+export default function CardPets({ nome, preco, imagem, onPress }) {
     return (
-        <View style={styles.Card}>
+        <TouchableOpacity style={styles.Card} onPress={onPress} activeOpacity={0.8}>
             <Image source={imagem} style={styles.imagem} resizeMode='cover' />
 
             <View style={styles.TextPreco}>
@@ -16,10 +16,10 @@ export default function CardPets({ nome, preco, imagem }) {
                 </View>
             </View>
 
-            <TouchableOpacity style={styles.botao}>
-                <Text style={styles.textBotao}>Comprar</Text>
-            </TouchableOpacity>
-        </View>
+            <View style={styles.botao}>
+                <Text style={styles.textBotao}>Ver detalhes</Text>
+            </View>
+        </TouchableOpacity>
     )
 }
 
@@ -41,6 +41,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    botaoDisabled: {
+        backgroundColor: '#CCCCCC'
     },
     textBotao: {
         color: '#FFF'
