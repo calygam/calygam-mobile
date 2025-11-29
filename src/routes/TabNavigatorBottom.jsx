@@ -6,7 +6,7 @@ import ShopPage from "../screens/ShopPage/ShopPage";
 import CriarTrilha from "../screens/PageProfessorCriarTrilha/CriarTrilha";
 import Trail from "../screens/TrailPage/Trail";
 import useUserRole from "../hooks/useUserRole";
-import TestePet from "../screens/TestCardPet/TestePet";
+
 
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
@@ -105,14 +105,6 @@ function Routes() {
                 }
             }} />
             <Tab.Screen name="Trilha" component={Trail} options={{
-                tabBarIcon: ({ color, size, focused }) => {
-                    if (focused) {
-                        return <IconTrailAtivo />
-                    }
-                    return <IconTrailDesabilitado />
-                }
-            }} />
-            <Tab.Screen name="TestePet" component={TestePet} options={{
                 tabBarIcon: ({ color, size, focused }) => {
                     if (focused) {
                         return <IconTrailAtivo />

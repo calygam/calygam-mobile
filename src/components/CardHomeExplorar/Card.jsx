@@ -16,8 +16,8 @@ export default function Cards({ title, Icon }) {
 }
 const styles = StyleSheet.create({
     Card: {
-    width: 80,
-    height: 80,
+    width: 75,
+    height: 75,
     backgroundColor: '#6C63FF',
     borderRadius: 20,
     justifyContent: 'flex-end',

@@ -208,7 +208,6 @@ const styles = StyleSheet.create({
   },
   btnCancelar: {
     flex: 1,
-    // backgroundColor: '#E0E0E0',
     padding: 10,
     borderRadius: 15,
     alignItems: 'center',

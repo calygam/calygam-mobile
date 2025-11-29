@@ -8,6 +8,7 @@ import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
 import apiAzure from "../../api/apiAzure";
 import ModalDetalhesPet from '../../components/ModalDetalhesPet/ModalDetalhesPet';
 import ModalConfirmacaoCompra from '../../components/ModalConfirmacaoCompra/ModalConfirmacaoCompra';
+import ModalTrocarPet from '../../components/ModalTrocarPet/ModalTrocarPet';
 
 export default function ShopPage() {
 
@@ -17,6 +18,8 @@ export default function ShopPage() {
   const [modalDetalhesVisible, setModalDetalhesVisible] = useState(false);
   const [modalConfirmacaoVisible, setModalConfirmacaoVisible] = useState(false);
   const [itemSelecionado, setItemSelecionado] = useState(null);
+  const [showModalTrocarPet, setShowModalTrocarPet] = useState(false);
+  const [preSelectPetId, setPreSelectPetId] = useState(null);
 
   const handleAbrirDetalhes = (item) => {
     setItemSelecionado(item);
@@ -38,8 +41,24 @@ export default function ShopPage() {
       );
       const msg = response.data?.responseMsg || 'Compra realizada!';
       setModalConfirmacaoVisible(false);
-      Alert.alert('Sucesso', msg);
       setPets((prev) => prev.filter((item) => item.id !== itemSelecionado.id));
+      // Fluxo pós-compra: oferecer equipar se for PET
+      if (itemSelecionado.tipo === 'PET') {
+        Alert.alert(
+          'Sucesso',
+          msg + '\nDeseja equipar este pet agora?',
+          [
+            { text: 'Não', style: 'cancel', onPress: () => {} },
+            { text: 'Equipar', onPress: () => {
+                setPreSelectPetId(itemSelecionado.id);
+                setShowModalTrocarPet(true);
+              } 
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Sucesso', msg);
+      }
       setItemSelecionado(null);
     } catch (error) {
       const msg = error.response?.data?.message 
@@ -202,6 +221,12 @@ export default function ShopPage() {
         item={itemSelecionado}
         onConfirmar={handleConfirmarCompra}
         loading={comprando}
+      />
+      <ModalTrocarPet
+        visible={showModalTrocarPet}
+        onClose={() => { setShowModalTrocarPet(false); setPreSelectPetId(null); }}
+        initialSelectedPetId={preSelectPetId}
+        onEquipped={() => { setShowModalTrocarPet(false); setPreSelectPetId(null); }}
       />
     </ScrollView>
   )

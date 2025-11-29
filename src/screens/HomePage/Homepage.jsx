@@ -3,11 +3,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Montanha from "./SvgMontanha/Montanha"
 import Cards from '../../components/CardHomeExplorar/Card';
 import CardProcessoTrilha from '../../components/CardProcesso/CardProcessoTrilha';
+import PetCard from '../../components/PetCardHome/PetCard';
 import IOTIcon from "../../../assets/svg/IconsCardExplorar/site-alt-1.svg";
+import CachorroIcon from "../../../assets/svg/undraw_page-eaten_b2rt 1.svg";
 import FigmaIcon from "../../../assets/svg/IconsCardExplorar/figma.svg";
 import AdobeIcon from "../../../assets/svg/IconsCardExplorar/illustrator-1.svg";
 import ExcelIcon from "../../../assets/svg/IconsCardExplorar/file-excel-1.svg";
-import CachorroIcon from "../../../assets/svg/undraw_page-eaten_b2rt 1.svg";
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import CUzinho from "./SvgMontanha/Montanha"
 import { Dimensions } from 'react-native';
@@ -18,6 +19,7 @@ import { computeRankProgress } from '../../utils/rankUtils';
 import React, { useState, useEffect, } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readProgress } from '../../services/progressService';
+
 
 const { width } = Dimensions.get('window');
 const SIZE = width * 0.55; // tamanho do círculo principal
@@ -113,7 +115,7 @@ export default function Homepage() {
 
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, width: '100%' }} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, alignItems: "center", justifyContent: "space-between", }}>
 
                 {/* Fundo */}
                 <View style={styles.background}>
@@ -197,7 +199,7 @@ export default function Homepage() {
                 </View>
 
                 {/* Texto */}
-                <View style={{ justifyContent: 'center', alignItems: 'center', padding: 20, gap: 14, marginTop: 20 }}>
+                <View style={{ justifyContent: 'center', alignItems: 'center', padding: 20, gap: 14, marginTop: 35 }}>
                     <Text style={styles.Titulo}>
                         Caminhos
                     </Text>
@@ -212,85 +214,60 @@ export default function Homepage() {
                 {/* Texto Explorar */}
                 <View style={styles.ExplorarContainer}>
                     <View style={styles.TextExplorar}>
-                        <Text style={{ color: '#FFF', fontSize: 20, textAlign: 'left', paddingLeft: 0 }}>
+                        <Text style={{ color: '#FFF', fontSize: 20, textAlign: 'left', }}>
                             Explorar Trilha
                         </Text>
                     </View>
-                    
 
-                    <View style={styles.Card}>
-                        {/* Cards */}
-                        <View style={{  }}>
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{
-                                    gap: 15,
-                                    paddingVertical: 20,
-                                    paddingHorizontal: 10,
-                                    
-                                    
-                                }}
-                            >
-                                {recentTrails.length > 0 ? (
-                                    recentTrails.map((trail, index) => (
-                                        <CardProcessoTrilha
-                                            key={trail.trailId}
-                                            title={trail.trailName}
-                                            progress={trail.progress}
-                                            iconKey={trail.iconKey}
-                                            onContinue={() => navigation.navigate('TrailPage', { trailId: trail.trailId })}
-                                        />
-                                    ))
-                                ) : (
-                                    <>
-                                        <Cards title="IOT" Icon={IOTIcon} />
-                                        <Cards title="Figma" Icon={FigmaIcon} />
-                                        <Cards title="Adobe" Icon={AdobeIcon} />
-                                        <Cards title="Excel" Icon={ExcelIcon} />
-                                    </>
-                                )}
-                            </ScrollView >
-                        </View>
-
-                        {/* Button Ver Mais */}
-                        <View>
-                            <TouchableOpacity style={styles.Button} onPress={() => navigation.navigate('Biblioteca', { screen: 'BibliotecaCursos' })} >
-                                <Text style={{ color: '#FFF', fontSize: 15 }}>Ver Mais </Text>
-                            </TouchableOpacity>
-                        </View>
+                    {/* Cards Explorar */}
+                    <View style={styles.CardExemplosContainer}>
+                        <Cards title="IoT" Icon={IOTIcon} />
+                        <Cards title="Figma" Icon={FigmaIcon} />
+                        <Cards title="Adobe" Icon={AdobeIcon} />
+                        <Cards title="Excel" Icon={ExcelIcon} />
                     </View>
+
+                    {/* Button Ver Mais */}
+                    <View style={{ marginBottom: 10 }}>
+                        <TouchableOpacity style={styles.Button} onPress={() => navigation.navigate('Biblioteca', { screen: 'BibliotecaCursos' })} >
+                            <Text style={{ color: '#FFF', fontSize: 15 }}>Ver Mais </Text>
+                        </TouchableOpacity>
+                    </View>
+
                 </View>
 
                 {/* Texto Mascote */}
                 <View style={styles.MascoteContainer}>
-                    <View style={styles.VemNenem}>
-                        <View style={styles.ProBraçosdoPapai}>
-                            
-                            <Text style={{ color: '#FFF', fontSize: 18, left: 25, fontWeight: 'bold' }}>Meu Mascote</Text>
-                            <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '700' }}>Ops! Você ainda não tem nenhum mascote</Text>
-                            <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '200' }}>Conheça os benefícios de ter um pet no seu dia a dia e descubra como adotar seu novo melhor amigo de forma responsável e consciente!</Text>
-                            
-                            <View>
-                                <TouchableOpacity style={{
-                                    width: 103,
-                                    height: 44,
-                                    backgroundColor: '#6C63FF',
-                                    borderRadius: 20,
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    marginLeft: 15
-                                }}>
-                                    <Text style={{ color: '#FFF', fontSize: 15 }}>Ver Mais</Text>
-                                </TouchableOpacity>
+                    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold', width: '100%', paddingLeft: 20 }}>Meu Mascote 🐾</Text>
+
+                    <PetCard
+                        renderEmpty={() => (
+                            <View style={styles.petCardContainer}>
+                                <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '700', textAlign: 'center' }}>
+                                    Ops! Você ainda não tem nenhum mascote
+                                </Text>
+                                <Text style={{ color: '#FFF', fontSize: 13, padding: 20, fontWeight: '200', textAlign: 'center' }}>
+                                    Conheça os benefícios de ter um pet no seu dia a dia e descubra como adotar seu novo melhor amigo de forma responsável e consciente!
+                                </Text>
+
+                                <CachorroIcon width={150} height={150} style={{ alignSelf: 'center', marginVertical: 20 }} />
+
+                                <View style={styles.petCardButtons}>
+                                    <TouchableOpacity
+                                        style={styles.petCardBtnTrocar}
+                                        onPress={() => navigation.navigate('Shop')}
+                                    >
+                                        <Text style={styles.petCardBtnText}>Ver Loja</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
-                    </View>
+                        )}
+                    />
 
+                    <View style={{ height: 10 }}></View>
                 </View>
-
-            </ScrollView>
-        </View>
+            </ScrollView >
+        </View >
     );
 }
 
@@ -327,10 +304,8 @@ const styles = StyleSheet.create({
     MontanhaView: {
         top: -40, // Adjusted to move mountain down
         justifyContent: 'flex-start',
-        // backgroundColor: 'red',
         width: '100%',
         height: '100%',
-
     },
     Titulo: {
         fontSize: 16,
@@ -348,10 +323,11 @@ const styles = StyleSheet.create({
         fontWeight: '100'
     },
     TextExplorar: {
-        width: '90%',
-        height: 55,
+        width: '100%',
+        height: 'auto',
         justifyContent: 'center',
-
+        paddingLeft: 20,
+        marginBottom: 15,
     },
     Button: {
         width: 103,
@@ -364,44 +340,25 @@ const styles = StyleSheet.create({
     },
     ExplorarContainer: {
         width: '100%',
-        height: 300,
+        height: 'auto',
         justifyContent: 'center',
         alignItems: 'center',
-        // backgroundColor: '#1A374D'
-    },
-    Card: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '80%',
+        paddingVertical: 15,
+        marginTop: 25,
         
     },
     MascoteContainer: {
-        width: 'auto',
-        height: 'auto',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    VemNenem: {
-        width: 'auto',
-        height: 'auto',
-        marginTop: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-
-    },
-    ProBraçosdoPapai: {
-        height: 'auto',
         width: '100%',
-        paddingTop: 20,
-        paddingLeft: 2,
-        paddingRight: 10,
-        paddingBottom: 150,
-        zIndex: -0,
+        marginTop: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
 
     },
-
-    // estilos De teste
-
+    petCardBtnText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 15,
+    },
     containerSla: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -458,5 +415,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         color: '#5D4037',
+    },
+    CardExemplosContainer: {
+        width: '100%',
+        height: 'auto',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 15,
+        marginBottom: 20,
+        marginTop: 25,
     },
 });
