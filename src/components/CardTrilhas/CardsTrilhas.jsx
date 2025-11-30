@@ -16,7 +16,16 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
 
     const trailName = item?.trailName ?? 'Sem nome'
     const vacancies = item?.vacancies ?? item?.vacanciesTrail ?? item?.vagas ?? 'N/A'
-    const hasPassword = item?.trailHavePassword ?? false // Backend informa se tem senha
+    
+    // 🔐 Verificação robusta se tem senha: backend deve enviar trailHavePassword
+    // Se não vier, tenta verificar se tem trailPassword preenchido
+    const hasPassword = item?.trailHavePassword === true || 
+                       (item?.trailPassword && item?.trailPassword !== '' && item?.trailPassword !== 'null')
+    
+    // Debug log para rastrear problema de senha
+    if (item?.trailPassword) {
+        console.log(`[CardsTrilhas] Trilha "${trailName}": trailHavePassword=${item?.trailHavePassword}, trailPassword presente=${!!item?.trailPassword}, hasPassword final=${hasPassword}`);
+    }
 
     // Escolha de mídia: prioridade para IMAGEM REAL do backend; senão ícone SVG; senão placeholder
     const renderTrailVisual = () => {
@@ -66,13 +75,19 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
         <View style={styles.container}>
             <View style={styles.BoxCard}>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                    <View style={styles.FotoTrilha}>
-                        {renderTrailVisual()}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15, justifyContent: 'space-between', width: '100%' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15, flex: 1 }}>
+                        <View style={styles.FotoTrilha}>
+                            {renderTrailVisual()}
+                        </View>
+
+                        <Text style={styles.title}>{trailName}</Text>
                     </View>
 
-                    <Text style={styles.title}>{trailName}</Text>
-
+                    {/* Badge Pública/Privada */}
+                    <View style={[styles.badge, { backgroundColor: hasPassword ? '#c1121e95' : '#5acc0295' }]}>
+                        <Text style={[styles.badgeText, { color: hasPassword ? '#FF7121' : '#CCFF33' }]}>{hasPassword ? 'Privada' : 'Pública'}</Text>
+                    </View>
                 </View>
 
                 {/* Informações do Professor */}
@@ -143,38 +158,9 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                                     return;
                                 }
 
-                                // ✅ SE TEM SENHA, verifica se já foi desbloqueada
-                                if (unlocked === 'true') {
-                                    try {
-                                        await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(item));
-                                        const listKey = `joinedTrails:${uid}`;
-                                        const raw = await AsyncStorage.getItem(listKey);
-                                        const arr = raw ? JSON.parse(raw) : [];
-                                        const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(item?.trailId));
-                                        if (!exists) {
-                                            const newItem = { 
-                                                trailId: item?.trailId, 
-                                                trailName: item?.trailName,
-                                                trailImage: item?.trailImage || null, 
-                                                icon: item?.trailIcon || item?.icon || null 
-                                            };
-                                            await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
-                                        }
-                                        const joinedFlag = await AsyncStorage.getItem(`progressJoined:${uid}:${item?.trailId}`);
-                                        if (!joinedFlag) {
-                                            try {
-                                                await api.post(`/progress/join/${item?.trailId}`);
-                                                await AsyncStorage.setItem(`progressJoined:${uid}:${item?.trailId}`, 'true');
-                                            } catch (joinErr) {
-                                                console.log('[CardsTrilhas] join falhou/ignorado:', joinErr?.response?.status, joinErr?.response?.data || joinErr.message);
-                                            }
-                                        }
-                                    } catch {}
-                                    navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
-                                } else {
-                                    // Mostra modal de senha
-                                    setShowPassword(true);
-                                }
+                                // ✅ SE TEM SENHA, SEMPRE pede senha (não confiar apenas no cache local)
+                                // Mostra modal de senha para validar com backend
+                                setShowPassword(true);
                             } catch (e) {
                                 console.log('[CardsTrilhas] Erro geral:', e);
                                 // fallback: se tem senha, mostra modal; senão tenta entrar direto
@@ -284,5 +270,16 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontSize: 15
 
+    },
+    badge: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '700',
     }
 })
