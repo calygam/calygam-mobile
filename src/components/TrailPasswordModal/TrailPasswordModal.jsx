@@ -231,7 +231,7 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
                 const newItem = {
                     trailId: data?.trailId ?? trailId,
                     trailName: data?.trailName ?? trailName ?? 'Trilha',
-                    // campos auxiliares opcionais
+                    trailImage: data?.trailImage || null,
                     icon: data?.trailIcon || data?.icon || null,
                 };
                 const next = exists ? arr : [...arr, newItem];

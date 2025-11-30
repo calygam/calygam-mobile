@@ -74,7 +74,7 @@ export default function TestePet({ route, renderEmpty }) {
     const boostFood = pet.petBoostFood || 0;
 
     return (
-        <ScrollView contentContainerStyle={{ alignItems: 'center', paddingVertical: 40 }}>
+        <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
             <View style={styles.CardContainer}>
 
                 {/* Nome do Pet */}
@@ -165,6 +165,7 @@ export default function TestePet({ route, renderEmpty }) {
                     </TouchableOpacity>
                 </View>
             </View>
+
             {/* Botões de Ações */}
             <View style={{ flexDirection: 'row', alignSelf: 'center', marginTop: 20, gap: 12, marginBottom: 20 }}>
                 <TouchableOpacity style={styles.btnTrocar} onPress={() => setShowTrocarPet(true)}>
@@ -174,6 +175,7 @@ export default function TestePet({ route, renderEmpty }) {
                     <Text style={styles.btnText}>Desequipar</Text>
                 </TouchableOpacity>
             </View>
+
             {/* Modal Trocar Pet */}
             <ModalTrocarPet
                 visible={showTrocarPet}
@@ -183,6 +185,7 @@ export default function TestePet({ route, renderEmpty }) {
                     loadPetData();
                 }}
             />
+
         </ScrollView>
     )
 }
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
     },
     petGifContainer: {
         height: 180,
-        width: '95%',
+        width: '90%',
         marginTop: 20,
         backgroundColor: '#FFF',
         justifyContent: 'center',
@@ -273,6 +276,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     btnTrocar: {
+        flex: 1,
         paddingHorizontal: 25,
         height: 50,
         backgroundColor: '#6C63FF',
@@ -281,6 +285,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     btnDesequipar: {
+        flex: 1,
         paddingHorizontal: 25,
         height: 50,
         backgroundColor: '#C1121F',
@@ -297,7 +302,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         height: 50,
         backgroundColor: '#4CAF50',
-        borderRadius: 15,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -305,7 +310,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         height: 50,
         backgroundColor: '#FF9800',
-        borderRadius: 15,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     }

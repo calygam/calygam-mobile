@@ -19,6 +19,7 @@ import { computeRankProgress } from '../../utils/rankUtils';
 import React, { useState, useEffect, } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readProgress } from '../../services/progressService';
+import Carrossel from '../../components/Carrossel';
 
 
 const { width } = Dimensions.get('window');
@@ -107,9 +108,9 @@ export default function Homepage() {
                 if (data) {
                     setUserName(JSON.parse(data));
                 }
-                await loadRecentTrails();
             };
             loadData();
+            loadRecentTrails();
         }, [])
     );
 
@@ -211,21 +212,52 @@ export default function Homepage() {
                     </Text>
                 </View>
 
+                {/* Trilhas Recentes */}
+                {recentTrails.length > 0 && (
+                    <View style={styles.RecentTrailsContainer}>
+                        <View style={styles.TextTrilhasRecentes}>
+                            <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold', textAlign: 'left' }}>
+                                Continuar Aprendendo 📚
+                            </Text>
+                            <Text style={{ color: '#D9D9D9', fontSize: 14, fontWeight: '300', textAlign: 'left', marginTop: 5 }}>
+                                Suas trilhas mais recentes
+                            </Text>
+                        </View>
+                        <Carrossel
+                            data={recentTrails}
+                            keyExtractor={(t) => String(t.trailId)}
+                            renderItem={({ item: t }) => (
+                                <CardProcessoTrilha
+                                    title={t.trailName}
+                                    progress={t.progress ?? 0}
+                                    trailImage={t.trailImage || null}
+                                    iconKey={t.icon || t.trailIcon || t.iconKey || null}
+                                    onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
+                                />
+                            )}
+                        />
+                    </View>
+                )}
+
                 {/* Texto Explorar */}
                 <View style={styles.ExplorarContainer}>
-                    <View style={styles.TextExplorar}>
-                        <Text style={{ color: '#FFF', fontSize: 20, textAlign: 'left', }}>
-                            Explorar Trilha
-                        </Text>
-                    </View>
+                    {recentTrails.length === 0 && (
+                        <>
+                            <View style={styles.TextExplorar}>
+                                <Text style={{ color: '#FFF', fontSize: 20, textAlign: 'left', }}>
+                                    Explorar Trilha
+                                </Text>
+                            </View>
 
-                    {/* Cards Explorar */}
-                    <View style={styles.CardExemplosContainer}>
-                        <Cards title="IoT" Icon={IOTIcon} />
-                        <Cards title="Figma" Icon={FigmaIcon} />
-                        <Cards title="Adobe" Icon={AdobeIcon} />
-                        <Cards title="Excel" Icon={ExcelIcon} />
-                    </View>
+                            {/* Cards Explorar */}
+                            <View style={styles.CardExemplosContainer}>
+                                <Cards title="IoT" Icon={IOTIcon} />
+                                <Cards title="Figma" Icon={FigmaIcon} />
+                                <Cards title="Adobe" Icon={AdobeIcon} />
+                                <Cards title="Excel" Icon={ExcelIcon} />
+                            </View>
+                        </>
+                    )}
 
                     {/* Button Ver Mais */}
                     <View style={{ marginBottom: 10 }}>
@@ -277,6 +309,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#021713',
         alignItems: 'center',
         justifyContent: 'center',
+        width: '100%',
     },
     background: {
         width: '100%',
@@ -352,7 +385,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
         justifyContent: 'center',
         alignItems: 'center',
-
+        paddingHorizontal: 20,
     },
     petCardBtnText: {
         color: '#FFF',
@@ -426,5 +459,15 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         marginBottom: 20,
         marginTop: 25,
+    },
+    RecentTrailsContainer: {
+        width: '100%',
+        marginTop: 20,
+        paddingHorizontal: 0,
+    },
+    TextTrilhasRecentes: {
+        width: '100%',
+        paddingHorizontal: 20,
+        marginBottom: 15,
     },
 });

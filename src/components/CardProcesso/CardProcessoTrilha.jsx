@@ -9,20 +9,34 @@ export default function CardProcessoTrilha({
   onContinue,
     iconSource,
     iconKey,
+    trailImage, // 🆕 URL da imagem real do backend
 }) {
 
     const renderIcon = () => {
-        // 1) Tenta usar o mesmo mapeamento de ícones das "Trilhas Disponíveis"
+        // 1️⃣ PRIORIDADE: Imagem real do backend (via /file/read/{uuid})
+        if (trailImage && !trailImage.includes('/file/read/null') && !trailImage.includes('null')) {
+            return (
+                <Image 
+                    source={{ uri: trailImage }} 
+                    style={{ width: '100%', height: '100%', borderRadius: 12 }} 
+                    resizeMode="cover"
+                />
+            );
+        }
+
+        // 2️⃣ Tenta usar o mesmo mapeamento de ícones das "Trilhas Disponíveis"
         const key = iconKey ? String(iconKey).toLowerCase().replace(/[^a-z0-9]/g, '') : null;
         const IconComponent = key ? iconMap[key] : null;
         if (IconComponent) {
             return <IconComponent width={24} height={24} fill="#FFF" />;
         }
-        // 2) Se foi passado um source de imagem (remota/local), usa
+
+        // 3️⃣ Se foi passado um source de imagem (remota/local), usa
         if (iconSource) {
             return <Image source={iconSource} style={{ width: 24, height: 24 }} />;
         }
-        // 3) Fallback
+
+        // 4️⃣ Fallback
         return <Image source={require('../../../assets/image/ImagemSem.png')} style={{ width: 24, height: 24 }} />;
     };
 

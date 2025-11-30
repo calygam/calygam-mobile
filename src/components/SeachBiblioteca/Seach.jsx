@@ -2,10 +2,14 @@ import React from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 import IconSeach from "../../../assets/svg/IconsInterface/icon_seach.svg";
 import { Dimensions } from "react-native";
+import { useState } from "react";
 
 const { width, height } = Dimensions.get('window')
 
-export default function SearchBar() {
+
+
+export default function SearchBar({ value, onChangeText }) {
+    
     return (
         <View style={styles.container}>
             <IconSeach width={24} height={24} fill="#888" style={styles.icon} />
@@ -13,6 +17,8 @@ export default function SearchBar() {
                 placeholder="Pesquisar Trilha:"
                 placeholderTextColor="#b4b3b3ff"
                 style={styles.input}
+                value={value} // ← recebe o texto do estado
+                onChangeText={onChangeText} // ← atualiza o estado digitado
             />
         </View>
     );
@@ -25,7 +31,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingHorizontal: 12,
         paddingVertical: 6,
-        height: 50,
+        height: 55,
         width: width * 0.7,
         backgroundColor: '#000',
         borderRadius: 20,
@@ -38,7 +44,6 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     input: {
-
         fontSize: 14,
         color: "#ffffffff",
         fontWeight: '100',

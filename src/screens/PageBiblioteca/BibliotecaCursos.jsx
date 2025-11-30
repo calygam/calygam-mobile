@@ -13,7 +13,6 @@ import Carrossel from '../../components/Carrossel';
 import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
 import useTrilhaApi from '../../hooks/useTrilhaApi';
 
-
 export default function BibliotecaCursos() {
     const navigation = useNavigation();
     const [trails, setTrails] = useState([]);
@@ -21,7 +20,13 @@ export default function BibliotecaCursos() {
     const [loading, setLoading] = useState(true);
     const { width } = Dimensions.get('window');
     const { handleEnterInTrailMobile } = useTrilhaApi();
-    
+    const [search, setSearch] = useState("");
+
+    // Isso cria uma lista já filtrada
+    const filteredTrails = trails.filter(trail =>
+        trail.trailName.toLowerCase().includes(search.toLowerCase())
+    );
+
     // Lista de Trilhas com Filtro
     useEffect(() => {
         const fetchTrails = async () => {
@@ -70,7 +75,28 @@ export default function BibliotecaCursos() {
                 try {
                     const pRaw = await AsyncStorage.getItem(`trailProgress:${uid}:${t.trailId}`);
                     const p = pRaw ? Number(pRaw) : 0;
-                    withProgress.push({ ...t, progress: isNaN(p) ? 0 : p });
+                    
+                    // Se não tem trailImage, tenta buscar do backend
+                    let trailData = { ...t };
+                    if (!t.trailImage && t.trailId) {
+                        try {
+                            const response = await api.get(`/trail/read/${t.trailId}`);
+                            if (response.data?.trailImage) {
+                                trailData.trailImage = response.data.trailImage;
+                                // Atualiza no AsyncStorage para não precisar buscar novamente
+                                const updatedList = list.map(trail => 
+                                    trail.trailId === t.trailId 
+                                        ? { ...trail, trailImage: response.data.trailImage }
+                                        : trail
+                                );
+                                await AsyncStorage.setItem(listKey, JSON.stringify(updatedList));
+                            }
+                        } catch (err) {
+                            console.log('[BibliotecaCursos] Erro ao buscar trailImage:', err);
+                        }
+                    }
+                    
+                    withProgress.push({ ...trailData, progress: isNaN(p) ? 0 : p });
                 } catch {
                     withProgress.push({ ...t, progress: 0 });
                 }
@@ -102,7 +128,7 @@ export default function BibliotecaCursos() {
                     <View style={styles.containerHeader}>
                         <View style={styles.searchBar}>
                             <Modal />
-                            <SearchBar />
+                            <SearchBar value={search} onChangeText={setSearch} />
                         </View>
                     </View>
 
@@ -122,6 +148,7 @@ export default function BibliotecaCursos() {
                                     <CardProcessoTrilha
                                         title={t.trailName}
                                         progress={t.progress ?? 0}
+                                        trailImage={t.trailImage || null}
                                         iconKey={t.icon || t.trailIcon || t.iconName || null}
                                         iconSource={t.iconUri ? { uri: t.iconUri } : null}
                                         onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
@@ -139,7 +166,7 @@ export default function BibliotecaCursos() {
                     </View>
 
                     <FlatList
-                        data={trails}
+                         data={filteredTrails}
                         renderItem={({ item }) => {
 
                             // dentro do render do FlatList (no CardsTrilhas)

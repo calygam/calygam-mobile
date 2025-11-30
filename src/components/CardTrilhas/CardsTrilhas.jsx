@@ -16,37 +16,47 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
 
     const trailName = item?.trailName ?? 'Sem nome'
     const vacancies = item?.vacancies ?? item?.vacanciesTrail ?? item?.vagas ?? 'N/A'
+    const hasPassword = item?.trailHavePassword ?? false // Backend informa se tem senha
 
-    // Escolha de mídia: prioridade para ÍCONE; senão imagem; senão placeholder estilizado
+    // Escolha de mídia: prioridade para IMAGEM REAL do backend; senão ícone SVG; senão placeholder
     const renderTrailVisual = () => {
+        const trailImage = item?.trailImage || null;
         const iconNameRaw = item?.trailIcon || item?.icon || null;
 
-        // ✅ Se backend não enviou o ícone → cai no fallback
-        if (!iconNameRaw) {
-            console.log("Nenhum ícone recebido, usando fallback visual.");
-            return (
-                <View style={[styles.FotoIconTrilha, { backgroundColor: '#fffffff3' }]}>
-                    {/* <Text style={{ color: '#CE82FF', fontSize: 12 }}>Trilha</Text> */}
-                    <Image source={require('../../../assets/image/ImagemSem.png')} style={{ width: 28, height: 28 }} />
-                </View>
-            );
-        }
-
-        const key = iconNameRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        const IconComponent = iconMap[key];
-
-        if (IconComponent) {
+        // 🖼️ PRIORIDADE 1: Imagem real do backend (via /file/read/{uuid})
+        if (trailImage && !trailImage.includes('/file/read/null') && !trailImage.includes('null')) {
             return (
                 <View style={styles.FotoIconTrilha}>
-                    <IconComponent width={28} height={28} fill="#FFF" />
+                    <Image 
+                        source={{ uri: trailImage }} 
+                        style={{ width: '100%', height: '100%', borderRadius: 12 }} 
+                        resizeMode="cover"
+                        onError={(e) => {
+                            console.log('[CardsTrilhas] Erro ao carregar imagem:', trailImage);
+                        }}
+                    />
                 </View>
             );
         }
 
+        // 🎨 PRIORIDADE 2: Ícone SVG
+        if (iconNameRaw) {
+            const key = iconNameRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const IconComponent = iconMap[key];
+
+            if (IconComponent) {
+                return (
+                    <View style={styles.FotoIconTrilha}>
+                        <IconComponent width={28} height={28} fill="#FFF" />
+                    </View>
+                );
+            }
+        }
+
+        // 🔲 FALLBACK: Placeholder padrão
         return (
-            <View style={[styles.FotoIconTrilha, { backgroundColor: '#5217b1ff' }]}>
-                <Text style={{ color: '#CE82FF', fontSize: 12 }}>Trilha</Text>
+            <View style={[styles.FotoIconTrilha, { backgroundColor: '#fffffff3' }]}>
+                <Image source={require('../../../assets/image/ImagemSem.png')} style={{ width: 28, height: 28 }} />
             </View>
         );
     };
@@ -84,7 +94,6 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                     <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
                         onPress={async () => {
-                            // Verifica se a trilha já foi desbloqueada neste dispositivo
                             try {
                                 const rawUser = await AsyncStorage.getItem('userInfo');
                                 const parsedUser = rawUser ? JSON.parse(rawUser) : null;
@@ -92,20 +101,65 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
 
                                 const unlockedKey = `trailUnlocked:${uid}:${item?.trailId}`;
                                 const unlocked = await AsyncStorage.getItem(unlockedKey);
-                                if (unlocked === 'true') {
-                                    // Mantém a trilha atual salva (por usuário)
+
+                                // ✅ SE NÃO TEM SENHA (trailHavePassword = false), entra direto
+                                if (!hasPassword) {
+                                    console.log('[CardsTrilhas] Trilha sem senha - entrando direto');
                                     try {
+                                        // Salva trilha atual
                                         await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(item));
-                                        // Garante presença na lista de "em progresso"
+                                        
+                                        // Adiciona na lista de "em progresso"
                                         const listKey = `joinedTrails:${uid}`;
                                         const raw = await AsyncStorage.getItem(listKey);
                                         const arr = raw ? JSON.parse(raw) : [];
                                         const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(item?.trailId));
                                         if (!exists) {
-                                            const newItem = { trailId: item?.trailId, trailName: item?.trailName, icon: item?.trailIcon || item?.icon || null };
+                                            const newItem = { 
+                                                trailId: item?.trailId, 
+                                                trailName: item?.trailName,
+                                                trailImage: item?.trailImage || null, 
+                                                icon: item?.trailIcon || item?.icon || null 
+                                            };
                                             await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
                                         }
-                                        // JOIN automático se ainda não marcado
+                                        
+                                        // JOIN sem senha (sem query param)
+                                        const joinedFlag = await AsyncStorage.getItem(`progressJoined:${uid}:${item?.trailId}`);
+                                        if (!joinedFlag) {
+                                            try {
+                                                await api.post(`/progress/join/${item?.trailId}`);
+                                                await AsyncStorage.setItem(`progressJoined:${uid}:${item?.trailId}`, 'true');
+                                                await AsyncStorage.setItem(unlockedKey, 'true');
+                                                console.log('[CardsTrilhas] JOIN sem senha: sucesso');
+                                            } catch (joinErr) {
+                                                console.log('[CardsTrilhas] JOIN sem senha falhou:', joinErr?.response?.status, joinErr?.response?.data || joinErr.message);
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.log('[CardsTrilhas] Erro ao entrar em trilha sem senha:', err);
+                                    }
+                                    navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
+                                    return;
+                                }
+
+                                // ✅ SE TEM SENHA, verifica se já foi desbloqueada
+                                if (unlocked === 'true') {
+                                    try {
+                                        await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(item));
+                                        const listKey = `joinedTrails:${uid}`;
+                                        const raw = await AsyncStorage.getItem(listKey);
+                                        const arr = raw ? JSON.parse(raw) : [];
+                                        const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(item?.trailId));
+                                        if (!exists) {
+                                            const newItem = { 
+                                                trailId: item?.trailId, 
+                                                trailName: item?.trailName,
+                                                trailImage: item?.trailImage || null, 
+                                                icon: item?.trailIcon || item?.icon || null 
+                                            };
+                                            await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
+                                        }
                                         const joinedFlag = await AsyncStorage.getItem(`progressJoined:${uid}:${item?.trailId}`);
                                         if (!joinedFlag) {
                                             try {
@@ -118,11 +172,17 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                                     } catch {}
                                     navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
                                 } else {
+                                    // Mostra modal de senha
                                     setShowPassword(true);
                                 }
                             } catch (e) {
-                                // fallback: caso dê erro, mostra o modal
-                                setShowPassword(true);
+                                console.log('[CardsTrilhas] Erro geral:', e);
+                                // fallback: se tem senha, mostra modal; senão tenta entrar direto
+                                if (hasPassword) {
+                                    setShowPassword(true);
+                                } else {
+                                    navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
+                                }
                             }
                         }}
                     >
@@ -153,7 +213,12 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                             const arr = raw ? JSON.parse(raw) : [];
                             const exists = Array.isArray(arr) && arr.some(t => String(t?.trailId) === String(item?.trailId));
                             if (!exists) {
-                                const newItem = { trailId: item?.trailId, trailName: item?.trailName, icon: item?.trailIcon || item?.icon || null };
+                                const newItem = { 
+                                    trailId: item?.trailId, 
+                                    trailName: item?.trailName,
+                                    trailImage: item?.trailImage || full?.trailImage || null, 
+                                    icon: item?.trailIcon || item?.icon || null 
+                                };
                                 await AsyncStorage.setItem(listKey, JSON.stringify([...arr, newItem]));
                             }
                             // Marca que o JOIN já foi feito para evitar chamadas repetidas

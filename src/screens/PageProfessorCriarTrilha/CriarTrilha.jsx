@@ -440,12 +440,20 @@ export default function CriarTrilha() {
                             <Text style={styles.label}>Número de Vagas</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Número de Vagas"
+                                placeholder="Número de Vagas (máx. 45)"
                                 placeholderTextColor="#888"
                                 value={vagas}
-                                onChangeText={setVagas}
+                                onChangeText={(text) => {
+                                    const num = parseInt(text) || 0;
+                                    if (num > 45) {
+                                        setVagas('45');
+                                    } else {
+                                        setVagas(text);
+                                    }
+                                }}
                                 keyboardType="numeric"
                             />
+                            <Text style={{ color: '#888', fontSize: 12, marginTop: 5 }}>⚠️ Limite máximo: 45 vagas</Text>
                             <Text style={styles.label}>Descrição</Text>
                             <TextInput
                                 style={styles.input}
