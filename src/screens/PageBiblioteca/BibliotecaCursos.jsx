@@ -60,9 +60,23 @@ export default function BibliotecaCursos() {
             console.log(`[BibliotecaCursos] 📊 Trilhas em progresso (HAVE_PROGRESS): ${haveProgressData.length}`);
             
             // Mapeia trilhas em progresso com dados do progressBarTrailDTO se disponível
+            // Backend envia: progressBarTrailDTO { totalActivitiesCompleted, totalActivities }
+            // Front calcula a porcentagem: (totalActivitiesCompleted / totalActivities) * 100
             const inProgressMapped = haveProgressData.map(t => {
                 const progressBar = t.progressBarTrailDTO;
-                const progressPercent = progressBar?.progressPercent ?? progressBar?.progress ?? 0;
+                
+                // Calcula porcentagem a partir dos dados do backend
+                let progressPercent = 0;
+                if (progressBar && typeof progressBar.totalActivities === 'number' && progressBar.totalActivities > 0) {
+                    const completed = progressBar.totalActivitiesCompleted || 0;
+                    const total = progressBar.totalActivities;
+                    progressPercent = Math.round((completed / total) * 100);
+                }
+                
+                // Log para debug
+                if (progressBar) {
+                    console.log(`[BibliotecaCursos] 📈 Trilha ${t.trailId} (${t.trailName}): ${progressBar.totalActivitiesCompleted || 0}/${progressBar.totalActivities || 0} = ${progressPercent}%`);
+                }
                 
                 return {
                     trailId: t.trailId,
