@@ -20,6 +20,8 @@ import React, { useState, useEffect, } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readProgress } from '../../services/progressService';
 import Carrossel from '../../components/Carrossel';
+import api from '../../api/api';
+import { validateAndFilterTrails } from '../../utils/trailValidation';
 
 
 const { width } = Dimensions.get('window');
@@ -57,7 +59,8 @@ export default function Homepage() {
     }, []);
 
     // Função para carregar trilhas recentes
-    const loadRecentTrails = async () => {
+    const loadRecentTrails = async (forceReload = false) => {
+        console.log('[Homepage] 🔄 Carregando trilhas recentes...');
         try {
             const rawUser = await AsyncStorage.getItem('userInfo');
             const parsed = rawUser ? JSON.parse(rawUser) : null;
@@ -66,8 +69,19 @@ export default function Homepage() {
             const rawJoined = await AsyncStorage.getItem(joinedKey);
             const joinedArr = rawJoined ? JSON.parse(rawJoined) : [];
 
-            // Pegar as últimas 3 trilhas
-            const recent = joinedArr.slice(-3).reverse(); // Mais recentes primeiro
+            console.log(`[Homepage] 📋 Total de trilhas no cache: ${joinedArr.length}`);
+
+            // 🛡️ VALIDAÇÃO: Usa função utilitária para validar e filtrar trilhas
+            const { validTrails, removedCount } = await validateAndFilterTrails(joinedArr, uid);
+            
+            if (removedCount > 0) {
+                console.log(`[Homepage] 🧹 Cache atualizado: ${removedCount} trilhas removidas`);
+            }
+            console.log(`[Homepage] 📊 Trilhas válidas restantes: ${validTrails.length}`);
+
+            // Pegar as últimas 3 trilhas válidas
+            const recent = validTrails.slice(-3).reverse(); // Mais recentes primeiro
+            console.log(`[Homepage] 🎯 Selecionando ${recent.length} trilhas recentes para exibir`);
 
             // Para cada trilha, calcular progresso
             const trailsWithProgress = await Promise.all(
@@ -93,9 +107,10 @@ export default function Homepage() {
                 })
             );
 
+            console.log(`[Homepage] 📊 Exibindo ${trailsWithProgress.length} trilhas recentes na UI`);
             setRecentTrails(trailsWithProgress);
         } catch (error) {
-            console.warn('Erro ao carregar trilhas recentes:', error);
+            console.error('[Homepage] 💥 Erro ao carregar trilhas recentes:', error);
             setRecentTrails([]);
         }
     };
@@ -232,7 +247,9 @@ export default function Homepage() {
                                     progress={t.progress ?? 0}
                                     trailImage={t.trailImage || null}
                                     iconKey={t.icon || t.trailIcon || t.iconKey || null}
+                                    trailId={t.trailId}
                                     onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
+                                    onTrailDeleted={() => loadRecentTrails(true)}
                                 />
                             )}
                         />

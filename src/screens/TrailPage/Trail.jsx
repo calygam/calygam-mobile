@@ -8,6 +8,7 @@ import RankBadge from '../../components/RankBadge';
 import { computeRankProgress } from '../../utils/rankUtils';
 import IconAviso from '../../../assets/svg/undraw_access-denied_krem.svg';
 import api from '../../api/api';
+import { validateTrailExists, removeTrailFromCache } from '../../utils/trailValidation';
 
 
 export default function Trail() {
@@ -35,12 +36,26 @@ export default function Trail() {
         const loadTrail = async () => {
             try {
                 if (trailId) {
-                    const token = await AsyncStorage.getItem('userToken');
-                    const response = await api.get(`/trail/read/${trailId}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    const fullTrail = response.data;
+                    // 🛡️ VALIDAÇÃO: Verificar se trilha ainda existe antes de carregar
+                    const validation = await validateTrailExists(trailId);
+                    
+                    if (!validation.exists) {
+                        // Trilha foi deletada - remove do cache e volta para Home
+                        console.log(`[Trail] ❌ Trilha ${trailId} não existe mais - removendo do cache`);
+                        await removeTrailFromCache(trailId);
+                        Alert.alert(
+                            'Trilha Removida',
+                            'Esta trilha foi deletada e não está mais disponível.',
+                            [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+                        );
+                        setTrail(null);
+                        return;
+                    }
+
+                    // Trilha existe - carrega normalmente
+                    const fullTrail = validation.data;
                     setTrail(fullTrail);
+                    
                     try {
                         const rawUser = await AsyncStorage.getItem('userInfo');
                         const parsedUser = rawUser ? JSON.parse(rawUser) : null;
@@ -58,11 +73,23 @@ export default function Trail() {
                     const stored = await AsyncStorage.getItem(`currentTrail:${uid}`);
                     if (stored) {
                         const parsed = JSON.parse(stored);
+                        // Valida também a trilha armazenada
+                        if (parsed?.trailId) {
+                            const validation = await validateTrailExists(parsed.trailId);
+                            if (!validation.exists) {
+                                // Trilha armazenada foi deletada
+                                await removeTrailFromCache(parsed.trailId);
+                                await AsyncStorage.removeItem(`currentTrail:${uid}`);
+                                setTrail(null);
+                                return;
+                            }
+                        }
                         setTrail(parsed);
                     }
                 } catch (err) {}
             } catch (e) {
                 console.log('Erro ao carregar trilha:', e?.response?.data || e.message);
+                // Em caso de erro de rede, tenta continuar com dados do cache
             }
         };
         loadTrail();
@@ -96,6 +123,20 @@ export default function Trail() {
 
                 // Recarregar progresso da trilha para atualizar completedIndex
                 if (trailId) {
+                    // 🛡️ VALIDAÇÃO: Verificar se trilha ainda existe antes de buscar progresso
+                    const validation = await validateTrailExists(trailId);
+                    if (!validation.exists) {
+                        // Trilha foi deletada - remove do cache e volta para Home
+                        await removeTrailFromCache(trailId);
+                        Alert.alert(
+                            'Trilha Removida',
+                            'Esta trilha foi deletada e não está mais disponível.',
+                            [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+                        );
+                        setTrail(null);
+                        return;
+                    }
+
                     const token = await AsyncStorage.getItem('userToken');
                     try {
                         const progressRes = await api.get(`/progress/read/${trailId}`, {

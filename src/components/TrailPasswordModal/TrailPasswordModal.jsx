@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
+import { validateTrailExists } from '../../utils/trailValidation';
 
 /**
  * Modal para validação de senha de trilha
@@ -11,8 +12,9 @@ import api from '../../api/api';
  * - onSuccess: (trail) => void  // chamado ao validar a senha
  * - trailId: string|number
  * - trailName: string
+ * - onTrailJoined: () => void  // 🆕 chamado após entrar na trilha com sucesso
  */
-export default function TrailPasswordModal({ visible, onClose, onSuccess, trailId, trailName }) {
+export default function TrailPasswordModal({ visible, onClose, onSuccess, trailId, trailName, onTrailJoined }) {
     const [password, setPassword] = useState('');
     const [show, setShow] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -83,7 +85,19 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
         setLoading(true);
         setError('');
         try {
-            const { data } = await api.get(`/trail/read/${trailId}`);
+            // 🛡️ VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
+            const validation = await validateTrailExists(trailId);
+            
+            if (!validation.exists) {
+                setError('❌ Trilha não encontrada - foi removida');
+                setLoading(false);
+                setTimeout(() => {
+                    onClose();
+                }, 2000);
+                return;
+            }
+
+            const data = validation.data;
 
             console.log("[TrailPasswordModal] DATA COMPLETA RECEBIDA:");
             console.log(JSON.stringify(data, null, 2));
@@ -240,6 +254,8 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
 
             resetLocal();
             onSuccess?.(data);
+            // 🔄 Chama callback de atualização se fornecido
+            if (onTrailJoined) onTrailJoined();
         } catch (e) {
             console.log('Erro ao validar senha da trilha:', e?.response?.data || e.message);
             setError('Erro ao validar. Verifique a conexão e tente novamente.');

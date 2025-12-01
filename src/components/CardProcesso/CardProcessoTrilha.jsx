@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import IconSeta from "../../../assets/svg/IconsCardExplorar/angulo-direito1.svg";
 import React from 'react'
 import { iconMap } from '../IconsModal/Icons';
+import { validateTrailExists, removeTrailFromCache } from '../../utils/trailValidation';
 
 export default function CardProcessoTrilha({
   title = 'Trilha',
@@ -10,7 +11,48 @@ export default function CardProcessoTrilha({
     iconSource,
     iconKey,
     trailImage, // 🆕 URL da imagem real do backend
+    trailId, // 🆕 ID para validação
+    onTrailDeleted, // 🆕 Callback para atualizar lista quando trilha é deletada
 }) {
+    
+    const handlePress = async () => {
+        // 🛡️ VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
+        if (trailId) {
+            try {
+                const { Alert } = require('react-native');
+                
+                const validation = await validateTrailExists(trailId);
+                
+                if (!validation.exists) {
+                    Alert.alert('Trilha Removida', 'Esta trilha foi deletada e não está mais disponível.');
+                    // Remove do cache usando função utilitária
+                    await removeTrailFromCache(trailId);
+                    // 🔄 Atualiza a UI imediatamente
+                    if (onTrailDeleted) onTrailDeleted();
+                    return;
+                }
+                
+                // Se chegou aqui, trilha existe - continua
+                onContinue();
+            } catch (err) {
+                const { Alert } = require('react-native');
+                console.error('[CardProcessoTrilha] Erro ao validar trilha:', err);
+                
+                // Em caso de erro de rede, permite continuar (pode ser problema temporário)
+                // Mas se for 404/500, remove do cache
+                if (err?.response?.status === 404 || err?.response?.status === 500) {
+                    Alert.alert('Trilha Removida', 'Esta trilha foi deletada e não está mais disponível.');
+                    await removeTrailFromCache(trailId);
+                    if (onTrailDeleted) onTrailDeleted();
+                } else {
+                    // Erro de rede - permite continuar
+                    onContinue();
+                }
+            }
+        } else {
+            onContinue();
+        }
+    };
 
     const renderIcon = () => {
         // 1️⃣ PRIORIDADE: Imagem real do backend (via /file/read/{uuid})
@@ -65,7 +107,7 @@ export default function CardProcessoTrilha({
               </View>
 
               <View style={{ justifyContent: 'center', alignItems: 'center', width: '100%', marginTop: 8, }}>
-                  <TouchableOpacity style={{ width: '90%', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 5 }} onPress={onContinue}>
+                  <TouchableOpacity style={{ width: '90%', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 5 }} onPress={handlePress}>
                       <Text style={{ color: '#CE82FF', fontSize: 14, textAlign: 'right', width: '75%' }}>Continuar</Text>
                       <IconSeta width={15} height={24} fill="#CE82FF" />
                   </TouchableOpacity>

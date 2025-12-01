@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image, Alert } from 'react-native'
 import { iconMap } from '../IconsModal/Icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
@@ -116,6 +116,37 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                     <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
                         onPress={async () => {
+                            // 🛡️ VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
+                            if (!item?.trailId) {
+                                Alert.alert('Erro', 'ID da trilha inválido');
+                                return;
+                            }
+
+                            try {
+                                const checkResponse = await api.get(`/trail/read/${item.trailId}`);
+                                if (!checkResponse.data) {
+                                    Alert.alert('Trilha Removida', 'Esta trilha não está mais disponível.');
+                                    return;
+                                }
+                            } catch (err) {
+                                if (err?.response?.status === 404 || err?.response?.status === 500) {
+                                    Alert.alert('Trilha Removida', 'Esta trilha foi deletada e não está mais disponível.');
+                                    // Remove do cache
+                                    const rawUser = await AsyncStorage.getItem('userInfo');
+                                    const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+                                    const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
+                                    const joinedKey = `joinedTrails:${uid}`;
+                                    const rawJoined = await AsyncStorage.getItem(joinedKey);
+                                    const arr = rawJoined ? JSON.parse(rawJoined) : [];
+                                    const filtered = arr.filter(t => t.trailId !== item.trailId);
+                                    await AsyncStorage.setItem(joinedKey, JSON.stringify(filtered));
+                                    // Recarrega a lista
+                                    if (onRefresh) onRefresh();
+                                    return;
+                                }
+                                console.error('Erro ao validar trilha:', err);
+                            }
+
                             try {
                                 const rawUser = await AsyncStorage.getItem('userInfo');
                                 const parsedUser = rawUser ? JSON.parse(rawUser) : null;
@@ -162,6 +193,8 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                                         console.log('[CardsTrilhas] Erro ao entrar em trilha sem senha:', err);
                                     }
                                     navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
+                                    // 🔄 Recarrega lista após entrar
+                                    if (onRefresh) onRefresh();
                                     return;
                                 }
 
@@ -191,6 +224,10 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
                     onClose={() => setShowPassword(false)}
                     trailId={item?.trailId}
                     trailName={item?.trailName}
+                    onTrailJoined={() => {
+                        // 🔄 Recarrega lista após entrar com sucesso
+                        if (onRefresh) onRefresh();
+                    }}
                     onSuccess={async (fullTrail) => {
                         setShowPassword(false);
                         // Salva a trilha completa retornada pelo backend (preferível) por usuário

@@ -12,6 +12,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Carrossel from '../../components/Carrossel';
 import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
 import useTrilhaApi from '../../hooks/useTrilhaApi';
+import { validateAndFilterTrails } from '../../utils/trailValidation';
 
 export default function BibliotecaCursos() {
     const navigation = useNavigation();
@@ -61,7 +62,8 @@ export default function BibliotecaCursos() {
     }, []);
 
     // Carrega trilhas em progresso do usuário atual
-    const loadInProgress = useCallback(async () => {
+    const loadInProgress = useCallback(async (forceReload = false) => {
+        console.log('[BibliotecaCursos] 🔄 Carregando trilhas em progresso...');
         try {
             const rawUser = await AsyncStorage.getItem('userInfo');
             const parsedUser = rawUser ? JSON.parse(rawUser) : null;
@@ -69,40 +71,35 @@ export default function BibliotecaCursos() {
             const listKey = `joinedTrails:${uid}`;
             const rawList = await AsyncStorage.getItem(listKey);
             const list = rawList ? JSON.parse(rawList) : [];
-            // Anexa progresso (se existir) por chave trailProgress:uid:trailId (0..100)
-            const withProgress = [];
-            for (const t of Array.isArray(list) ? list : []) {
-                try {
-                    const pRaw = await AsyncStorage.getItem(`trailProgress:${uid}:${t.trailId}`);
-                    const p = pRaw ? Number(pRaw) : 0;
-                    
-                    // Se não tem trailImage, tenta buscar do backend
-                    let trailData = { ...t };
-                    if (!t.trailImage && t.trailId) {
-                        try {
-                            const response = await api.get(`/trail/read/${t.trailId}`);
-                            if (response.data?.trailImage) {
-                                trailData.trailImage = response.data.trailImage;
-                                // Atualiza no AsyncStorage para não precisar buscar novamente
-                                const updatedList = list.map(trail => 
-                                    trail.trailId === t.trailId 
-                                        ? { ...trail, trailImage: response.data.trailImage }
-                                        : trail
-                                );
-                                await AsyncStorage.setItem(listKey, JSON.stringify(updatedList));
-                            }
-                        } catch (err) {
-                            console.log('[BibliotecaCursos] Erro ao buscar trailImage:', err);
-                        }
-                    }
-                    
-                    withProgress.push({ ...trailData, progress: isNaN(p) ? 0 : p });
-                } catch {
-                    withProgress.push({ ...t, progress: 0 });
-                }
+            
+            console.log(`[BibliotecaCursos] 📋 Total de trilhas no cache: ${list.length}`);
+            
+            // 🛡️ VALIDAÇÃO: Usa função utilitária para validar e filtrar trilhas
+            const { validTrails, removedCount } = await validateAndFilterTrails(list, uid);
+            
+            if (removedCount > 0) {
+                console.log(`[BibliotecaCursos] 🧹 Cache atualizado: ${removedCount} trilhas removidas`);
             }
+            console.log(`[BibliotecaCursos] 📊 Trilhas válidas restantes: ${validTrails.length}`);
+            
+            // Para cada trilha válida, buscar progresso
+            const withProgress = await Promise.all(
+                validTrails.map(async (t) => {
+                    try {
+                        const pRaw = await AsyncStorage.getItem(`trailProgress:${uid}:${t.trailId}`);
+                        const p = pRaw ? Number(pRaw) : 0;
+                        return { ...t, progress: isNaN(p) ? 0 : p };
+                    } catch (error) {
+                        console.warn(`[BibliotecaCursos] Erro ao buscar progresso para trilha ${t.trailId}:`, error);
+                        return { ...t, progress: 0 };
+                    }
+                })
+            );
+            
+            console.log(`[BibliotecaCursos] 🎯 Exibindo ${withProgress.length} trilhas em progresso`);
             setInProgressTrails(withProgress);
         } catch (e) {
+            console.error('[BibliotecaCursos] 💥 Erro ao carregar trilhas em progresso:', e);
             setInProgressTrails([]);
         }
     }, []);
@@ -151,7 +148,9 @@ export default function BibliotecaCursos() {
                                         trailImage={t.trailImage || null}
                                         iconKey={t.icon || t.trailIcon || t.iconName || null}
                                         iconSource={t.iconUri ? { uri: t.iconUri } : null}
+                                        trailId={t.trailId}
                                         onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
+                                        onTrailDeleted={() => loadInProgress(true)}
                                     />
                                 )}
                             />
@@ -202,7 +201,28 @@ export default function BibliotecaCursos() {
                                     professorName={professorName}
                                     professorPhotoUrl={professorPhotoUrl}
                                     onEnter={() => onEnterTrail(item.trailId, item.trailPassword)}
-                                    
+                                    onRefresh={() => {
+                                        loadInProgress(true);
+                                        // Recarrega trilhas disponíveis
+                                        const fetchTrails = async () => {
+                                            try {
+                                                const response = await api.get("trail/read/all-trails", {
+                                                    params: {
+                                                        haveProgress: "NOT_HAVE_PROGRESS"
+                                                    },
+                                                });
+                                                const data = Array.isArray(response.data) ? response.data : [];
+                                                const onlyEnabled = data.filter(t => {
+                                                    const raw = String(t.trailStatus || "").toUpperCase().trim();
+                                                    return raw === "ENABLE";
+                                                });
+                                                setTrails(onlyEnabled);
+                                            } catch (error) {
+                                                console.error('Erro ao recarregar trilhas:', error);
+                                            }
+                                        };
+                                        fetchTrails();
+                                    }}
                                 />
                             )
                         }}

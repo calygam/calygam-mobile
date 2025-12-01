@@ -21,16 +21,16 @@ export default function CardProf({titulo, professorNome, vagas, foto, onEdit, on
         if (raw === "BUILDING") {
             return {
                 label: "Em construção",
-                bg: "#ffca2844",
-                color: "#FFC107"
+                bg: "#FFC32B",
+                color: "#D9904B"
             };
         }
 
         // Default → ENABLE
         return {
             label: "Ativa",
-            bg: "#2e7d3244",
-            color: "#2E7D32"
+            bg: "#34A853",
+            color: "#CCFF33"
         };
     };
 

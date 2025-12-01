@@ -80,8 +80,6 @@ api.interceptors.request.use(
     (error) => Promise.reject(error) // Se deu algun erro antes de mandar ele ja rejeita na hora 
 )
 
-
-
 // Flag para evitar múltiplos alerts simultâneos
 let sessionAlertVisible = false;
 
