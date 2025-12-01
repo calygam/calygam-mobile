@@ -33,7 +33,14 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl })
         const iconNameRaw = item?.trailIcon || item?.icon || null;
 
         // 🖼️ PRIORIDADE 1: Imagem real do backend (via /file/read/{uuid})
-        if (trailImage && !trailImage.includes('/file/read/null') && !trailImage.includes('null')) {
+        // Verifica se tem imagem válida (URL completa, não apenas /file/read/)
+        const hasValidImage = trailImage && 
+                             !trailImage.includes('/file/read/null') && 
+                             !trailImage.includes('null') &&
+                             !trailImage.endsWith('/file/read/') &&
+                             trailImage.length > 'http://10.0.0.191:8080/file/read/'.length;
+        
+        if (hasValidImage) {
             return (
                 <View style={styles.FotoIconTrilha}>
                     <Image 

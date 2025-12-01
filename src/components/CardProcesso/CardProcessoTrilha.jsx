@@ -14,7 +14,13 @@ export default function CardProcessoTrilha({
 
     const renderIcon = () => {
         // 1️⃣ PRIORIDADE: Imagem real do backend (via /file/read/{uuid})
-        if (trailImage && !trailImage.includes('/file/read/null') && !trailImage.includes('null')) {
+        const hasValidImage = trailImage && 
+                             !trailImage.includes('/file/read/null') && 
+                             !trailImage.includes('null') &&
+                             !trailImage.endsWith('/file/read/') &&
+                             trailImage.length > 40; // URL válida tem UUID
+        
+        if (hasValidImage) {
             return (
                 <Image 
                     source={{ uri: trailImage }} 
