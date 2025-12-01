@@ -15,7 +15,16 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
     const [showPassword, setShowPassword] = useState(false);
 
     const trailName = item?.trailName ?? 'Sem nome'
-    const vacancies = item?.vacancies ?? item?.vacanciesTrail ?? item?.vagas ?? 'N/A'
+    
+    // 🎫 Cálculo de vagas: trailVacancy (ocupadas) / trailVacancies (total)
+    // Backend envia: trailVacancy = número de pessoas que já entraram
+    //                trailVacancies = limite total de vagas definido pelo professor
+    const filled = Number(item?.trailVacancy || 0); // Vagas ocupadas
+    const total = Number(item?.trailVacancies || 0); // Total de vagas
+    const remaining = Math.max(0, total - filled); // Vagas restantes
+    
+    // Formata a exibição: "ocupadas/total" (ex: "20/45")
+    const vacanciesDisplay = total > 0 ? `${filled}/${total}` : 'N/A';
     
     // 🔐 Verificação robusta se tem senha: backend deve enviar trailHavePassword
     // Se não vier, tenta verificar se tem trailPassword preenchido
@@ -109,7 +118,13 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                 <View style={styles.Infomações}>
                     <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
                         <IconPessoas width={15} height={24} fill="#CE82FF" />
-                        <Text style={{ color: '#CE82FF', fontSize: 13 }}> Vagas Disponiveis: {vacancies}</Text>
+                        <Text style={{ color: '#CE82FF', fontSize: 13 }}>
+                            {total > 0 ? (
+                                `Vagas: ${vacanciesDisplay} (${remaining} restantes)`
+                            ) : (
+                                'Vagas: N/A'
+                            )}
+                        </Text>
                     </View>
 
 
