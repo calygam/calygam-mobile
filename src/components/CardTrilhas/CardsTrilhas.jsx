@@ -16,7 +16,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
 
     const trailName = item?.trailName ?? 'Sem nome'
     
-    // 🎫 Cálculo de vagas: trailVacancy (ocupadas) / trailVacancies (total)
+    // Cálculo de vagas: trailVacancy (ocupadas) / trailVacancies (total)
     // Backend envia: trailVacancy = número de pessoas que já entraram
     //                trailVacancies = limite total de vagas definido pelo professor
     const filled = Number(item?.trailVacancy || 0); // Vagas ocupadas
@@ -26,7 +26,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
     // Formata a exibição: "ocupadas/total" (ex: "20/45")
     const vacanciesDisplay = total > 0 ? `${filled}/${total}` : 'N/A';
     
-    // 🔐 Verificação robusta se tem senha: backend deve enviar trailHavePassword
+    // Verificação robusta se tem senha: backend deve enviar trailHavePassword
     // Se não vier, tenta verificar se tem trailPassword preenchido
     const hasPassword = item?.trailHavePassword === true || 
                        (item?.trailPassword && item?.trailPassword !== '' && item?.trailPassword !== 'null')
@@ -41,7 +41,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
         const trailImage = item?.trailImage || null;
         const iconNameRaw = item?.trailIcon || item?.icon || null;
 
-        // 🖼️ PRIORIDADE 1: Imagem real do backend (via /file/read/{uuid})
+        // PRIORIDADE 1: Imagem real do backend (via /file/read/{uuid})
         // Verifica se tem imagem válida (URL completa, não apenas /file/read/)
         const hasValidImage = trailImage && 
                              !trailImage.includes('/file/read/null') && 
@@ -64,7 +64,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
             );
         }
 
-        // 🎨 PRIORIDADE 2: Ícone SVG
+        // PRIORIDADE 2: Ícone SVG
         if (iconNameRaw) {
             const key = iconNameRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
             const IconComponent = iconMap[key];
@@ -78,7 +78,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
             }
         }
 
-        // 🔲 FALLBACK: Placeholder padrão
+        // FALLBACK: Placeholder padrão
         return (
             <View style={[styles.FotoIconTrilha, { backgroundColor: '#fffffff3' }]}>
                 <Image source={require('../../../assets/image/ImagemSem.png')} style={{ width: 28, height: 28 }} />
@@ -111,8 +111,11 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                     <Image
                         source={professorPhotoUrl ? { uri: professorPhotoUrl } : require('../../../assets/image/ImagemSem.png')}
                         style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#333' }}
+                        onError={(e) => {
+                            console.log('[CardsTrilhas] Erro ao carregar foto do professor:', professorPhotoUrl);
+                        }}
                     />
-                    <Text style={{ color: '#B3B3B3' }}>Prof. {professorName ?? 'Desconhecido'}</Text>
+                    <Text style={{ color: '#B3B3B3', fontSize: 13 }}>Prof. {professorName ?? 'Desconhecido'}</Text>
                 </View>
 
                 <View style={styles.Infomações}>
@@ -131,7 +134,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                     <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
                         onPress={async () => {
-                            // 🛡️ VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
+                            // VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
                             if (!item?.trailId) {
                                 Alert.alert('Erro', 'ID da trilha inválido');
                                 return;
@@ -170,7 +173,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                                 const unlockedKey = `trailUnlocked:${uid}:${item?.trailId}`;
                                 const unlocked = await AsyncStorage.getItem(unlockedKey);
 
-                                // ✅ SE NÃO TEM SENHA (trailHavePassword = false), entra direto
+                                // SE NÃO TEM SENHA (trailHavePassword = false), entra direto
                                 if (!hasPassword) {
                                     console.log('[CardsTrilhas] Trilha sem senha - entrando direto');
                                     try {
@@ -208,12 +211,12 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                                         console.log('[CardsTrilhas] Erro ao entrar em trilha sem senha:', err);
                                     }
                                     navigation.navigate('Trilha', { trailId: item?.trailId, trailName: item?.trailName });
-                                    // 🔄 Recarrega lista após entrar
+                                    // Recarrega lista após entrar
                                     if (onRefresh) onRefresh();
                                     return;
                                 }
 
-                                // ✅ SE TEM SENHA, SEMPRE pede senha (não confiar apenas no cache local)
+                                // SE TEM SENHA, SEMPRE pede senha (não confiar apenas no cache local)
                                 // Mostra modal de senha para validar com backend
                                 setShowPassword(true);
                             } catch (e) {
@@ -240,7 +243,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                     trailId={item?.trailId}
                     trailName={item?.trailName}
                     onTrailJoined={() => {
-                        // 🔄 Recarrega lista após entrar com sucesso
+                        // Recarrega lista após entrar com sucesso
                         if (onRefresh) onRefresh();
                     }}
                     onSuccess={async (fullTrail) => {

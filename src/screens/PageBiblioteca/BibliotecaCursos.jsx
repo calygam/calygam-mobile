@@ -11,6 +11,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Carrossel from '../../components/Carrossel';
 import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
 import useTrilhaApi from '../../hooks/useTrilhaApi';
+import { enrichTrailsWithTeachers } from '../../services/teacherService';
 
 export default function BibliotecaCursos() {
     const navigation = useNavigation();
@@ -26,7 +27,7 @@ export default function BibliotecaCursos() {
         trail.trailName.toLowerCase().includes(search.toLowerCase())
     );
     
-    // 🐛 DEBUG: Log para rastrear o que está chegando no FlatList
+    // DEBUG: Log para rastrear o que está chegando no FlatList
     console.log(`[BibliotecaCursos] 🎯 trails.length=${trails.length}, search="${search}", filteredTrails.length=${filteredTrails.length}`);
 
     // Função para buscar trilhas disponíveis E em progresso em paralelo
@@ -96,16 +97,22 @@ export default function BibliotecaCursos() {
             // Processa trilhas DISPONÍVEIS (NOT_HAVE_PROGRESS)
             const notHaveProgressData = Array.isArray(notHaveProgressResponse.data) ? notHaveProgressResponse.data : [];
             console.log(`[BibliotecaCursos] 📊 Trilhas disponíveis (NOT_HAVE_PROGRESS): ${notHaveProgressData.length}`);
-            console.log(`[BibliotecaCursos] 📝 Status das trilhas disponíveis:`, notHaveProgressData.map(t => ({ 
+            
+            // 👨‍🏫 ENRIQUECE trilhas com dados dos professores (nome + foto)
+            const enrichedTrails = await enrichTrailsWithTeachers(notHaveProgressData);
+            console.log(`[BibliotecaCursos] 👨‍🏫 Trilhas enriquecidas com professores`);
+            
+            console.log(`[BibliotecaCursos] 📝 Status das trilhas disponíveis:`, enrichedTrails.map(t => ({ 
                 id: t.trailId, 
                 name: t.trailName, 
                 status: t.trailStatus, 
-                type: typeof t.trailStatus 
+                type: typeof t.trailStatus,
+                professor: t.professorName 
             })));
             
             // Filtra para mostrar apenas trilhas ATIVAS (ENABLE)
             // Aceita status como número (0 = ENABLE) ou string ("ENABLE", "ATIVO", etc)
-            const onlyEnabled = notHaveProgressData.filter(t => {
+            const onlyEnabled = enrichedTrails.filter(t => {
                 const rawStatus = t.trailStatus ?? t.status ?? '';
                 
                 // Se for número: 0 = ENABLE
@@ -243,24 +250,13 @@ export default function BibliotecaCursos() {
                             };
 
 
-                            // Normaliza os dados do professor vindos do backend
-                            const professor = item.user || item.professor || item.teacher || {};
-                            const professorName = professor?.userName ?? professor?.name ?? professor?.displayName ?? 'Desconhecido';
-                            const professorPhotoUrl =
-                                professor?.photoUrl ||
-                                professor?.photoURL ||
-                                professor?.avatarUrl ||
-                                professor?.avatar ||
-                                professor?.profileImageUrl ||
-                                professor?.imageUrl ||
-                                professor?.picture ||
-                                null;
-
+                            // Os dados do professor já foram enriquecidos pelo teacherService
+                            // item.professorName e item.professorImage já estão disponíveis
                             return (
                                 <CardsTrilhas
                                     item={item}
-                                    professorName={professorName}
-                                    professorPhotoUrl={professorPhotoUrl}
+                                    professorName={item.professorName || 'Professor'}
+                                    professorPhotoUrl={item.professorImage}
                                     onEnter={() => onEnterTrail(item.trailId, item.trailPassword)}
                                     onRefresh={() => {
                                         // Recarrega ambas as listas (disponíveis e em progresso)

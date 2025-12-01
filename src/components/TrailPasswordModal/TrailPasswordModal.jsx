@@ -12,7 +12,7 @@ import { validateTrailExists } from '../../utils/trailValidation';
  * - onSuccess: (trail) => void  // chamado ao validar a senha
  * - trailId: string|number
  * - trailName: string
- * - onTrailJoined: () => void  // 🆕 chamado após entrar na trilha com sucesso
+ * - onTrailJoined: () => void  // chamado após entrar na trilha com sucesso
  */
 export default function TrailPasswordModal({ visible, onClose, onSuccess, trailId, trailName, onTrailJoined }) {
     const [password, setPassword] = useState('');
@@ -85,7 +85,7 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
         setLoading(true);
         setError('');
         try {
-            // 🛡️ VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
+            // VALIDAÇÃO EM TEMPO REAL: Verificar se trilha ainda existe
             const validation = await validateTrailExists(trailId);
             
             if (!validation.exists) {
@@ -254,7 +254,7 @@ export default function TrailPasswordModal({ visible, onClose, onSuccess, trailI
 
             resetLocal();
             onSuccess?.(data);
-            // 🔄 Chama callback de atualização se fornecido
+            // Chama callback de atualização se fornecido
             if (onTrailJoined) onTrailJoined();
         } catch (e) {
             console.log('Erro ao validar senha da trilha:', e?.response?.data || e.message);
