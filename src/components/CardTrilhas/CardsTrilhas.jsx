@@ -10,7 +10,7 @@ import api from '../../api/api';
 
 const { width, height } = Dimensions.get('window')
 
-export default function CardsTrilhas({ item, professorName, professorPhotoUrl }) {
+export default function CardsTrilhas({ item, professorName, professorPhotoUrl, onRefresh, onEnter }) {
     const navigation = useNavigation();
     const [showPassword, setShowPassword] = useState(false);
 
@@ -312,8 +312,12 @@ const styles = StyleSheet.create({
     title: {
         color: '#FFF',
         fontWeight: '700',
-        fontSize: 15
-
+        fontSize: 15,
+        width: '100%',
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        
     },
     badge: {
         paddingHorizontal: 14,

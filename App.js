@@ -34,7 +34,7 @@ const linking = {
     prefixes: ['Calygam://', devPrefix],
     config: {
         screens: {
-            home: 'home'
+            home: 'Home'
         }
     }
 }
@@ -108,10 +108,10 @@ export default function App() {
                         <AlertProvider>
                           <NavigationContainer linking={linking} ref={navigationRef}>
                               <ErrorBoundary>
-                                  <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "home" : "Login"} screenOptions={{ headerShown: false }}>
+                                  <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "Home" : "Login"} screenOptions={{ headerShown: false }}>
                                   <Stack.Screen name="Trilha" component={Trail} />
                                   {/* Home SEMPRE registrada */}
-                                  <Stack.Screen name="home" component={Routes}/>
+                                  <Stack.Screen name="Home" component={Routes}/>
                                   {/* Telas de auth sempre registradas para permitir reset após logout */}
                                   <Stack.Screen name="Login" component={LoginScreen} />
                                   <Stack.Screen name="SignUpScreen" component={SignUpScreen}/>

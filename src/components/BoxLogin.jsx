@@ -93,7 +93,7 @@ export default function BoxLogin() {
                 };
 
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
-                navigation.replace("home");
+                navigation.replace("Home");
             }
 
         } catch (error) {
@@ -165,7 +165,7 @@ export default function BoxLogin() {
                 await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
 
                 Alert.alert("Sucesso", "Login realizado!");
-                navigation.navigate('home');
+                navigation.navigate('Home');
             }
         } catch (error) {
             console.log(error);

@@ -56,6 +56,8 @@ export default function Homepage() {
         };
 
         loadUser();
+        // Carrega trilhas recentes na primeira renderização também
+        loadRecentTrails();
     }, []);
 
     // Função para carregar trilhas recentes

@@ -21,7 +21,7 @@ export default function CardProf({titulo, professorNome, vagas, foto, onEdit, on
         if (raw === "BUILDING") {
             return {
                 label: "Em construção",
-                bg: "#FFC32B",
+                bg: "#ffc32b90",
                 color: "#D9904B"
             };
         }
@@ -29,8 +29,8 @@ export default function CardProf({titulo, professorNome, vagas, foto, onEdit, on
         // Default → ENABLE
         return {
             label: "Ativa",
-            bg: "#34A853",
-            color: "#CCFF33"
+            bg: "#ccff3390",
+            color: "#34A853"
         };
     };
 

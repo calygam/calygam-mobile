@@ -22,7 +22,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use(
-    async(config) => {
+    async (config) => {
         try { // O try Tenta pegar o token
             const token = await AsyncStorage.getItem('userToken') // Procurar no celular se existe um token salvo
             if (token) {
@@ -48,33 +48,33 @@ api.interceptors.request.use(
             config.data._parts // React Native FormData tem _parts
         );
 
-                if (isFormData) {
-                        console.log('[API REQUEST] FormData detectado - removendo Content-Type para deixar axios gerar');
-                        // Remove Content-Type se foi definido (axios gerará automaticamente)
-                        if (config.headers && config.headers['Content-Type']) {
-                                delete config.headers['Content-Type'];
-                        }
-                        if (config.headers && config.headers['content-type']) {
-                                delete config.headers['content-type'];
-                        }
-                        // Remover dos defaults também (garantia extra)
-                        if (axios.defaults.headers) {
-                            if (axios.defaults.headers.post && axios.defaults.headers.post['Content-Type'] === 'application/x-www-form-urlencoded') {
-                                delete axios.defaults.headers.post['Content-Type'];
-                            }
-                            if (axios.defaults.headers.put && axios.defaults.headers.put['Content-Type'] === 'application/x-www-form-urlencoded') {
-                                delete axios.defaults.headers.put['Content-Type'];
-                            }
-                            if (axios.defaults.headers.common && axios.defaults.headers.common['Content-Type'] === 'application/x-www-form-urlencoded') {
-                                delete axios.defaults.headers.common['Content-Type'];
-                            }
-                        }
+        if (isFormData) {
+            console.log('[API REQUEST] FormData detectado - removendo Content-Type para deixar axios gerar');
+            // Remove Content-Type se foi definido (axios gerará automaticamente)
+            if (config.headers && config.headers['Content-Type']) {
+                delete config.headers['Content-Type'];
+            }
+            if (config.headers && config.headers['content-type']) {
+                delete config.headers['content-type'];
+            }
+            // Remover dos defaults também (garantia extra)
+            if (axios.defaults.headers) {
+                if (axios.defaults.headers.post && axios.defaults.headers.post['Content-Type'] === 'application/x-www-form-urlencoded') {
+                    delete axios.defaults.headers.post['Content-Type'];
                 }
+                if (axios.defaults.headers.put && axios.defaults.headers.put['Content-Type'] === 'application/x-www-form-urlencoded') {
+                    delete axios.defaults.headers.put['Content-Type'];
+                }
+                if (axios.defaults.headers.common && axios.defaults.headers.common['Content-Type'] === 'application/x-www-form-urlencoded') {
+                    delete axios.defaults.headers.common['Content-Type'];
+                }
+            }
+        }
 
         console.log('[API REQUEST] URL:', config.url, 'Method:', config.method);
         console.log('[API REQUEST] Headers:', JSON.stringify(config.headers, null, 2));
         console.log('[API REQUEST] Data type:', config.data?.constructor?.name || typeof config.data);
-        
+
         return config; // Aqui ele devolve o pedido se existir pra manda pro servidor(Back-end)
     },
     (error) => Promise.reject(error) // Se deu algun erro antes de mandar ele ja rejeita na hora 

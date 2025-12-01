@@ -1,18 +1,16 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import SearchBar from '../../components/SeachBiblioteca/Seach'
 import CardsTrilhas from '../../components/CardTrilhas/CardsTrilhas'
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import CardProcessoTrilha from '../../components/CardProcesso/CardProcessoTrilha'
 import { FlatList } from 'react-native-gesture-handler';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Carrossel from '../../components/Carrossel';
 import LoadingSkeletonShimmer from '../../components/LoadingSkeletonShimmer';
 import useTrilhaApi from '../../hooks/useTrilhaApi';
-import { validateAndFilterTrails } from '../../utils/trailValidation';
 
 export default function BibliotecaCursos() {
     const navigation = useNavigation();
@@ -27,146 +25,195 @@ export default function BibliotecaCursos() {
     const filteredTrails = trails.filter(trail =>
         trail.trailName.toLowerCase().includes(search.toLowerCase())
     );
+    
+    // 🐛 DEBUG: Log para rastrear o que está chegando no FlatList
+    console.log(`[BibliotecaCursos] 🎯 trails.length=${trails.length}, search="${search}", filteredTrails.length=${filteredTrails.length}`);
 
-    // Lista de Trilhas com Filtro
-    useEffect(() => {
-        const fetchTrails = async () => {
-            setLoading(true);
-            try {
-                
-                const token = await AsyncStorage.getItem("userToken");
-                console.log("TOKEN NO MOMENTO DA CHAMADA:", token);
-                // const response = await axios.get('https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/trail/read/all-trails'
-                const response = await api.get("trail/read/all-trails", {
-                    params: {
-                        // haveProgress: "HAVE_PROGRESS", // Exemplo de filtro por progresso
-                        haveProgress: "NOT_HAVE_PROGRESS"
-
-                    },
-                });
-                const data = Array.isArray(response.data) ? response.data : [];
-                // Filtra para mostrar apenas trilhas ATIVAS (ENABLE)
-                const onlyEnabled = data.filter(t => {
-                    const raw = String(t.trailStatus || "").toUpperCase().trim();
-                    return raw === "ENABLE";
-                });
-                setTrails(onlyEnabled);
-            } catch (error) {
-                Alert.alert('Erro', 'Não foi possível carregar as trilhas.');
-                console.error('Erro ao buscar trilhas:', error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchTrails();
-    }, []);
-
-    // Carrega trilhas em progresso do usuário atual
-    const loadInProgress = useCallback(async (forceReload = false) => {
-        console.log('[BibliotecaCursos] 🔄 Carregando trilhas em progresso...');
+    // Função para buscar trilhas disponíveis E em progresso em paralelo
+    const fetchTrails = useCallback(async () => {
+        setLoading(true);
         try {
-            const rawUser = await AsyncStorage.getItem('userInfo');
-            const parsedUser = rawUser ? JSON.parse(rawUser) : null;
-            const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
-            const listKey = `joinedTrails:${uid}`;
-            const rawList = await AsyncStorage.getItem(listKey);
-            const list = rawList ? JSON.parse(rawList) : [];
+            const token = await AsyncStorage.getItem("userToken");
+            console.log("[BibliotecaCursos] 🔄 Buscando trilhas (HAVE_PROGRESS e NOT_HAVE_PROGRESS)...");
             
-            console.log(`[BibliotecaCursos] 📋 Total de trilhas no cache: ${list.length}`);
-            
-            // 🛡️ VALIDAÇÃO: Usa função utilitária para validar e filtrar trilhas
-            const { validTrails, removedCount } = await validateAndFilterTrails(list, uid);
-            
-            if (removedCount > 0) {
-                console.log(`[BibliotecaCursos] 🧹 Cache atualizado: ${removedCount} trilhas removidas`);
-            }
-            console.log(`[BibliotecaCursos] 📊 Trilhas válidas restantes: ${validTrails.length}`);
-            
-            // Para cada trilha válida, buscar progresso
-            const withProgress = await Promise.all(
-                validTrails.map(async (t) => {
-                    try {
-                        const pRaw = await AsyncStorage.getItem(`trailProgress:${uid}:${t.trailId}`);
-                        const p = pRaw ? Number(pRaw) : 0;
-                        return { ...t, progress: isNaN(p) ? 0 : p };
-                    } catch (error) {
-                        console.warn(`[BibliotecaCursos] Erro ao buscar progresso para trilha ${t.trailId}:`, error);
-                        return { ...t, progress: 0 };
-                    }
+            // Faz DUAS requisições em paralelo para obter ambos os conjuntos
+            const [haveProgressResponse, notHaveProgressResponse] = await Promise.all([
+                // Trilhas em progresso (HAVE_PROGRESS)
+                api.get("trail/read/all-trails", {
+                    params: { haveProgress: "HAVE_PROGRESS" }
+                }).catch(err => {
+                    console.warn('[BibliotecaCursos] ⚠️ Erro ao buscar HAVE_PROGRESS:', err?.response?.status, err?.response?.data);
+                    return { data: [] }; // Retorna array vazio em caso de erro
+                }),
+                
+                // Trilhas disponíveis (NOT_HAVE_PROGRESS)
+                api.get("trail/read/all-trails", {
+                    params: { haveProgress: "NOT_HAVE_PROGRESS" }
+                }).catch(err => {
+                    console.warn('[BibliotecaCursos] ⚠️ Erro ao buscar NOT_HAVE_PROGRESS:', err?.response?.status, err?.response?.data);
+                    return { data: [] }; // Retorna array vazio em caso de erro
                 })
-            );
+            ]);
+
+            // Processa trilhas EM PROGRESSO (HAVE_PROGRESS)
+            const haveProgressData = Array.isArray(haveProgressResponse.data) ? haveProgressResponse.data : [];
+            console.log(`[BibliotecaCursos] 📊 Trilhas em progresso (HAVE_PROGRESS): ${haveProgressData.length}`);
             
-            console.log(`[BibliotecaCursos] 🎯 Exibindo ${withProgress.length} trilhas em progresso`);
-            setInProgressTrails(withProgress);
-        } catch (e) {
-            console.error('[BibliotecaCursos] 💥 Erro ao carregar trilhas em progresso:', e);
+            // Mapeia trilhas em progresso com dados do progressBarTrailDTO se disponível
+            const inProgressMapped = haveProgressData.map(t => {
+                const progressBar = t.progressBarTrailDTO;
+                const progressPercent = progressBar?.progressPercent ?? progressBar?.progress ?? 0;
+                
+                return {
+                    trailId: t.trailId,
+                    trailName: t.trailName,
+                    trailImage: t.trailImage,
+                    trailIcon: t.trailIcon,
+                    icon: t.trailIcon,
+                    iconName: t.trailIcon,
+                    progress: progressPercent,
+                    progressBarTrailDTO: progressBar
+                };
+            });
+            
+            console.log(`[BibliotecaCursos] ✅ Trilhas em progresso processadas: ${inProgressMapped.length}`);
+            setInProgressTrails(inProgressMapped);
+
+            // Processa trilhas DISPONÍVEIS (NOT_HAVE_PROGRESS)
+            const notHaveProgressData = Array.isArray(notHaveProgressResponse.data) ? notHaveProgressResponse.data : [];
+            console.log(`[BibliotecaCursos] 📊 Trilhas disponíveis (NOT_HAVE_PROGRESS): ${notHaveProgressData.length}`);
+            console.log(`[BibliotecaCursos] 📝 Status das trilhas disponíveis:`, notHaveProgressData.map(t => ({ 
+                id: t.trailId, 
+                name: t.trailName, 
+                status: t.trailStatus, 
+                type: typeof t.trailStatus 
+            })));
+            
+            // Filtra para mostrar apenas trilhas ATIVAS (ENABLE)
+            // Aceita status como número (0 = ENABLE) ou string ("ENABLE", "ATIVO", etc)
+            const onlyEnabled = notHaveProgressData.filter(t => {
+                const rawStatus = t.trailStatus ?? t.status ?? '';
+                
+                // Se for número: 0 = ENABLE
+                if (typeof rawStatus === 'number') {
+                    return rawStatus === 0;
+                }
+                
+                // Se for string: aceita "ENABLE" ou "ATIVO"
+                if (typeof rawStatus === 'string') {
+                    const upper = rawStatus.toUpperCase().trim();
+                    return upper === 'ENABLE' || upper === 'ATIVO';
+                }
+                
+                return false;
+            });
+            
+            console.log(`[BibliotecaCursos] ✅ Trilhas ativas filtradas (NOT_HAVE_PROGRESS): ${onlyEnabled.length}`);
+            console.log(`[BibliotecaCursos] 🔍 Detalhes trilhas disponíveis:`, onlyEnabled.map(t => ({
+                id: t.trailId,
+                name: t.trailName,
+                status: t.trailStatus,
+                hasImage: !!t.trailImage,
+                hasIcon: !!t.trailIcon,
+                hasUser: !!t.user
+            })));
+            setTrails(onlyEnabled);
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível carregar as trilhas.');
+            console.error('[BibliotecaCursos] 💥 Erro ao buscar trilhas:', error);
+            // Em caso de erro, define arrays vazios
+            setTrails([]);
             setInProgressTrails([]);
+        } finally {
+            setLoading(false);
         }
     }, []);
 
-    // Sempre que a tela ganhar foco, recarrega
+    // Lista de Trilhas com Filtro - carrega na montagem
+    useEffect(() => {
+        fetchTrails();
+    }, [fetchTrails]);
+
+    // Sempre que a tela ganhar foco, recarrega trilhas disponíveis e em progresso
     useFocusEffect(
         useCallback(() => {
-            loadInProgress();
-        }, [loadInProgress])
+            console.log('[BibliotecaCursos] 🔄 Tela ganhou foco - recarregando trilhas...');
+            fetchTrails();
+        }, [fetchTrails])
     );
     
 
-    return (
-        <ScrollView style={{ flex: 1, backgroundColor: '#021713' }} >
-            {loading ? (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#021713', paddingTop: 100 }}>
-                    <LoadingSkeletonShimmer type="list" count={5} />
+    // Header component para o FlatList
+    const ListHeader = () => (
+        <View style={styles.listHeaderContainer}>
+            {/* Header */}
+            <View style={styles.containerHeader}>
+                <View style={styles.searchBar}>
+                    <Modal />
+                    <SearchBar value={search} onChangeText={setSearch} />
                 </View>
-            ) : (
-                <View style={styles.container}>
+            </View>
 
-                    {/* Header */}
-                    <View style={styles.containerHeader}>
-                        <View style={styles.searchBar}>
-                            <Modal />
-                            <SearchBar value={search} onChangeText={setSearch} />
-                        </View>
-                    </View>
-
-                    {inProgressTrails.length > 0 && (
-                        <View style={styles.CardProcessoTrilha}>
-                            {/* Card de progresso da trilha que o usuario está participando */}
-                            <View style={styles.TextTrilhas}>
-                                <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas em Procresso</Text>
-                            </View>
-                            {/* Carrossel Horizontal */}
-                            <Carrossel
-                                data={inProgressTrails}
-                                keyExtractor={(t) => String(t.trailId)}
-                                renderItem={({ item: t }) => (
-                                    // Você só se preocupa em RENDERIZAR o card.
-                                    // O Carrossel.js cuida do tamanho e da margem.
-                                    <CardProcessoTrilha
-                                        title={t.trailName}
-                                        progress={t.progress ?? 0}
-                                        trailImage={t.trailImage || null}
-                                        iconKey={t.icon || t.trailIcon || t.iconName || null}
-                                        iconSource={t.iconUri ? { uri: t.iconUri } : null}
-                                        trailId={t.trailId}
-                                        onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
-                                        onTrailDeleted={() => loadInProgress(true)}
-                                    />
-                                )}
-                            />
-                        </View>
-                    )}
-                    
-
-                    {/* Texto - Trilhas Disponiveis */}
+            {inProgressTrails.length > 0 && (
+                <View style={styles.CardProcessoTrilha}>
+                    {/* Card de progresso da trilha que o usuario está participando */}
                     <View style={styles.TextTrilhas}>
-                        <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
-                        <Text style={{ color: '#D9D9D9', fontSize: 15, textAlign: 'left', fontWeight: '100' }}> Explore novas áreas do conhecimento </Text>
+                        <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left', width: '100%'}}> Trilhas em Procresso </Text>
                     </View>
+                    {/* Carrossel Horizontal */}
+                    <Carrossel
+                        data={inProgressTrails}
+                        keyExtractor={(t) => String(t.trailId)}
+                        renderItem={({ item: t }) => (
+                            // Você só se preocupa em RENDERIZAR o card.
+                            // O Carrossel.js cuida do tamanho e da margem.
+                            <CardProcessoTrilha
+                                title={t.trailName}
+                                progress={t.progress ?? 0}
+                                trailImage={t.trailImage || null}
+                                iconKey={t.icon || t.trailIcon || t.iconName || null}
+                                iconSource={t.iconUri ? { uri: t.iconUri } : null}
+                                trailId={t.trailId}
+                                onContinue={() => navigation.navigate('Trilha', { trailId: t.trailId, trailName: t.trailName })}
+                                onTrailDeleted={() => fetchTrails()}
+                            />
+                        )}
+                    />
+                </View>
+            )}
+            
 
-                    <FlatList
-                         data={filteredTrails}
-                        renderItem={({ item }) => {
+            {/* Texto - Trilhas Disponiveis */}
+            <View style={styles.TextTrilhas}>
+                <Text style={{ color: '#FFF', fontSize: 24, textAlign: 'left' }}> Trilhas Disponíveis </Text>
+                <Text style={{ color: '#D9D9D9', fontSize: 15, textAlign: 'left', fontWeight: '100' }}> Explore novas áreas do conhecimento </Text>
+            </View>
+        </View>
+    );
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#021713', paddingTop: 100 }}>
+                <LoadingSkeletonShimmer type="list" count={5} />
+            </View>
+        );
+    }
+
+    return (
+        <View style={{ flex: 1, backgroundColor: '#021713' }}>
+            <FlatList
+                data={filteredTrails}
+                ListHeaderComponent={ListHeader}
+                ListEmptyComponent={() => (
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                        <Text style={{ color: '#FFF', fontSize: 16 }}>Nenhuma trilha disponível</Text>
+                        <Text style={{ color: '#999', fontSize: 12, marginTop: 5 }}>
+                            Total: {trails.length} | Filtradas: {filteredTrails.length}
+                        </Text>
+                    </View>
+                )}
+                renderItem={({ item, index }) => {
+                            console.log(`[BibliotecaCursos] 📦 Renderizando item ${index}:`, item?.trailName, item?.trailId);
 
                             // dentro do render do FlatList (no CardsTrilhas)
                             const onEnterTrail = async (trailId, trailPassword) => {
@@ -202,25 +249,7 @@ export default function BibliotecaCursos() {
                                     professorPhotoUrl={professorPhotoUrl}
                                     onEnter={() => onEnterTrail(item.trailId, item.trailPassword)}
                                     onRefresh={() => {
-                                        loadInProgress(true);
-                                        // Recarrega trilhas disponíveis
-                                        const fetchTrails = async () => {
-                                            try {
-                                                const response = await api.get("trail/read/all-trails", {
-                                                    params: {
-                                                        haveProgress: "NOT_HAVE_PROGRESS"
-                                                    },
-                                                });
-                                                const data = Array.isArray(response.data) ? response.data : [];
-                                                const onlyEnabled = data.filter(t => {
-                                                    const raw = String(t.trailStatus || "").toUpperCase().trim();
-                                                    return raw === "ENABLE";
-                                                });
-                                                setTrails(onlyEnabled);
-                                            } catch (error) {
-                                                console.error('Erro ao recarregar trilhas:', error);
-                                            }
-                                        };
+                                        // Recarrega ambas as listas (disponíveis e em progresso)
                                         fetchTrails();
                                     }}
                                 />
@@ -228,34 +257,29 @@ export default function BibliotecaCursos() {
                         }}
                         keyExtractor={item => String(item.trailId || item.id || Math.random())}
                         contentContainerStyle={styles.flatListContainer}
+                        nestedScrollEnabled={true}
                     />
-
-                </View >
-            )}
-        </ScrollView>
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
-    container: {
+    listHeaderContainer: {
         justifyContent: 'flex-start',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         backgroundColor: '#021713',
-        paddingTop: 50,
-        gap: 35,
-        height: 'auto',
-        flex: 1,
-        paddingBottom: 80
-
+        paddingTop: 15,
+        gap: 15,
     },
     containerHeader: {
         width: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+
     },
     searchBar: {
-        width: 'auto',
-        height: 60,
+        width: '90%',
+        height: 'auto',
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
@@ -265,30 +289,28 @@ const styles = StyleSheet.create({
     perfil: {
         height: 50,
         width: 50,
-        backgroundColor: 'red',
         borderRadius: 100
     },
     TextTrilhas: {
-        width: '95%',
-        height: 50,
+        width: '100%',
+        height: 'auto',
         justifyContent: 'center',
-        gap: 8
+        alignItems: 'flex-start',  
+        gap: 4,
+        paddingLeft: 20,
     },
     flatListContainer: {
-        flexGrow: 1,
         backgroundColor: '#021713',
         alignItems: 'center',
         gap: 25,
-        height: 'auto',
-        flex: 1,
-        paddingTop: 30,
-        marginBottom: 30
-
+        paddingTop: 20,
+        paddingBottom: 100,
+        paddingHorizontal: 0,
     },
     CardProcessoTrilha: {
         width: '100%',
         justifyContent: 'center',
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
         gap: 12,
-    }
+    },
 })

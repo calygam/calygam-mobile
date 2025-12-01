@@ -60,7 +60,7 @@ function Routes() {
 
 
     return (
-        <Tab.Navigator initialRouteName="home" screenOptions={{
+        <Tab.Navigator initialRouteName="Home" screenOptions={{
             tabBarActiveTintColor: '#6C63FF',
             tabBarInactiveTintColor: '#676D75',
             headerShown: false,
@@ -80,7 +80,7 @@ function Routes() {
             }
 
         }}>
-            <Tab.Screen name="home" component={Homepage} options={{
+            <Tab.Screen name="Home" component={Homepage} options={{
                 tabBarIcon: ({ color, size, focused }) => {
                     if (focused) {
                         return <IconHomeAtivo />
