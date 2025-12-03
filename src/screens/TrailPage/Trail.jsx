@@ -9,6 +9,8 @@ import { computeRankProgress } from '../../utils/rankUtils';
 import IconAviso from '../../../assets/svg/undraw_access-denied_krem.svg';
 import api from '../../api/api';
 import { validateTrailExists, removeTrailFromCache } from '../../utils/trailValidation';
+import { getFlagsTimer } from '../../services/submissionService';
+import useFlagsTimer from '../../hooks/useFlagsTimer';
 
 
 export default function Trail() {
@@ -19,6 +21,8 @@ export default function Trail() {
     const [userName, setUserName] = useState();
     const [trail, setTrail] = useState();
     const [completedIndex, setCompletedIndex] = useState(-1);
+    const [flags, setFlags] = useState({ flagsQtd: null, flagGenerateTimer: 0 });
+    const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -31,12 +35,31 @@ export default function Trail() {
         loadUser();
     }, []);
 
+    // Carrega flags globais ao entrar e quando a tela ganha foco
+    const loadFlags = React.useCallback(async () => {
+        try {
+            const res = await getFlagsTimer();
+            setFlags(res);
+            if (res?.flagGenerateTimer > 0) {
+                startTimer(res.flagGenerateTimer);
+            } else {
+                resetTimer(0);
+            }
+        } catch (e) {
+            console.log('[Trail] Erro ao carregar flags:', e);
+        }
+    }, [startTimer, resetTimer]);
+
+    useEffect(() => {
+        loadFlags();
+    }, [loadFlags]);
+
 
     useEffect(() => {
         const loadTrail = async () => {
             try {
                 if (trailId) {
-                    // 🛡️ VALIDAÇÃO: Verificar se trilha ainda existe antes de carregar
+                    // VALIDAÇÃO: Verificar se trilha ainda existe antes de carregar
                     const validation = await validateTrailExists(trailId);
                     
                     if (!validation.exists) {
@@ -121,9 +144,12 @@ export default function Trail() {
                     setUserName(JSON.parse(data));
                 }
 
+                // Recarregar flags e timer
+                await loadFlags();
+
                 // Recarregar progresso da trilha para atualizar completedIndex
                 if (trailId) {
-                    // 🛡️ VALIDAÇÃO: Verificar se trilha ainda existe antes de buscar progresso
+                    // VALIDAÇÃO: Verificar se trilha ainda existe antes de buscar progresso
                     const validation = await validateTrailExists(trailId);
                     if (!validation.exists) {
                         // Trilha foi deletada - remove do cache e volta para Home
@@ -151,7 +177,7 @@ export default function Trail() {
                 }
             };
             loadData();
-        }, [trailId])
+        }, [trailId, loadFlags])
     );
 
 
@@ -197,6 +223,16 @@ export default function Trail() {
                     )}
                 </View>
 
+                {/* Topo: Bandeiras e Timer globais */}
+                <View style={styles.FlagsBox}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={styles.flagsLabel}>Bandeiras restantes</Text>
+                        <Text style={styles.flagsValue}>{flags?.flagsQtd ?? '-'}</Text>
+                    </View>
+                    {(flags?.flagsQtd ?? 0) <= 0 && (
+                        <Text style={styles.flagsTimer}>Reseta em: {hhmmss}</Text>
+                    )}
+                </View>
 
                 {/* Status e recompensar da atividade */}
                 <View style={styles.StatusContainer}>
@@ -312,6 +348,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 15,
 
+    },
+    FlagsBox: {
+        width: '95%',
+        backgroundColor: '#1E3D35',
+        borderRadius: 12,
+        padding: 12,
+    },
+    flagsLabel: {
+        color: '#B7B7B7',
+        fontSize: 12
+    },
+    flagsValue: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700'
+    },
+    flagsTimer: {
+        color: '#CE82FF',
+        marginTop: 6,
+        fontSize: 12,
+        textAlign: 'right'
     },
     title: {
         fontSize: 16,

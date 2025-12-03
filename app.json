@@ -9,7 +9,9 @@
         "projectId": "a9bd4283-889c-4997-a058-2698fcbf4905"
       }
     },
-    "plugins": [],
+    "plugins": [
+    
+    ],
     "android": {
       "package": "com.mr_cat.Calygam"
     }

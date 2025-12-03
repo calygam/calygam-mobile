@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Alert, TextInput } from 'react-native'
 import React, { useState, useMemo } from 'react'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import IconUpload from '../../../assets/svg/upload-cloudRoxo.svg';
@@ -6,6 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/api';
 import ModalEntrega from '../../components/ModalEntrega&Sucesso/ModalEntrega';
 import ModalSucessoEntrega from '../../components/ModalEntrega&Sucesso/ModalSucessoEntrega';
+import { getLimitsForUI, getActivitySubmissionsCount, getFlagsTimer } from '../../services/submissionService';
+import useFlagsTimer from '../../hooks/useFlagsTimer';
+import { CommentsSection } from '../../components/CommentsSection/CommentsSection';
 
 const decodeJWT = (token) => {
     try {
@@ -43,6 +46,8 @@ export default function PageAtividade() {
     const [submissions, setSubmissions] = useState([]);
     const [activityStatus, setActivityStatus] = useState(null);
     const [progressId, setProgressId] = useState(null);
+    const [limits, setLimits] = useState(null); // { perActivity, flags, shouldBlock, blockReason }
+    const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
 
     const filePreviewIsImage = useMemo(() => {
         const mt = file?.mimeType || '';
@@ -55,6 +60,25 @@ export default function PageAtividade() {
         fetchUser();
         fetchProgressAndSubmissions();
     }, [route.params]);
+
+    // Carrega limites (entregas por atividade e flags globais) quando já soubermos o progressId
+    React.useEffect(() => {
+        const loadLimits = async () => {
+            try {
+                if (!progressId) return;
+                const l = await getLimitsForUI({ progressId });
+                setLimits(l);
+                if (l?.flags?.flagGenerateTimer > 0) {
+                    startTimer(l.flags.flagGenerateTimer);
+                } else {
+                    resetTimer(0);
+                }
+            } catch (e) {
+                console.log('[PageAtividade] Erro ao carregar limites:', e);
+            }
+        };
+        loadLimits();
+    }, [progressId]);
 
     // ajuda simples para inferir mime pela extensão quando o picker não retorna
     const inferMimeTypeFromName = (name = '') => {
@@ -136,7 +160,7 @@ export default function PageAtividade() {
                         alert('Seleção de documentos indisponível neste app. Reconstrua com expo-document-picker (expo run:android) ou atualize o Expo Go.');
                         return;
                     }
-                } catch {}
+                } catch { }
             }
             const res = await DocumentPicker.getDocumentAsync({
                 type: ['image/*', 'application/pdf', 'application/zip', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
@@ -178,15 +202,15 @@ export default function PageAtividade() {
             const password = await AsyncStorage.getItem(`trailPassword:${trailId}`);
             console.log('[ensureProgress] Senha recuperada:', password);
             console.log('[ensureProgress] Tentando join na trilha:', trailId);
-            
+
             const query = password && password.length > 0 ? `?trailPassword=${encodeURIComponent(password)}` : "";
             // O interceptor já adiciona Authorization
             const resp = await api.post(`/progress/join/${trailId}${query}`);
 
             console.log('[ensureProgress] JOIN SUCCESS - status:', resp.status);
             console.log('[ensureProgress] JOIN SUCCESS - data length:', resp.data?.length);
-            
-            if (![200,201].includes(resp.status) || !Array.isArray(resp.data) || resp.data.length === 0) {
+
+            if (![200, 201].includes(resp.status) || !Array.isArray(resp.data) || resp.data.length === 0) {
                 throw new Error('Join não inicializou progresso.');
             }
             return resp.data;
@@ -199,7 +223,7 @@ export default function PageAtividade() {
             console.log('  message:', e?.message);
             console.log('  full error:', JSON.stringify(e, null, 2));
             console.log('=====================================================');
-            
+
             if (e?.response?.status === 403) {
                 Alert.alert('Acesso negado', 'Sessão inválida. Faça login novamente.');
             } else if (e?.response?.status === 400) {
@@ -269,7 +293,7 @@ export default function PageAtividade() {
                     const chk = await api.get(`/progress/read/${trailId}`);
                     const progressList = chk?.data?.progressList || [];
                     const existsHere = progressList.some(p => Number(p.activityId) === Number(activityId));
-                    
+
                     if (!existsHere) {
                         // Progresso não existe - tentar criar via join
                         console.log('[submitActivity] Progresso não encontrado, tentando join...');
@@ -277,7 +301,7 @@ export default function PageAtividade() {
                         if (!password) {
                             throw new Error('Você precisa entrar na trilha com a senha antes de enviar atividades.');
                         }
-                        
+
                         const joinResp = await ensureProgressInitialized();
                         const found = Array.isArray(joinResp) && joinResp.some(p => Number(p.activityId) === Number(activityId));
                         if (!found) {
@@ -329,7 +353,7 @@ export default function PageAtividade() {
             // Upload direto via fetch para evitar header incorreto aplicado pelo axios em alguns ambientes RN
             console.log('[submitActivity] Enviando PUT (fetch) para /progress/submit/trail/', trailId, '/activity/', activityId);
             const tokenFetch = await AsyncStorage.getItem('userToken');
-            const fetchResp = await fetch(`${api.defaults.baseURL}/progress/submit/trail/${trailId}/activity/${activityId}` , {
+            const fetchResp = await fetch(`${api.defaults.baseURL}/progress/submit/trail/${trailId}/activity/${activityId}`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${tokenFetch}`
@@ -340,7 +364,12 @@ export default function PageAtividade() {
             console.log('[submitActivity] Fetch status upload:', fetchResp.status);
             if (!fetchResp.ok) {
                 const txtErr = await fetchResp.text();
-                throw new Error(`Falha upload (fetch) status=${fetchResp.status} body=${txtErr}`);
+                // Backend retorna mensagens de erro como texto no body (HTTP 400)
+                // Exemplos: "Limite de 5 entregas atingido para esta atividade!"
+                //           "Entregas - Limite atingido. Tente novamente em Xh e Ym"
+                const error = new Error(txtErr || `Erro ao enviar atividade (status ${fetchResp.status})`);
+                error.response = { status: fetchResp.status, data: txtErr };
+                throw error;
             }
             const txtOk = await fetchResp.text();
             console.log('[submitActivity] ✅ Upload bem-sucedido (fetch) body:', txtOk);
@@ -351,8 +380,7 @@ export default function PageAtividade() {
                 if (previousUserData.userRank !== newUser.userRank) {
                     Alert.alert('Parabéns!', `Você subiu para ${newUser.userRank}!`);
                 } else if ((newUser.userXp || 0) > (previousUserData.userXp || 0)) {
-                    const delta = (newUser.userXp || 0) - (previousUserData.userXp |3
-                        | 0);
+                    const delta = (newUser.userXp || 0) - (previousUserData.userXp || 0);
                     Alert.alert('XP Ganho!', `Você ganhou ${delta} XP!`);
                 }
             }
@@ -360,6 +388,20 @@ export default function PageAtividade() {
             // Recarregar progresso e submissões
             await fetchProgressAndSubmissions();
 
+            // Atualizar limites após envio bem-sucedido
+            if (progressId) {
+                try {
+                    const updatedLimits = await getLimitsForUI({ progressId });
+                    setLimits(updatedLimits);
+                    if (updatedLimits?.flags?.flagGenerateTimer > 0) {
+                        startTimer(updatedLimits.flags.flagGenerateTimer);
+                    } else {
+                        resetTimer(0);
+                    }
+                } catch (e) {
+                    console.log('[submitActivity] Erro ao atualizar limites:', e);
+                }
+            }
 
             // Atualiza progresso local para Biblioteca e desbloqueio da próxima
             try {
@@ -373,7 +415,7 @@ export default function PageAtividade() {
                     const stored = await AsyncStorage.getItem(`currentTrail:${uid}`);
                     const t = stored ? JSON.parse(stored) : null;
                     total = Array.isArray(t?.activities) ? t.activities.length : 0;
-                } catch {}
+                } catch { }
                 const percent = total > 0 ? Math.round(((Number(index) + 1) / total) * 100) : 0;
                 await AsyncStorage.setItem(`trailProgress:${uid}:${trailId}`, String(percent));
 
@@ -384,8 +426,8 @@ export default function PageAtividade() {
                     const prev = current != null ? Number(current) : -1;
                     const next = Math.max(prev, Number(index));
                     await AsyncStorage.setItem(key, String(next));
-                } catch {}
-            } catch {}
+                } catch { }
+            } catch { }
 
             setShowConfirm(false);
             setShowSuccess(true);
@@ -394,31 +436,32 @@ export default function PageAtividade() {
             console.log('[submitActivity] ❌ ERRO NO UPLOAD');
             console.log('[submitActivity] Erro completo:', e);
             // Sem fallback axios agora; fetch já é caminho principal
-            
+
             if (e?.response?.status === 403) {
                 Alert.alert('Acesso negado', 'Token expirado ou sem permissão. Faça login novamente.');
                 // opcional: limpar token e redirecionar login
             } else {
-                const msg = e?.userMessage || 'Erro ao enviar arquivo.';
-                Alert.alert('Erro', msg);
-            }
-            // mantém sua lógica de apresentação de erro (errMsg)
-            let errMsg = "Erro desconhecido";
+                // Extrair mensagem de erro do backend
+                let errMsg = 'Erro ao enviar arquivo.';
 
-            if (e.response && e.response.data) {
-                try {
-                    errMsg = typeof e.response.data === "string"
-                        ? e.response.data
-                        : JSON.stringify(e.response.data);
-                } catch {
-                    errMsg = "Erro ao processar a resposta do servidor.";
+                if (e?.response?.data) {
+                    const data = e.response.data;
+                    if (typeof data === 'string') {
+                        errMsg = data;
+                    } else if (data?.message) {
+                        errMsg = data.message;
+                    } else if (data?.responseMsg) {
+                        errMsg = data.responseMsg;
+                    }
+                } else if (e?.message) {
+                    errMsg = e.message;
+                } else if (e?.userMessage) {
+                    errMsg = e.userMessage;
                 }
-            } else if (e.message) {
-                errMsg = e.message;
-            }
 
-            console.log("Falha upload:", errMsg);
-            alert(`Erro ao enviar arquivo:\n\n${errMsg}`);
+                console.log('[submitActivity] Erro:', errMsg);
+                Alert.alert('Erro ao enviar', errMsg);
+            }
         }
         setUploading(false);
     };
@@ -454,6 +497,27 @@ export default function PageAtividade() {
                 </View>
             )}
 
+            {/* Topo: Limites */}
+            <View style={styles.limitsBox}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <Text style={styles.boxTitle}>Entregas desta atividade</Text>
+                    <Text style={styles.limitValue}>{limits?.perActivity?.used ?? 0}/5</Text>
+                </View>
+                {limits?.perActivity?.atLimit && (
+                    <Text style={styles.warningText}>⚠️ Limite de 5 entregas atingido para esta atividade!</Text>
+                )}
+
+                <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#3C4250' }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={styles.boxTitle}>Bandeiras restantes</Text>
+                        <Text style={styles.limitValue}>{limits?.flags?.flagsQtd ?? 0}</Text>
+                    </View>
+                    {(limits?.flags?.flagsQtd ?? 0) <= 0 && (
+                        <Text style={styles.timerText}>Reseta em: {hhmmss}</Text>
+                    )}
+                </View>
+            </View>
+
             <Text style={styles.boxTitle}>Sua entrega</Text>
 
             {/* Espaço para futura entrega de arquivo / inputs */}
@@ -481,13 +545,39 @@ export default function PageAtividade() {
             <View style={styles.actionsRow}>
                 <TouchableOpacity style={styles.actionBtn} onPress={handlePickFile}><Text style={styles.actionText}>Escolher arquivo</Text></TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: file ? '#6C63FF' : '#6C63FF55' }]}
-                    disabled={!file}
-                    onPress={() => setShowConfirm(true)}
+                    style={[
+                        styles.actionBtn,
+                        {
+                            backgroundColor: (file && !limits?.shouldBlock) ? '#6C63FF' : '#6C63FF55'
+                        }
+                    ]}
+                    disabled={!file || limits?.shouldBlock}
+                    onPress={() => {
+                        // Bloqueia localmente se já atingir limites
+                        if (limits?.perActivity?.atLimit) {
+                            Alert.alert(
+                                'Limite por atividade',
+                                'Limite de 5 entregas atingido para esta atividade!'
+                            );
+                            return;
+                        }
+                        if ((limits?.flags?.flagsQtd ?? 0) <= 0) {
+                            Alert.alert(
+                                'Limite global',
+                                `Entregas - Limite atingido. Tente novamente em ${hhmmss}.`
+                            );
+                            return;
+                        }
+                        setShowConfirm(true);
+                    }}
                 >
                     <Text style={[styles.actionText, { color: '#FFF' }]}>Entregar atividade</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Sistema de comentários em tempo real */}
+            <CommentsSection activityId={activityId} />
+
 
             {/* Modal de confirmação */}
             <ModalEntrega
@@ -516,7 +606,36 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         backgroundColor: '#021713',
         padding: 20,
-        paddingTop: 55
+        paddingTop: 55,
+        width: '100%',
+    },
+    limitsBox: {
+        backgroundColor: '#1E3D35',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 16,
+    },
+    limitLabel: {
+        color: '#B7B7B7',
+        fontSize: 12
+    },
+    limitValue: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700'
+    },
+    timerText: {
+        color: '#CE82FF',
+        marginTop: 6,
+        fontSize: 12,
+        textAlign: 'right'
+    },
+    warningText: {
+        color: '#FF6B6B',
+        fontSize: 12,
+        marginTop: 8,
+        textAlign: 'center',
+        fontWeight: '600'
     },
     header: {
         flexDirection: 'row',
@@ -573,7 +692,6 @@ const styles = StyleSheet.create({
 
     },
     actionBtn: {
-        backgroundColor: '#592ced56',
         paddingVertical: 10,
         paddingHorizontal: 14,
         borderRadius: 10
@@ -583,24 +701,21 @@ const styles = StyleSheet.create({
         fontWeight: '600'
     },
     descriptionBox: {
-        // backgroundColor: '#1E3D35',
         borderRadius: 12,
         padding: 16,
-        marginBottom: 25,
-        // borderWidth: 1,
-        // borderColor: '#6C63FF55'
+        marginBottom: 35,
+        width: '100%',
     },
     submissionsBox: {
         backgroundColor: '#1E3D35',
         borderRadius: 12,
         padding: 16,
         marginBottom: 25,
-        borderWidth: 2,
-        borderColor: '#ffffffc2'
     },
     submissionText: {
         color: '#E5E5E5',
         fontSize: 14,
         marginBottom: 8
-    }
+    },
+
 })

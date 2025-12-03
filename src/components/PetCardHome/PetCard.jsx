@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { fetchEquippedPet, feedPet } from '../../services/petService';
+import ModalTrocarSkin from '../../components/ModalTrocarSkin/ModalTrocarSkin';
 import ModalTrocarPet from '../../components/ModalTrocarPet/ModalTrocarPet';
 
 export default function TestePet({ route, renderEmpty }) {
@@ -8,6 +9,7 @@ export default function TestePet({ route, renderEmpty }) {
     const [showBoosts, setShowBoosts] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showTrocarPet, setShowTrocarPet] = useState(false);
+    const [showTrocarSkin, setShowTrocarSkin] = useState(false);
 
     // Carrega pet e dados do usuário
     useEffect(() => {
@@ -163,11 +165,15 @@ export default function TestePet({ route, renderEmpty }) {
                     >
                         <Text style={styles.btnText}>🍖🍖 Alimentar Máximo</Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.btnTrocarSkin} onPress={() => setShowTrocarSkin(true)}>
+                        <Text style={styles.btnText}>Trocar Skin</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
 
             {/* Botões de Ações */}
-            <View style={{ flexDirection: 'row', alignSelf: 'center', marginTop: 20, gap: 12, marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignSelf: 'center', marginTop: 20, gap: 12, marginBottom: 20, width: '100%'}}>
                 <TouchableOpacity style={styles.btnTrocar} onPress={() => setShowTrocarPet(true)}>
                     <Text style={styles.btnText}> Trocar Pet </Text>
                 </TouchableOpacity>
@@ -182,6 +188,16 @@ export default function TestePet({ route, renderEmpty }) {
                 onClose={() => setShowTrocarPet(false)}
                 onEquipped={() => {
                     setShowTrocarPet(false);
+                    loadPetData();
+                }}
+            />
+
+            {/* Modal Trocar Skin */}
+            <ModalTrocarSkin
+                visible={showTrocarSkin}
+                onClose={() => setShowTrocarSkin(false)}
+                onEquipped={() => {
+                    setShowTrocarSkin(false);
                     loadPetData();
                 }}
             />
@@ -277,7 +293,7 @@ const styles = StyleSheet.create({
     },
     btnTrocar: {
         flex: 1,
-        paddingHorizontal: 25,
+        paddingHorizontal: 15,
         height: 50,
         backgroundColor: '#6C63FF',
         borderRadius: 20,
@@ -286,7 +302,7 @@ const styles = StyleSheet.create({
     },
     btnDesequipar: {
         flex: 1,
-        paddingHorizontal: 25,
+        paddingHorizontal: 15,
         height: 50,
         backgroundColor: '#C1121F',
         borderRadius: 20,
@@ -310,6 +326,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         height: 50,
         backgroundColor: '#FF9800',
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    btnTrocarSkin: {
+        flex: 1,
+        paddingHorizontal: 15,
+        height: 50,
+        backgroundColor: '#6C63FF',
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',

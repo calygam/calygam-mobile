@@ -73,7 +73,7 @@ export default function Homepage() {
 
             console.log(`[Homepage] 📋 Total de trilhas no cache: ${joinedArr.length}`);
 
-            // 🛡️ VALIDAÇÃO: Usa função utilitária para validar e filtrar trilhas
+            // VALIDAÇÃO: Usa função utilitária para validar e filtrar trilhas
             const { validTrails, removedCount } = await validateAndFilterTrails(joinedArr, uid);
             
             if (removedCount > 0) {
@@ -133,7 +133,7 @@ export default function Homepage() {
 
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, alignItems: "center", justifyContent: "space-between", }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, alignItems: "center", justifyContent: "space-between" }}>
 
                 {/* Fundo */}
                 <View style={styles.background}>

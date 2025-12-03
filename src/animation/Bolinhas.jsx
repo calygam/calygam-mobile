@@ -15,7 +15,7 @@ export default function GamifiedActivity() {
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
       <LottieView
         ref={animationRef}
-  source={require('../../assets/SLa.json')} 
+        source={require('../../assets/SLa.json')}
         style={{ width: 150, height: 150 }}
         loop={false}
       />

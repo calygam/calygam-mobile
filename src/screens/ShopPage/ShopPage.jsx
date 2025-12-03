@@ -182,7 +182,7 @@ export default function ShopPage() {
 
           <View style={styles.containerCard}>
             {loading ? (
-              <LoadingSkeletonShimmer type="cards" count={10} />
+              <LoadingSkeletonShimmer type="cards" count={30} />
             ) : (
               <View style={styles.card}>
                 {(Array.isArray(pets) ? pets : []).map((item, index) => (
@@ -237,7 +237,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: '#0FFF',
     paddingTop: 55,
     gap: 35,
     backgroundColor: '#021713'
@@ -273,7 +272,11 @@ const styles = StyleSheet.create({
 
   },
   containerCard: {
-    // backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: '#021713',
+  
 
   }
 })

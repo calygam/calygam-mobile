@@ -17,8 +17,8 @@ if (axios.defaults.headers) {
 }
 
 const api = axios.create({
-    baseURL: "http://10.0.0.191:8080",
-    // baseURL: 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net'
+    // baseURL: "http://192.168.18.234:8080",
+    baseURL: 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net'
 })
 
 api.interceptors.request.use(

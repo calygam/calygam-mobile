@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'flex-start',  
         gap: 4,
-        paddingLeft: 20,
+        paddingTop: 18,
     },
     flatListContainer: {
         backgroundColor: '#021713',

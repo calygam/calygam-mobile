@@ -110,7 +110,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Image
                         source={professorPhotoUrl ? { uri: professorPhotoUrl } : require('../../../assets/image/ImagemSem.png')}
-                        style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#333' }}
+                        style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#ffffffff' }}
                         onError={(e) => {
                             console.log('[CardsTrilhas] Erro ao carregar foto do professor:', professorPhotoUrl);
                         }}

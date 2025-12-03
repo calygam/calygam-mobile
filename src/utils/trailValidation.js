@@ -152,3 +152,5 @@ export const validateAndFilterTrails = async (trails, uid = null) => {
     return { validTrails, removedCount };
 };
 
+
+
