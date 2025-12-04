@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Modal } from 'react-native';
 import { useComments } from '../../hooks/useComments';
 import { CommentItem } from '../CommentItem/CommentItem';
 
@@ -8,8 +8,11 @@ import { CommentItem } from '../CommentItem/CommentItem';
  */
 export const CommentsSection = ({ activityId }) => {
   const [commentText, setCommentText] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null);
   const [textInputHeight, setTextInputHeight] = useState(40);
+  const [selectedItem, setSelectedItem] = useState(null); // {type: 'comment'|'reply', data: item}
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState(null); // Item sendo editado
+  const inputRef = useRef(null);
 
   const {
     comments,
@@ -25,34 +28,109 @@ export const CommentsSection = ({ activityId }) => {
   } = useComments(activityId, 5000); // Auto-refresh a cada 5 segundos
 
   const handleSendComment = async () => {
+    // Se estiver editando, atualiza o comentário
+    if (editingItem) {
+      const success = await updateComment(
+        editingItem.data.messageActivityId, 
+        commentText, 
+        editingItem.type === 'reply'
+      );
+      if (success) {
+        setCommentText('');
+        setTextInputHeight(40);
+        setEditingItem(null);
+      }
+      return;
+    }
+
+    // Senão, envia novo comentário
     const success = await sendNewComment(
       commentText,
       'MESSAGE_CONTRIBUTION',
-      replyingTo?.messageActivityId
+      null
     );
 
     if (success) {
       setCommentText('');
-      setReplyingTo(null);
       setTextInputHeight(40);
     }
   };
 
-  const handleReply = (comment) => {
-    setReplyingTo(comment);
-    // Focar no input (opcional: usar ref)
+  // Função para enviar resposta (agora usada pelo CommentItem)
+  const handleReply = async (replyToId, replyText) => {
+    const success = await sendNewComment(
+      replyText,
+      'MESSAGE_REPLY',
+      replyToId
+    );
+    return success;
   };
 
-  const handleCancelReply = () => {
-    setReplyingTo(null);
-  };
+  // Abre o modal com opções
+  const openMenu = useCallback((type, item) => {
+    setSelectedItem({ type, data: item });
+    setModalVisible(true);
+  }, []);
+
+  // Handler para editar - vai pro input
+  const handleEditPress = useCallback(() => {
+    if (!selectedItem) return;
+    
+    setModalVisible(false);
+    setEditingItem(selectedItem);
+    setCommentText(selectedItem.data.messageActivityDescription);
+    
+    // Foca no input
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  }, [selectedItem]);
+
+  // Handler para deletar - mostra modal de confirmação
+  const handleDeletePress = useCallback(() => {
+    setModalVisible(false);
+    
+    // Marca como delete e reabre modal
+    setTimeout(() => {
+      if (selectedItem) {
+        setSelectedItem({ ...selectedItem, type: 'delete' });
+        setModalVisible(true);
+      }
+    }, 200);
+  }, [selectedItem]);
+
+  // Confirma a exclusão
+  const confirmDelete = useCallback(async () => {
+    if (!selectedItem) return;
+    
+    setModalVisible(false);
+    await removeComment(selectedItem.data.messageActivityId);
+    setSelectedItem(null);
+  }, [selectedItem, removeComment]);
+
+  // Cancela a exclusão
+  const cancelDelete = useCallback(() => {
+    setModalVisible(false);
+    setSelectedItem(null);
+  }, []);
+
+  // Backdrop do modal
+  const renderBackdrop = useCallback(
+    (props) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+      />
+    ),
+    []
+  );
 
   const renderComment = ({ item }) => (
     <CommentItem
       comment={item}
       onReply={handleReply}
-      onEdit={updateComment}
-      onDelete={removeComment}
+      onMenuPress={openMenu}
       activityId={activityId}
     />
   );
@@ -87,19 +165,25 @@ export const CommentsSection = ({ activityId }) => {
     <View style={styles.container}>
       {/* Input de comentário */}
       <View style={styles.inputContainer}>
-        {replyingTo && (
-          <View style={styles.replyingToBar}>
-            <Text style={styles.replyingToText}>
-              Respondendo para <Text style={styles.replyingToName}>{replyingTo.userName}</Text>
+        {editingItem && (
+          <View style={styles.editingBanner}>
+            <Text style={styles.editingText}>
+              Editando {editingItem.type === 'comment' ? 'comentário' : 'resposta'}
             </Text>
-            <TouchableOpacity onPress={handleCancelReply}>
-              <Text style={styles.cancelReplyText}>✕</Text>
+            <TouchableOpacity 
+              onPress={() => {
+                setEditingItem(null);
+                setCommentText('');
+              }}
+            >
+              <Text style={styles.cancelEditText}>✕ Cancelar</Text>
             </TouchableOpacity>
           </View>
         )}
-
+        
         <View style={[styles.inputBox, { minHeight: Math.max(60, textInputHeight + 20) }]}>
           <TextInput
+            ref={inputRef}
             multiline
             value={commentText}
             onChangeText={setCommentText}
@@ -120,7 +204,7 @@ export const CommentsSection = ({ activityId }) => {
           {sending ? (
             <ActivityIndicator color="#FFF" size="small" />
           ) : (
-            <Text style={styles.sendBtnText}>Enviar</Text>
+            <Text style={styles.sendBtnText}>{editingItem ? 'Salvar' : 'Enviar'}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -158,6 +242,54 @@ export const CommentsSection = ({ activityId }) => {
           <Text style={styles.loadMoreText}>Carregar mais comentários</Text>
         </TouchableOpacity>
       )}
+
+      {/* Modal Simples de Confirmação */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelDelete}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1}
+          onPress={cancelDelete}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>
+              {selectedItem?.type === 'delete' ? 'Deseja Deletar?' : 'Opções'}
+            </Text>
+            
+            {selectedItem?.type !== 'delete' ? (
+              <>
+                <TouchableOpacity onPress={handleEditPress} style={styles.modalButton}>
+                  <Text style={styles.modalButtonText}>✏️ Editar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={handleDeletePress} style={styles.modalButton}>
+                  <Text style={[styles.modalButtonText, styles.deleteButtonText]}>🗑️ Deletar</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity 
+                  onPress={cancelDelete} 
+                  style={[styles.confirmButton, styles.cancelButton]}
+                >
+                  <Text style={styles.confirmButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  onPress={confirmDelete} 
+                  style={[styles.confirmButton, styles.deleteConfirmButton]}
+                >
+                  <Text style={[styles.confirmButtonText, styles.deleteConfirmText]}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -170,29 +302,6 @@ const styles = StyleSheet.create({
   inputContainer: {
     width: '100%',
     marginBottom: 20,
-  },
-  replyingToBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#6C63FF33',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  replyingToText: {
-    color: '#B7B7B7',
-    fontSize: 12,
-  },
-  replyingToName: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  cancelReplyText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   inputBox: {
     backgroundColor: '#1E3D35',
@@ -279,5 +388,90 @@ const styles = StyleSheet.create({
     color: '#928cffff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  // Banner de edição
+  editingBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#6C63FF',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  editingText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cancelEditText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  // Modal simples
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#1E3D35',
+    borderRadius: 12,
+    minWidth: 280,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3C4250',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  deleteButtonText: {
+    color: '#FF6B6B',
+  },
+  // Botões de confirmação
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#3C4250',
+  },
+  deleteConfirmButton: {
+    backgroundColor: '#FF6B6B',
+  },
+  confirmButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteConfirmText: {
+    color: '#FFF',
   },
 });

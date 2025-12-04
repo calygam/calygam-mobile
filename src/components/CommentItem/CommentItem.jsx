@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Keyboard } from 'react-native';
 import { useReplies } from '../../hooks/useComments';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Componente para exibir um único comentário com opções de responder, editar e deletar
@@ -8,39 +9,93 @@ import { useReplies } from '../../hooks/useComments';
 export const CommentItem = ({ 
   comment, 
   onReply, 
-  onEdit, 
-  onDelete, 
+  onMenuPress,
   activityId 
 }) => {
   const [showReplies, setShowReplies] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(comment.messageActivityDescription);
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const replyInputRef = useRef(null);
+
+  // Verifica se o usuário é o dono do comentário
+  useEffect(() => {
+    const checkOwner = async () => {
+      try {
+        // DEBUG: Ver todo o objeto comment
+        console.log('[CommentItem] COMMENT COMPLETO:', JSON.stringify(comment, null, 2));
+        
+        // Caso contrário, compara userId
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          console.log('[CommentItem] Sem token, não é owner');
+          setIsOwner(false);
+          return;
+        }
+
+        // Decodifica o token para obter userId
+        const payload = token.split('.')[1];
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        const currentUserId = decoded?.userId || decoded?.sub;
+
+        console.log('[CommentItem] Token decodificado:', decoded);
+        console.log('[CommentItem] currentUserId do token:', currentUserId);
+
+        // Compara com o userId do comentário
+        const commentUserId = comment.userId || comment.user?.userId;
+        console.log('[CommentItem] commentUserId:', commentUserId);
+        console.log('[CommentItem] comment.messageUserOwner (do backend):', comment.messageUserOwner);
+        
+        // Usar SEMPRE a verificação manual, ignorando messageUserOwner do backend
+        const owner = Number(currentUserId) === Number(commentUserId);
+        setIsOwner(owner);
+        console.log('[CommentItem] ✅ RESULTADO FINAL - isOwner:', owner);
+      } catch (error) {
+        console.error('[CommentItem] ❌ Erro ao verificar proprietário:', error);
+        setIsOwner(false);
+      }
+    };
+
+    checkOwner();
+  }, [comment]);
 
   const { replies, loading: loadingReplies, hasNext, loadMore, refresh } = useReplies(
     showReplies ? comment.messageActivityId : null,
     activityId
   );
 
-  const handleEdit = async () => {
-    const success = await onEdit(comment.messageActivityId, editText, false);
-    if (success) {
-      setIsEditing(false);
+  useEffect(() => {
+    if (showReplyInput && replyInputRef.current) {
+      setTimeout(() => {
+        replyInputRef.current?.focus();
+      }, 100);
     }
+  }, [showReplyInput]);
+
+  const handleReplyPress = () => {
+    setShowReplyInput(true);
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja deletar este comentário?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Deletar', 
-          style: 'destructive',
-          onPress: () => onDelete(comment.messageActivityId)
-        }
-      ]
-    );
+  const handleSendReply = async () => {
+    if (!replyText.trim()) return;
+
+    setSendingReply(true);
+    const success = await onReply(comment.messageActivityId, replyText);
+    if (success) {
+      setReplyText('');
+      setShowReplyInput(false);
+      setShowReplies(true);
+      refresh();
+      Keyboard.dismiss();
+    }
+    setSendingReply(false);
+  };
+
+  const handleCancelReply = () => {
+    setReplyText('');
+    setShowReplyInput(false);
+    Keyboard.dismiss();
   };
 
   const toggleReplies = () => {
@@ -49,67 +104,76 @@ export const CommentItem = ({
 
   return (
     <View style={styles.commentContainer}>
-      <View style={styles.commentHeader}>
-        <Image
-          source={{ 
-            uri: comment.userImageUrl || 'https://via.placeholder.com/50'
-          }}
-          style={styles.userAvatar}
-        />
-        <View style={styles.commentContent}>
-          <Text style={styles.userName}>{comment.userName}</Text>
-          
-          {isEditing ? (
-            <View style={styles.editContainer}>
-              <TextInput
-                style={styles.editInput}
-                value={editText}
-                onChangeText={setEditText}
-                multiline
-                autoFocus
-              />
-              <View style={styles.editActions}>
-                <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelBtn}>
-                  <Text style={styles.cancelText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleEdit} style={styles.saveBtn}>
-                  <Text style={styles.saveText}>Salvar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
+      <View style={styles.commentHeaderRow}>
+        <View style={styles.commentHeader}>
+          <Image
+            source={{ 
+              uri: comment.userImageUrl || 'https://via.placeholder.com/50'
+            }}
+            style={styles.userAvatar}
+          />
+          <View style={styles.commentContent}>
+            <Text style={styles.userName}>{comment.userName}</Text>
             <Text style={styles.commentText}>{comment.messageActivityDescription}</Text>
-          )}
 
-          <View style={styles.commentActions}>
-            {/* Botão de responder */}
-            <TouchableOpacity onPress={() => onReply(comment)}>
-              <Text style={styles.actionText}>Responder</Text>
-            </TouchableOpacity>
-
-            {/* Mostrar respostas se houver */}
-            {comment.messageResSize > 0 && (
-              <TouchableOpacity onPress={toggleReplies}>
-                <Text style={styles.actionText}>
-                  {showReplies ? 'Ocultar' : `Ver ${comment.messageResSize}`} {comment.messageResSize === 1 ? 'resposta' : 'respostas'}
-                </Text>
+            <View style={styles.commentActions}>
+              <TouchableOpacity onPress={handleReplyPress}>
+                <Text style={styles.actionText}>Responder</Text>
               </TouchableOpacity>
-            )}
 
-            {/* Editar e deletar apenas se for do usuário */}
-            {comment.messageUserOwner && (
-              <>
-                <TouchableOpacity onPress={() => setIsEditing(true)}>
-                  <Text style={styles.actionText}>Editar</Text>
+              {comment.messageResSize > 0 && (
+                <TouchableOpacity onPress={toggleReplies}>
+                  <Text style={styles.actionText}>
+                    {showReplies ? 'Ocultar' : `Ver ${comment.messageResSize}`} {comment.messageResSize === 1 ? 'resposta' : 'respostas'}
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleDelete}>
-                  <Text style={[styles.actionText, styles.deleteText]}>Deletar</Text>
-                </TouchableOpacity>
-              </>
-            )}
+              )}
+            </View>
           </View>
         </View>
+        {isOwner && (
+          <TouchableOpacity onPress={() => onMenuPress('comment', comment)} style={styles.menuButton}>
+            <Text style={styles.menuDots}>⋮</Text>
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* Input de resposta inline */}
+      {showReplyInput && (
+        <View style={styles.replyInputContainer}>
+          <Image
+            source={{ uri: 'https://via.placeholder.com/40' }}
+            style={styles.replyInputAvatar}
+          />
+          <View style={styles.replyInputBox}>
+            <TextInput
+              ref={replyInputRef}
+              style={styles.replyInput}
+              value={replyText}
+              onChangeText={setReplyText}
+              placeholder="Escreva sua resposta..."
+              placeholderTextColor="#B7B7B7"
+              multiline
+            />
+            <View style={styles.replyInputActions}>
+              <TouchableOpacity onPress={handleCancelReply}>
+                <Text style={styles.cancelReplyText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleSendReply} 
+                disabled={!replyText.trim() || sendingReply}
+                style={[styles.sendReplyBtn, (!replyText.trim() || sendingReply) && styles.sendReplyBtnDisabled]}
+              >
+                {sendingReply ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.sendReplyText}>Enviar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Área de respostas */}
       {showReplies && (
@@ -122,8 +186,7 @@ export const CommentItem = ({
                 <ReplyItem 
                   key={reply.messageActivityId} 
                   reply={reply}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
+                  onMenuPress={onMenuPress}
                 />
               ))}
               {hasNext && (
@@ -142,76 +205,65 @@ export const CommentItem = ({
 /**
  * Componente para exibir uma resposta (reply)
  */
-const ReplyItem = ({ reply, onEdit, onDelete }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(reply.messageActivityDescription);
+const ReplyItem = ({ reply, onMenuPress }) => {
+  const [isOwner, setIsOwner] = useState(false);
 
-  const handleEdit = async () => {
-    const success = await onEdit(reply.messageActivityId, editText, true);
-    if (success) {
-      setIsEditing(false);
-    }
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja deletar esta resposta?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Deletar', 
-          style: 'destructive',
-          onPress: () => onDelete(reply.messageActivityId)
+  // Verifica se o usuário é o dono da resposta
+  useEffect(() => {
+    const checkOwner = async () => {
+      try {
+        console.log('[ReplyItem] REPLY COMPLETA:', JSON.stringify(reply, null, 2));
+        
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          console.log('[ReplyItem] ❌ Token não encontrado');
+          setIsOwner(false);
+          return;
         }
-      ]
-    );
-  };
+
+        // Decodifica o token para obter userId
+        const payload = token.split('.')[1];
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        console.log('[ReplyItem] Token decodificado:', JSON.stringify(decoded, null, 2));
+        
+        const currentUserId = decoded?.userId || decoded?.sub;
+        const replyUserId = reply.userId || reply.user?.userId;
+        
+        console.log('[ReplyItem] messageUserOwner do backend:', reply.messageUserOwner);
+        console.log('[ReplyItem] Verificação manual - currentUserId:', currentUserId, 'vs replyUserId:', replyUserId);
+        
+        // SEMPRE usa verificação manual, ignorando backend
+        const owner = Number(currentUserId) === Number(replyUserId);
+        setIsOwner(owner);
+        console.log('[ReplyItem] ✅ RESULTADO FINAL - isOwner:', owner);
+      } catch (error) {
+        console.error('[ReplyItem] ❌ Erro ao verificar proprietário:', error);
+        setIsOwner(false);
+      }
+    };
+
+    checkOwner();
+  }, [reply]);
 
   return (
-    <View style={styles.replyContainer}>
-      <Image
-        source={{ 
-          uri: reply.userImageUrl || 'https://via.placeholder.com/40'
-        }}
-        style={styles.replyAvatar}
-      />
-      <View style={styles.replyContent}>
-        <Text style={styles.replyUserName}>{reply.userName}</Text>
-        
-        {isEditing ? (
-          <View style={styles.editContainer}>
-            <TextInput
-              style={styles.editInput}
-              value={editText}
-              onChangeText={setEditText}
-              multiline
-              autoFocus
-            />
-            <View style={styles.editActions}>
-              <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelBtn}>
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleEdit} style={styles.saveBtn}>
-                <Text style={styles.saveText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
+    <View style={styles.replyContainerWrapper}>
+      <View style={styles.replyContainer}>
+        <Image
+          source={{ 
+            uri: reply.userImageUrl || 'https://via.placeholder.com/40'
+          }}
+          style={styles.replyAvatar}
+        />
+        <View style={styles.replyContent}>
+          <Text style={styles.replyUserName}>{reply.userName}</Text>
           <Text style={styles.replyText}>{reply.messageActivityDescription}</Text>
-        )}
-
-        {reply.messageUserOwner && !isEditing && (
-          <View style={styles.replyActions}>
-            <TouchableOpacity onPress={() => setIsEditing(true)}>
-              <Text style={styles.actionText}>Editar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete}>
-              <Text style={[styles.actionText, styles.deleteText]}>Deletar</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        </View>
       </View>
+      {isOwner && (
+        <TouchableOpacity onPress={() => onMenuPress('reply', reply)} style={styles.menuButton}>
+          <Text style={styles.menuDots}>⋮</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -221,9 +273,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '100%',
   },
+  commentHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    flex: 1,
   },
   userAvatar: {
     width: 50,
@@ -235,11 +293,31 @@ const styles = StyleSheet.create({
   commentContent: {
     flex: 1,
   },
+  userRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   userName: {
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 14,
     marginBottom: 4,
+  },
+  menuButton: {
+    padding: 4,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    minWidth: 32,
+    minHeight: 32,
+  },
+  menuDots: {
+    color: '#B7B7B7',
+    fontSize: 20,
+    fontWeight: 'bold',
+    lineHeight: 20,
+    textAlign: 'center',
   },
   commentText: {
     color: '#E0E0E0',
@@ -267,10 +345,16 @@ const styles = StyleSheet.create({
     borderLeftWidth: 2,
     borderLeftColor: '#3C4250',
   },
+  replyContainerWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
   replyContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    flex: 1,
   },
   replyAvatar: {
     width: 40,
@@ -286,7 +370,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 13,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   replyText: {
     color: '#E0E0E0',
@@ -309,41 +393,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  editContainer: {
+  replyInputContainer: {
+    flexDirection: 'row',
+    marginTop: 12,
+    marginLeft: 62,
     marginBottom: 8,
   },
-  editInput: {
+  replyInputAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: '#6C63FF',
+  },
+  replyInputBox: {
+    flex: 1,
     backgroundColor: '#1E3D35',
+    borderRadius: 12,
+    padding: 12,
+  },
+  replyInput: {
     color: '#FFFFFF',
-    padding: 10,
-    borderRadius: 8,
-    minHeight: 60,
+    fontSize: 13,
+    minHeight: 40,
+    maxHeight: 100,
     textAlignVertical: 'top',
     marginBottom: 8,
   },
-  editActions: {
+  replyInputActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 10,
+    alignItems: 'center',
   },
-  cancelBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  cancelText: {
+  cancelReplyText: {
     color: '#B7B7B7',
     fontSize: 12,
     fontWeight: '600',
   },
-  saveBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+  sendReplyBtn: {
     backgroundColor: '#6C63FF',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
     borderRadius: 6,
+    minWidth: 70,
+    alignItems: 'center',
   },
-  saveText: {
+  sendReplyBtnDisabled: {
+    opacity: 0.5,
+  },
+  sendReplyText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

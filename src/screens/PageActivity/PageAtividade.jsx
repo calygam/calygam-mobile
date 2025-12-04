@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Alert, TextInput } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Alert, TextInput, KeyboardAvoidingView, Platform } from 'react-native'
 import React, { useState, useMemo } from 'react'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import IconUpload from '../../../assets/svg/upload-cloudRoxo.svg';
@@ -467,8 +467,13 @@ export default function PageAtividade() {
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.header}>
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        >
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Text style={{ color: '#928cffff' }}>Voltar</Text>
                 </TouchableOpacity>
@@ -597,7 +602,8 @@ export default function PageAtividade() {
                 }}
             />
 
-        </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
