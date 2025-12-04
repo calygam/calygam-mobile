@@ -7,7 +7,6 @@ import CriarTrilha from "../screens/PageProfessorCriarTrilha/CriarTrilha";
 import Trail from "../screens/TrailPage/Trail";
 import useUserRole from "../hooks/useUserRole";
 
-
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
 import IconHomeDesabilitado from '../../assets/svg/IconsTabBottom/casa-1-2.svg'

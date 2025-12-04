@@ -11,6 +11,7 @@ import api from '../../api/api';
 import { validateTrailExists, removeTrailFromCache } from '../../utils/trailValidation';
 import { getFlagsTimer } from '../../services/submissionService';
 import useFlagsTimer from '../../hooks/useFlagsTimer';
+import SkeletonTrail from '../../components/Skeletons/SkeletonTrail';
 
 
 export default function Trail() {
@@ -22,6 +23,7 @@ export default function Trail() {
     const [trail, setTrail] = useState();
     const [completedIndex, setCompletedIndex] = useState(-1);
     const [flags, setFlags] = useState({ flagsQtd: null, flagGenerateTimer: 0 });
+    const [loading, setLoading] = useState(true);
     const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
 
     useEffect(() => {
@@ -58,6 +60,7 @@ export default function Trail() {
     useEffect(() => {
         const loadTrail = async () => {
             try {
+                setLoading(true);
                 if (trailId) {
                     // VALIDAÇÃO: Verificar se trilha ainda existe antes de carregar
                     const validation = await validateTrailExists(trailId);
@@ -72,6 +75,7 @@ export default function Trail() {
                             [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
                         );
                         setTrail(null);
+                        setLoading(false);
                         return;
                     }
 
@@ -85,6 +89,7 @@ export default function Trail() {
                         const uid = parsedUser?.uid || parsedUser?.userId || parsedUser?.id || parsedUser?.email || 'anon';
                         await AsyncStorage.setItem(`currentTrail:${uid}`, JSON.stringify(fullTrail));
                     } catch (err) {}
+                    setLoading(false);
                     return;
                 }
 
@@ -104,6 +109,7 @@ export default function Trail() {
                                 await removeTrailFromCache(parsed.trailId);
                                 await AsyncStorage.removeItem(`currentTrail:${uid}`);
                                 setTrail(null);
+                                setLoading(false);
                                 return;
                             }
                         }
@@ -113,6 +119,8 @@ export default function Trail() {
             } catch (e) {
                 console.log('Erro ao carregar trilha:', e?.response?.data || e.message);
                 // Em caso de erro de rede, tenta continuar com dados do cache
+            } finally {
+                setLoading(false);
             }
         };
         loadTrail();
@@ -193,6 +201,14 @@ export default function Trail() {
     // Cálculo de progresso real baseado nos thresholds (barra mostra avanço dentro do rank atual)
     const xp = userName?.userXp ?? 0;
     const { current, next, progress } = computeRankProgress(xp);
+
+    if (loading || !trail) {
+        return (
+            <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: '#021713' }}>
+                <SkeletonTrail count={3} />
+            </ScrollView>
+        );
+    }
 
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>

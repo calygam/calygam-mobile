@@ -9,6 +9,7 @@ import ModalSucessoEntrega from '../../components/ModalEntrega&Sucesso/ModalSuce
 import { getLimitsForUI, getActivitySubmissionsCount, getFlagsTimer } from '../../services/submissionService';
 import useFlagsTimer from '../../hooks/useFlagsTimer';
 import { CommentsSection } from '../../components/CommentsSection/CommentsSection';
+import SkeletonActivity from '../../components/Skeletons/SkeletonActivity';
 
 const decodeJWT = (token) => {
     try {
@@ -47,6 +48,7 @@ export default function PageAtividade() {
     const [activityStatus, setActivityStatus] = useState(null);
     const [progressId, setProgressId] = useState(null);
     const [limits, setLimits] = useState(null); // { perActivity, flags, shouldBlock, blockReason }
+    const [initialLoading, setInitialLoading] = useState(true);
     const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
 
     const filePreviewIsImage = useMemo(() => {
@@ -122,8 +124,12 @@ export default function PageAtividade() {
 
     const fetchProgressAndSubmissions = async () => {
         try {
+            setInitialLoading(true);
             const token = await AsyncStorage.getItem('userToken');
-            if (!token || !trailId) return;
+            if (!token || !trailId) {
+                setInitialLoading(false);
+                return;
+            }
             // O interceptor já adiciona Authorization
             const res = await api.get(`/progress/read/${trailId}`);
             const progressList = res.data?.progressList || [];
@@ -139,6 +145,8 @@ export default function PageAtividade() {
             }
         } catch (e) {
             console.log('Erro ao buscar progresso:', e);
+        } finally {
+            setInitialLoading(false);
         }
     };
 
@@ -465,6 +473,10 @@ export default function PageAtividade() {
         }
         setUploading(false);
     };
+
+    if (initialLoading) {
+        return <SkeletonActivity />;
+    }
 
     return (
         <KeyboardAvoidingView 

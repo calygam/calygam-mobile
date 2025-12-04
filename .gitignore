@@ -61,6 +61,8 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+COMMENTS_README.md
+TEACHER_SERVICE_README.md
 
 # debug
 npm-debug.*

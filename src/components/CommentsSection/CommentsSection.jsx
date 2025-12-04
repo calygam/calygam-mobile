@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Modal } from 'react-native';
 import { useComments } from '../../hooks/useComments';
 import { CommentItem } from '../CommentItem/CommentItem';
+import SkeletonComment from '../Skeletons/SkeletonComment';
 
 /**
  * Componente principal para seção de comentários da atividade
@@ -146,11 +147,7 @@ export const CommentsSection = ({ activityId }) => {
 
   const renderEmpty = () => {
     if (loading && comments.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator color="#6C63FF" size="large" />
-        </View>
-      );
+      return <SkeletonComment count={5} />;
     }
 
     return (
@@ -217,25 +214,29 @@ export const CommentsSection = ({ activityId }) => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={comments}
-        renderItem={renderComment}
-        keyExtractor={(item) => item.messageActivityId.toString()}
-        ListEmptyComponent={renderEmpty}
-        ListFooterComponent={renderFooter}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={refresh}
-            tintColor="#6C63FF"
-            colors={["#6C63FF"]}
-          />
-        }
-        contentContainerStyle={comments.length === 0 ? styles.emptyList : styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading && comments.length === 0 ? (
+        <SkeletonComment count={5} />
+      ) : (
+        <FlatList
+          data={comments}
+          renderItem={renderComment}
+          keyExtractor={(item) => item.messageActivityId.toString()}
+          ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderFooter}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              tintColor="#6C63FF"
+              colors={["#6C63FF"]}
+            />
+          }
+          contentContainerStyle={comments.length === 0 ? styles.emptyList : styles.list}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       {hasNext && !loading && (
         <TouchableOpacity onPress={loadMore} style={styles.loadMoreBtn}>
@@ -436,8 +437,6 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3C4250',
   },
   modalButtonText: {
     color: '#FFFFFF',
@@ -464,7 +463,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3C4250',
   },
   deleteConfirmButton: {
-    backgroundColor: '#FF6B6B',
+      backgroundColor: '#6C63FF',
   },
   confirmButtonText: {
     color: '#FFF',

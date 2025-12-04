@@ -214,8 +214,8 @@ export default function BibliotecaCursos() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#021713', paddingTop: 100 }}>
-                <LoadingSkeletonShimmer type="list" count={5} />
+            <View style={{ flex: 1, backgroundColor: '#021713', paddingTop: 100 }}>
+                <LoadingSkeletonShimmer type="library" count={6} />
             </View>
         );
     }
