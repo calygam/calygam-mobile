@@ -4,6 +4,11 @@
     "slug": "Calygam",
     "scheme": "calygam",
     "version": "1.0.0",
+    "icon": "./assets/image/logo.png",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/image/logo.png",
+      "backgroundColor": "#ffffff"
+    },
     "extra": {
       "eas": {
         "projectId": "a9bd4283-889c-4997-a058-2698fcbf4905"

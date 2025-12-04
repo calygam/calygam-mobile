@@ -3,6 +3,7 @@
 // import Onboarding from './src/screens/OnboardingScreens/Onboarding';
 // import LoginScreen from './src/screens/LoginPage/LoginScreen';
 
+import logo from './assets/image/logo.png';
 
 // const Stack = createNativeStackNavigator();
 
