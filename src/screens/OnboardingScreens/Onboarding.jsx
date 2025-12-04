@@ -4,6 +4,7 @@ import OnboardingScreensSlides from '../../../OnboardingScreensSlides'
 import OnboardingItem from './OnboardingItem'
 import OnboardingFooter from './OnboardingFooter'
 import { createStaticNavigation, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Pegamos a largura da tela do celular
 const { width } = Dimensions.get("window");
@@ -30,10 +31,16 @@ export default function Onboarding() {
     const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
     // Função para ir para o próximo slide ou terminar o onboarding
-    const scrollToNext = () => {
+    const scrollToNext = async () => {
         if (currentIndex < OnboardingScreensSlides.length - 1) {
             slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
         } else {
+            // Marcar que o usuário já viu o onboarding
+            try {
+                await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+            } catch (error) {
+                console.error('Erro ao salvar hasSeenOnboarding:', error);
+            }
             // Aqui vamos manda o usuário pra tela de Login
             navigation.navigate('Login')
         }

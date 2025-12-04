@@ -73,6 +73,7 @@ export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true); // pra mostrar splash
     const [hasBackendToken, setHasBackendToken] = useState(false);
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
     useEffect(() => {
         const unsubFirebase = onAuthStateChanged(auth, (currentUser) => {
@@ -83,6 +84,10 @@ export default function App() {
             try {
                 const t = await AsyncStorage.getItem('userToken');
                 setHasBackendToken(!!t);
+                
+                // Verificar se o usuário já viu o onboarding
+                const seenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+                setHasSeenOnboarding(seenOnboarding === 'true');
             } catch {}
             setLoading(false);
         };
@@ -109,7 +114,15 @@ export default function App() {
                         <AlertProvider>
                           <NavigationContainer linking={linking} ref={navigationRef}>
                               <ErrorBoundary>
-                                  <Stack.Navigator initialRouteName={(user || hasBackendToken) ? "Home" : "Login"} screenOptions={{ headerShown: false }}>
+                                  <Stack.Navigator 
+                                    initialRouteName={
+                                      !hasSeenOnboarding ? "Onboarding" : 
+                                      (user || hasBackendToken) ? "Home" : "Login"
+                                    } 
+                                    screenOptions={{ headerShown: false }}
+                                  >
+                                  {/* Onboarding - primeira tela se nunca viu */}
+                                  <Stack.Screen name="Onboarding" component={Onboarding} />
                                   <Stack.Screen name="Trilha" component={Trail} />
                                   {/* Home SEMPRE registrada */}
                                   <Stack.Screen name="Home" component={Routes}/>

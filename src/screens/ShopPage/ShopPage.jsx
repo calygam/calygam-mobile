@@ -266,9 +266,11 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 15,
+    gap: 20,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    width: '100%',
+    height: 'auto'
 
   },
   containerCard: {
@@ -276,7 +278,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     backgroundColor: '#021713',
-  
+    width: '100%',
+    height: 'auto',
 
   }
 })

@@ -10,6 +10,7 @@ import { getLimitsForUI, getActivitySubmissionsCount, getFlagsTimer } from '../.
 import useFlagsTimer from '../../hooks/useFlagsTimer';
 import { CommentsSection } from '../../components/CommentsSection/CommentsSection';
 import SkeletonActivity from '../../components/Skeletons/SkeletonActivity';
+import { fetchEquippedPet } from '../../services/petService';
 
 const decodeJWT = (token) => {
     try {
@@ -44,6 +45,8 @@ export default function PageAtividade() {
     const [ensuringProgress, setEnsuringProgress] = useState(false);
     const [userData, setUserData] = useState(null);
     const [previousUserData, setPreviousUserData] = useState(null);
+    const [petData, setPetData] = useState(null);
+    const [previousPetData, setPreviousPetData] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [activityStatus, setActivityStatus] = useState(null);
     const [progressId, setProgressId] = useState(null);
@@ -60,6 +63,7 @@ export default function PageAtividade() {
     React.useEffect(() => {
         console.log('PageAtividade params', route.params);
         fetchUser();
+        fetchPet(); // Buscar pet ao carregar página
         fetchProgressAndSubmissions();
     }, [route.params]);
 
@@ -119,6 +123,17 @@ export default function PageAtividade() {
             return newUser;
         } catch (e) {
             console.log('Erro ao buscar usuário:', e);
+        }
+    };
+
+    const fetchPet = async () => {
+        try {
+            const pet = await fetchEquippedPet();
+            setPetData(pet);
+            return pet;
+        } catch (e) {
+            console.log('Erro ao buscar pet equipado:', e);
+            return null;
         }
     };
 
@@ -382,14 +397,62 @@ export default function PageAtividade() {
             const txtOk = await fetchResp.text();
             console.log('[submitActivity] ✅ Upload bem-sucedido (fetch) body:', txtOk);
 
-            // Após sucesso, buscar novo user e detectar level-up
-            const newUser = await fetchUser();
+            // Salvar estado anterior do pet antes de atualizar
+            setPreviousPetData(petData);
+
+            // Após sucesso, buscar novo user e pet em paralelo
+            const [newUser, newPet] = await Promise.all([
+                fetchUser(),
+                fetchPet()
+            ]);
+
+            // Montar mensagem de feedback com XP, moedas e pet
+            let feedbackMsg = '';
+            let hadBoost = false;
+
+            // Verificar se tinha pet equipado e HAPPY antes da entrega
+            if (petData && petData.apprenticeInventoryEquipped && petData.apprenticePetEnergy >= (petData.petMinEnergy || 0)) {
+                hadBoost = true;
+            }
+
             if (previousUserData && newUser) {
+                const deltaXp = (newUser.userXp || 0) - (previousUserData.userXp || 0);
+                const deltaMoney = (newUser.userMoney || 0) - (previousUserData.userMoney || 0);
+
+                if (deltaXp > 0) {
+                    feedbackMsg += `\n✨ +${deltaXp} XP${hadBoost ? ' (com boost do pet 🐾)' : ''}!`;
+                }
+                if (deltaMoney > 0) {
+                    feedbackMsg += `\n💰 +${deltaMoney} Moedas${hadBoost ? ' (com boost do pet 🐾)' : ''}!`;
+                }
+
+                // Verificar mudança de rank
                 if (previousUserData.userRank !== newUser.userRank) {
-                    Alert.alert('Parabéns!', `Você subiu para ${newUser.userRank}!`);
-                } else if ((newUser.userXp || 0) > (previousUserData.userXp || 0)) {
-                    const delta = (newUser.userXp || 0) - (previousUserData.userXp || 0);
-                    Alert.alert('XP Ganho!', `Você ganhou ${delta} XP!`);
+                    Alert.alert('🎉 Parabéns!', `Você subiu para ${newUser.userRank}!${feedbackMsg}`);
+                } else if (feedbackMsg) {
+                    Alert.alert('✅ Atividade Enviada!', feedbackMsg.trim());
+                }
+            }
+
+            // Verificar mudanças no pet
+            if (previousPetData && newPet && newPet.apprenticeInventoryEquipped) {
+                const oldEnergy = previousPetData.apprenticePetEnergy || 0;
+                const newEnergy = newPet.apprenticePetEnergy || 0;
+                const minEnergy = newPet.petMinEnergy || 0;
+
+                if (oldEnergy > newEnergy) {
+                    const energyLost = oldEnergy - newEnergy;
+                    console.log(`[Pet] Energia reduzida: ${oldEnergy} → ${newEnergy} (-${energyLost})`);
+                    
+                    // Avisar se pet ficou EXHAUSTED
+                    if (newEnergy < minEnergy && oldEnergy >= minEnergy) {
+                        setTimeout(() => {
+                            Alert.alert(
+                                '😴 Pet Cansado!',
+                                `Seu pet está exausto e perdeu os boosts!\n🔋 Energia: ${newEnergy}/${newPet.petMaxEnergy}\n\nAlimente-o para reativar os boosts! 🍖`
+                            );
+                        }, 1500);
+                    }
                 }
             }
 
@@ -524,7 +587,7 @@ export default function PageAtividade() {
                     <Text style={styles.warningText}>⚠️ Limite de 5 entregas atingido para esta atividade!</Text>
                 )}
 
-                <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#3C4250' }}>
+                <View style={{ marginTop: 5, paddingTop: 5}}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                         <Text style={styles.boxTitle}>Bandeiras restantes</Text>
                         <Text style={styles.limitValue}>{limits?.flags?.flagsQtd ?? 0}</Text>
@@ -534,6 +597,56 @@ export default function PageAtividade() {
                     )}
                 </View>
             </View>
+
+            {/* Card do Pet e Boosts */}
+            {petData && petData.apprenticeInventoryEquipped && (
+                <View style={styles.petBoostCard}>
+                    <View style={styles.petBoostHeader}>
+                        <Text style={styles.petBoostTitle}>🐾 Pet Equipado</Text>
+                        {petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? (
+                            <Text style={styles.petStatusHappy}>⚡ HAPPY</Text>
+                        ) : (
+                            <Text style={styles.petStatusExhausted}>😴 CANSADO</Text>
+                        )}
+                    </View>
+
+                    <View style={styles.petBoostContent}>
+                        {petData.petOutfitUrl && (
+                            <Image source={{ uri: petData.petOutfitUrl }} style={styles.petBoostImage} />
+                        )}
+                        <View style={styles.petBoostInfo}>
+                            <Text style={styles.petBoostName}>{petData.petOutfitName || petData.petName || 'Pet'}</Text>
+                            
+                            {petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? (
+                                <View style={styles.petBoostStats}>
+                                    <Text style={styles.petBoostStat}>✨ XP: x{petData.petBoostXp || 1}</Text>
+                                    <Text style={styles.petBoostStat}>💰 Moedas: x{petData.petBoostMoney || 1}</Text>
+                                    <Text style={styles.petBoostStat}>🍖 Comida: x{petData.petBoostFood || 1}</Text>
+                                </View>
+                            ) : (
+                                <Text style={styles.petBoostWarning}>
+                                    Alimente seu pet para ativar os boosts!
+                                </Text>
+                            )}
+                            
+                            <View style={styles.petEnergyBar}>
+                                <View 
+                                    style={[
+                                        styles.petEnergyFill, 
+                                        { 
+                                            width: `${Math.min(100, Math.max(0, ((petData.apprenticePetEnergy || 0) / (petData.petMaxEnergy || 100)) * 100))}%`,
+                                            backgroundColor: petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? '#4CAF50' : '#FF6B6B'
+                                        }
+                                    ]} 
+                                />
+                            </View>
+                            <Text style={styles.petEnergyText}>
+                                🔋 Energia: {petData.apprenticePetEnergy || 0}/{petData.petMaxEnergy || 100}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            )}
 
             <Text style={styles.boxTitle}>Sua entrega</Text>
 
@@ -734,6 +847,92 @@ const styles = StyleSheet.create({
         color: '#E5E5E5',
         fontSize: 14,
         marginBottom: 8
+    },
+    // Estilos do Pet Boost Card
+    petBoostCard: {
+        backgroundColor: '#1E3D35',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 2,
+        borderColor: '#6C63FF',
+    },
+    petBoostHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    petBoostTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    petStatusHappy: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#4CAF50',
+        backgroundColor: '#4CAF5020',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    petStatusExhausted: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#FF6B6B',
+        backgroundColor: '#FF6B6B20',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    petBoostContent: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    petBoostImage: {
+        width: 70,
+        height: 70,
+        borderRadius: 12,
+        backgroundColor: '#163028',
+    },
+    petBoostInfo: {
+        flex: 1,
+    },
+    petBoostName: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#FFF',
+        marginBottom: 6,
+    },
+    petBoostStats: {
+        marginBottom: 8,
+    },
+    petBoostStat: {
+        fontSize: 12,
+        color: '#E5E5E5',
+        marginBottom: 2,
+    },
+    petBoostWarning: {
+        fontSize: 12,
+        color: '#FF9800',
+        marginBottom: 8,
+        fontStyle: 'italic',
+    },
+    petEnergyBar: {
+        height: 6,
+        backgroundColor: '#163028',
+        borderRadius: 3,
+        overflow: 'hidden',
+        marginBottom: 4,
+    },
+    petEnergyFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    petEnergyText: {
+        fontSize: 11,
+        color: '#B7B7B7',
     },
 
 })

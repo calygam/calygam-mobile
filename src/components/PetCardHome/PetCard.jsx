@@ -166,9 +166,6 @@ export default function TestePet({ route, renderEmpty }) {
                         <Text style={styles.btnText}>🍖🍖 Alimentar Máximo</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.btnTrocarSkin} onPress={() => setShowTrocarSkin(true)}>
-                        <Text style={styles.btnText}>Trocar Skin</Text>
-                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -177,9 +174,11 @@ export default function TestePet({ route, renderEmpty }) {
                 <TouchableOpacity style={styles.btnTrocar} onPress={() => setShowTrocarPet(true)}>
                     <Text style={styles.btnText}> Trocar Pet </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.btnDesequipar}>
-                    <Text style={styles.btnText}>Desequipar</Text>
+
+                <TouchableOpacity style={styles.btnTrocarSkin} onPress={() => setShowTrocarSkin(true)}>
+                    <Text style={styles.btnText}>Trocar Skin</Text>
                 </TouchableOpacity>
+
             </View>
 
             {/* Modal Trocar Pet */}

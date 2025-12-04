@@ -22,7 +22,6 @@ import { readProgress } from '../../services/progressService';
 import Carrossel from '../../components/Carrossel';
 import api from '../../api/api';
 import { validateAndFilterTrails } from '../../utils/trailValidation';
-import SkeletonHomepage from '../../components/Skeletons/SkeletonHomepage';
 
 
 const { width } = Dimensions.get('window');
@@ -32,7 +31,6 @@ export default function Homepage() {
 
     const [userName, setUserName] = useState();
     const [recentTrails, setRecentTrails] = useState([]);
-    const [loadingTrails, setLoadingTrails] = useState(true);
     const navigation = useNavigation();
 
     const xp = userName?.userXp ?? 0;
@@ -65,7 +63,6 @@ export default function Homepage() {
     // Função para carregar trilhas recentes
     const loadRecentTrails = async (forceReload = false) => {
         console.log('[Homepage] 🔄 Carregando trilhas recentes...');
-        setLoadingTrails(true);
         try {
             const rawUser = await AsyncStorage.getItem('userInfo');
             const parsed = rawUser ? JSON.parse(rawUser) : null;
@@ -117,8 +114,6 @@ export default function Homepage() {
         } catch (error) {
             console.error('[Homepage] 💥 Erro ao carregar trilhas recentes:', error);
             setRecentTrails([]);
-        } finally {
-            setLoadingTrails(false);
         }
     };
 
@@ -235,19 +230,7 @@ export default function Homepage() {
                 </View>
 
                 {/* Trilhas Recentes */}
-                {loadingTrails ? (
-                    <View style={styles.RecentTrailsContainer}>
-                        <View style={styles.TextTrilhasRecentes}>
-                            <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold', textAlign: 'left' }}>
-                                Continuar Aprendendo 📚
-                            </Text>
-                            <Text style={{ color: '#D9D9D9', fontSize: 14, fontWeight: '300', textAlign: 'left', marginTop: 5 }}>
-                                Suas trilhas mais recentes
-                            </Text>
-                        </View>
-                        <SkeletonHomepage count={3} />
-                    </View>
-                ) : recentTrails.length > 0 && (
+                {recentTrails.length > 0 && (
                     <View style={styles.RecentTrailsContainer}>
                         <View style={styles.TextTrilhasRecentes}>
                             <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold', textAlign: 'left' }}>

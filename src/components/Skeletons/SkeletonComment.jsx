@@ -14,15 +14,15 @@ export default function SkeletonComment({ count = 3 }) {
       {Array.from({ length: count }).map((_, i) => (
         <View key={i} style={styles.commentItem}>
           <View style={styles.commentHeaderRow}>
-            <View style={styles.commentHeader}>
-              <Shimmer style={styles.avatar} />
-              <View style={styles.commentContent}>
-                <Shimmer style={styles.userName} />
-                <Shimmer style={styles.commentText1} />
-                <Shimmer style={styles.commentText2} />
-                <View style={styles.actions}>
-                  <Shimmer style={styles.actionButton} />
-                  <Shimmer style={styles.actionButton} />
+          <View style={styles.commentHeader}>
+            <Shimmer style={styles.avatar} />
+            <View style={styles.commentContent}>
+              <Shimmer style={styles.userName} />
+              <Shimmer style={styles.commentText1} />
+              <Shimmer style={styles.commentText2} />
+              <View style={styles.actions}>
+                <Shimmer style={styles.actionButton} />
+                <Shimmer style={styles.actionButton} />
                 </View>
               </View>
             </View>
