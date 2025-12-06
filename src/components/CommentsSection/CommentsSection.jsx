@@ -1,5 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Modal } from 'react-native';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useComments } from '../../hooks/useComments';
 import { CommentItem } from '../CommentItem/CommentItem';
 
@@ -10,9 +12,11 @@ export const CommentsSection = ({ activityId }) => {
   const [commentText, setCommentText] = useState('');
   const [textInputHeight, setTextInputHeight] = useState(40);
   const [selectedItem, setSelectedItem] = useState(null); // {type: 'comment'|'reply', data: item}
-  const [modalVisible, setModalVisible] = useState(false);
+  const [sheetIndex, setSheetIndex] = useState(-1); // -1 = fechado, 0 = aberto
   const [editingItem, setEditingItem] = useState(null); // Item sendo editado
   const inputRef = useRef(null);
+  const bottomSheetRef = useRef(null);
+  const snapPoints = useMemo(() => [130, '75%'], []);
 
   const {
     comments,
@@ -66,17 +70,17 @@ export const CommentsSection = ({ activityId }) => {
     return success;
   };
 
-  // Abre o modal com opções
+  // Abre o BottomSheet com opções
   const openMenu = useCallback((type, item) => {
     setSelectedItem({ type, data: item });
-    setModalVisible(true);
+    setSheetIndex(0);
   }, []);
 
   // Handler para editar - vai pro input
   const handleEditPress = useCallback(() => {
     if (!selectedItem) return;
     
-    setModalVisible(false);
+    setSheetIndex(-1);
     setEditingItem(selectedItem);
     setCommentText(selectedItem.data.messageActivityDescription);
     
@@ -88,13 +92,10 @@ export const CommentsSection = ({ activityId }) => {
 
   // Handler para deletar - mostra modal de confirmação
   const handleDeletePress = useCallback(() => {
-    setModalVisible(false);
-    
-    // Marca como delete e reabre modal
     setTimeout(() => {
       if (selectedItem) {
         setSelectedItem({ ...selectedItem, type: 'delete' });
-        setModalVisible(true);
+        setSheetIndex(0);
       }
     }, 200);
   }, [selectedItem]);
@@ -103,14 +104,14 @@ export const CommentsSection = ({ activityId }) => {
   const confirmDelete = useCallback(async () => {
     if (!selectedItem) return;
     
-    setModalVisible(false);
+    setSheetIndex(-1);
     await removeComment(selectedItem.data.messageActivityId);
     setSelectedItem(null);
   }, [selectedItem, removeComment]);
 
   // Cancela a exclusão
   const cancelDelete = useCallback(() => {
-    setModalVisible(false);
+    setSheetIndex(-1);
     setSelectedItem(null);
   }, []);
 
@@ -243,31 +244,34 @@ export const CommentsSection = ({ activityId }) => {
         </TouchableOpacity>
       )}
 
-      {/* Modal Simples de Confirmação */}
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={cancelDelete}
+      {/* BottomSheet para Menu de Opções */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        snapPoints={snapPoints}
+        index={sheetIndex}
+        onChange={setSheetIndex}
+        enablePanDownToClose={true}
+        style={styles.sheetContainer}
+        bottomInset={50}
+        detached={true}
+        backgroundStyle={{ backgroundColor: '#1E3D35' }}
+        handleIndicatorStyle={{ backgroundColor: '#ffffffff' }}
+        
+  
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1}
-          onPress={cancelDelete}
-        >
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-            <Text style={styles.modalTitle}>
+          <BottomSheetView style={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>
               {selectedItem?.type === 'delete' ? 'Deseja Deletar?' : 'Opções'}
             </Text>
             
             {selectedItem?.type !== 'delete' ? (
               <>
-                <TouchableOpacity onPress={handleEditPress} style={styles.modalButton}>
-                  <Text style={styles.modalButtonText}>✏️ Editar</Text>
+                <TouchableOpacity onPress={handleEditPress} style={styles.sheetButton}>
+                  <Text style={styles.sheetButtonText}>✏️ Editar</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity onPress={handleDeletePress} style={styles.modalButton}>
-                  <Text style={[styles.modalButtonText, styles.deleteButtonText]}>🗑️ Deletar</Text>
+                <TouchableOpacity onPress={handleDeletePress} style={[styles.sheetButton, styles.deleteButton]}>
+                  <Text style={[styles.sheetButtonText, styles.deleteButtonText]}>🗑️ Deletar</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -287,9 +291,8 @@ export const CommentsSection = ({ activityId }) => {
                 </TouchableOpacity>
               </View>
             )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+          </BottomSheetView>
+        </BottomSheet>
     </View>
   );
 };
@@ -409,41 +412,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  // Modal simples
-  modalOverlay: {
+  // BottomSheet
+  sheetContainer: {
+    zIndex: 999,
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#1E3D35',
-    borderRadius: 12,
-    minWidth: 280,
-    padding: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+  sheetContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 20,
   },
-  modalTitle: {
+  sheetTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 20,
+    color: '#ffffffff',
+    marginBottom: 10,
     textAlign: 'center',
+    
   },
-  modalButton: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3C4250',
+  sheetButton: {
+    gap: 30,
+  
   },
-  modalButtonText: {
-    color: '#FFFFFF',
+  sheetButtonText: {
+    color: '#ffffffff',
     fontSize: 16,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  deleteButton: {
+    borderBottomWidth: 0,
   },
   deleteButtonText: {
     color: '#FF6B6B',

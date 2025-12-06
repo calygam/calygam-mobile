@@ -11,6 +11,13 @@ import { auth } from '../../firebase';
 import CircularLoader from '../LoadingCircular/Loading';
 import api from '../../api/api';
 import * as ImagePicker from 'expo-image-picker';
+import IconClose from '../../../assets/svg/cross-small.svg';
+import IconEstrela from '../../../assets/svg/Icon.svg';
+import IconMoney from '../../../assets/svg/IconMoney.svg';
+import IconRank from '../../../assets/svg/IconRank.svg';
+import IconFood from '../../../assets/svg/IconFood.svg';
+import IconSair from '../../../assets/svg/exit.svg';
+import IconEmail from '../../../assets/svg/envelope.svg';
 
 const Modal = () => {
     const navigation = useNavigation();
@@ -131,7 +138,7 @@ const Modal = () => {
             const uri = selectedImage.uri;
             const uriParts = uri.split('/');
             const fileName = selectedImage.fileName || uriParts[uriParts.length - 1] || 'profile.jpg';
-            
+
             const mimeType = selectedImage.mimeType || selectedImage.type || 'image/jpeg';
 
             // Monta FormData
@@ -147,11 +154,11 @@ const Modal = () => {
             formData.append('userPassword', '');
             formData.append('userNewPassword', '');
 
-            
+
             const base = (api && api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : '';
             const url = base ? `${base}/users/editOne` : `/users/editOne`;
 
-            
+
             try {
                 const resp = await fetch(url, {
                     method: 'PUT',
@@ -238,6 +245,14 @@ const Modal = () => {
         }
     };
 
+    const cardColors = {
+        xp: { bg: 'rgba(240, 177, 0, 0.2)', border: '#F0B100' },
+        rank: { bg: 'rgba(172, 70, 255, 0.16)', border: '#8B5CF6' },
+        money: { bg: 'rgba(0, 201, 80, 0.2)', border: '#10B981' },
+        food: { bg: 'rgba(59,130,246,0.22)', border: '#3B82F6' },
+    };
+
+
     return (
 
         <GestureHandlerRootView style={styles.container}>
@@ -261,7 +276,9 @@ const Modal = () => {
                 <BottomSheetView style={styles.contentContainer}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20 }}>
                         <Text style={{ fontSize: 24, color: '#ffffffff' }}>Meu Perfil</Text>
-                        <Button title='Fechar' onPress={handleCloseAction} />
+                        <TouchableOpacity onPress={handleCloseAction}>
+                            <IconClose width={24} height={24} fill="#ffffffff" />
+                        </TouchableOpacity>
                     </View>
 
 
@@ -286,34 +303,71 @@ const Modal = () => {
                     )}
 
                     <Text style={styles.userName}>Nome: {user?.userName || user?.userEmail || 'Usuário'}</Text>
-                    <Text style={styles.userEmail}>Email: {user?.userEmail || 'Não disponível'}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                        <IconEmail width={18} height={18} fill="#E5E5E5" />
+                        <Text style={styles.userEmail}>Email: {user?.userEmail || 'Não disponível'}</Text>
+                    </View>
 
-                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                        <Text style={styles.logoutText}>Sair da conta</Text>
-                    </TouchableOpacity>
 
                     {/* Divider */}
                     <View style={styles.divider} />
 
-                    {/* Status */}
-                    <View style={styles.statsContainer}>
-                        <View style={styles.statItem}>
+                    {/* Estatisticas do usuario */}
+                    <View style={{ flexDirection: 'row', width: '100%', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between', marginBottom: 10 }}>
+
+                        <View style={[styles.BoxContainer, { backgroundColor: cardColors.xp.bg, borderColor: cardColors.xp.border }]}>
+                            <View style={styles.NameConteudo}>
+                                <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0b0005e', padding: 5, borderRadius: 10 }}>
+                                    <IconEstrela width={20} height={20} />
+                                </View>
+                                <Text style={{ color: '#99A1AF', fontWeight: '200', fontSize: 16 }}>Xp</Text>
+                            </View>
+
                             <Text style={styles.statValue}>{user?.userXp || 0}</Text>
-                            <Text style={styles.statLabel}>XP</Text>
+
                         </View>
-                        <View style={styles.statItem}>
+
+                        <View style={[styles.BoxContainer, { backgroundColor: cardColors.rank.bg, borderColor: cardColors.rank.border }]}>
+                            <View style={styles.NameConteudo}>
+                                <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(173, 70, 255, 0.1)', padding: 5, borderRadius: 10 }}>
+                                    <IconRank width={20} height={20} />
+                                </View>
+                                <Text style={{ color: '#99A1AF', fontWeight: '200', fontSize: 16 }}>Rank</Text>
+                            </View>
+
                             <Text style={styles.statValue}>{user?.userRank || "NOVATO"}</Text>
-                            <Text style={styles.statLabel}>Rank</Text>
+
                         </View>
-                        <View style={styles.statItem}>
+                        <View style={[styles.BoxContainer, { backgroundColor: cardColors.money.bg, borderColor: cardColors.money.border }]}>
+                            <View style={styles.NameConteudo}>
+                                <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 201, 80, 0.1)', padding: 5, borderRadius: 10 }}>
+                                    <IconMoney width={20} height={20} />
+                                </View>
+                                <Text style={{ color: '#99A1AF', fontWeight: '200', fontSize: 16 }}>Dinheiro</Text>
+                            </View>
+
                             <Text style={styles.statValue}>{user?.userMoney || 0}</Text>
-                            <Text style={styles.statLabel}>Dinheiro</Text>
+
                         </View>
-                        <View style={styles.statItem}>
+
+                        <View style={[styles.BoxContainer, { backgroundColor: cardColors.food.bg, borderColor: cardColors.food.border }]}>
+                            <View style={styles.NameConteudo}>
+                                <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(43, 127, 255, 0.1)', padding: 5, borderRadius: 10, }}>
+                                    <IconFood width={20} height={20} />
+                                </View>
+                                <Text style={{ color: '#99A1AF', fontWeight: '200', fontSize: 16 }}>Comida</Text>
+                            </View>
+
                             <Text style={styles.statValue}>{user?.userFood || 0}</Text>
-                            <Text style={styles.statLabel}>Comida</Text>
+
                         </View>
+
                     </View>
+
+                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                        <IconSair width={20} height={20} fill="#ffffff" style={{ marginBottom: 4 }} />
+                        <Text style={styles.logoutText}>Sair da conta</Text>
+                    </TouchableOpacity>
 
 
                 </BottomSheetView>
@@ -326,12 +380,13 @@ const styles = StyleSheet.create({
     container: {
         width: 'auto',
         height: 'auto',
-       
+
     },
     contentContainer: {
         flex: 1,
-        padding: 36,
+        padding: 20,
         alignItems: 'center',
+        width: '100%',
 
     },
     userName: {
@@ -343,7 +398,9 @@ const styles = StyleSheet.create({
     userEmail: {
         fontSize: 16,
         color: '#E5E5E5',
-        marginBottom: 20,
+        fontWeight: '200',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     divider: {
         height: 1,
@@ -359,11 +416,13 @@ const styles = StyleSheet.create({
     },
     statItem: {
         alignItems: 'center',
+        flex: 1,
+
     },
     statValue: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#007AFF',
+        fontSize: 14,
+        fontWeight: '200',
+        color: '#ffffffff',
     },
     statLabel: {
         fontSize: 12,
@@ -382,14 +441,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#FF3B30',
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 8,
+        borderRadius: 12,
         marginTop: 30,
-        width: '80%',
+        width: '100%',
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10,
     },
     logoutText: {
         color: 'white',
-        fontWeight: 'bold',
+        fontWeight: '300',
         fontSize: 16,
     },
     saveButton: {
@@ -402,7 +464,7 @@ const styles = StyleSheet.create({
     },
     saveText: {
         color: 'white',
-        fontWeight: 'bold',
+        fontWeight: '500',
         fontSize: 14,
     },
     cancelButton: {
@@ -415,8 +477,25 @@ const styles = StyleSheet.create({
     },
     cancelText: {
         color: 'white',
-        fontWeight: 'bold',
+        fontWeight: '500',
         fontSize: 14,
+    },
+    BoxContainer: {
+        width: '48%',
+        height: 120,
+        borderRadius: 16,
+        borderWidth: 1,
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: 21,
+    },
+    NameConteudo: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 5,
+        width: '100%',
     },
 });
 

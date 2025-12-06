@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LottieView from 'lottie-react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import Modal from '../../components/BottomSheetModalPerfil/Modalperfil'
 import IconCoins from '../../../assets/svg/IconsInterface/coin.svg';
@@ -25,6 +26,9 @@ export default function Trail() {
     const [flags, setFlags] = useState({ flagsQtd: null, flagGenerateTimer: 0 });
     const [loading, setLoading] = useState(true);
     const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
+    const animationRef = useRef(null);
+    const [flagsChanged, setFlagsChanged] = useState(false);
+    const previousFlagsQtd = useRef(flags.flagsQtd);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -55,6 +59,17 @@ export default function Trail() {
     useEffect(() => {
         loadFlags();
     }, [loadFlags]);
+
+    // Animar quando as bandeiras mudarem (ex: após submissão de atividade)
+    useEffect(() => {
+        if (previousFlagsQtd.current !== null && previousFlagsQtd.current !== flags.flagsQtd) {
+            // Bandeiras mudaram - tocar animação
+            animationRef.current?.play();
+            setFlagsChanged(true);
+            setTimeout(() => setFlagsChanged(false), 1000);
+        }
+        previousFlagsQtd.current = flags.flagsQtd;
+    }, [flags.flagsQtd]);
 
 
     useEffect(() => {
@@ -241,10 +256,25 @@ export default function Trail() {
 
                 {/* Topo: Bandeiras e Timer globais */}
                 <View style={styles.FlagsBox}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={styles.flagsLabel}>Bandeiras restantes</Text>
-                        <Text style={styles.flagsValue}>{flags?.flagsQtd ?? '-'}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={styles.flagsLabel}>Bandeiras Restantes</Text>
+                        <Text style={styles.flagsValue}>{flags?.flagsQtd ?? 0}</Text>
                     </View>
+                    
+                    {/* Mostra as bandeiras visualmente */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+                        {Array.from({ length: flags?.flagsQtd ?? 0 }).map((_, index) => (
+                            <LottieView 
+                                key={index}
+                                source={require('../../../assets/like.json')}
+                                autoPlay={false}
+                                loop={false}
+                                style={{ width: 35, height: 35 }}
+                                ref={index === 0 ? animationRef : null}
+                            />
+                        ))}
+                    </View>
+                    
                     {(flags?.flagsQtd ?? 0) <= 0 && (
                         <Text style={styles.flagsTimer}>Reseta em: {hhmmss}</Text>
                     )}

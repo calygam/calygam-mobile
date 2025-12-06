@@ -207,6 +207,7 @@ export default function TestePet({ route, renderEmpty }) {
 
 const styles = StyleSheet.create({
     container: {
+        width: '100%',
         flex: 1,
         backgroundColor: '#021713',
         justifyContent: 'center',

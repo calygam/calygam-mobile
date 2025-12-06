@@ -305,7 +305,7 @@ export default function Homepage() {
 
                                 <View style={styles.petCardButtons}>
                                     <TouchableOpacity
-                                        style={styles.petCardBtnTrocar}
+                                        style={styles.Button}
                                         onPress={() => navigation.navigate('Shop')}
                                     >
                                         <Text style={styles.petCardBtnText}>Ver Loja</Text>
@@ -315,7 +315,7 @@ export default function Homepage() {
                         )}
                     />
 
-                    <View style={{ height: 10 }}></View>
+                    <View style={{ height: 80 }}></View>
                 </View>
             </ScrollView >
         </View >

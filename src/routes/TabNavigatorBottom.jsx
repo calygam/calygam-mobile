@@ -6,6 +6,7 @@ import ShopPage from "../screens/ShopPage/ShopPage";
 import CriarTrilha from "../screens/PageProfessorCriarTrilha/CriarTrilha";
 import Trail from "../screens/TrailPage/Trail";
 import useUserRole from "../hooks/useUserRole";
+import Teste from "../screens/TelaTeste/TesteSla";
 
 // Icon Tab Naviagtion
 import IconHomeAtivo from '../../assets/svg/IconsTabBottom/group-1.svg'
@@ -109,6 +110,16 @@ function Routes() {
                         return <IconTrailAtivo />
                     }
                     return <IconTrailDesabilitado />
+                }
+            }} />
+
+            <Tab.Screen name="Teste" component={Teste} options={{
+                tabBarIcon: ({ color, size, focused }) => {
+                    return <AnimatedTabIcon
+                        focused={focused}
+                        ActiveIcon={IconHomeAtivo}
+                        InactiveIcon={IconHomeDesabilitado}
+                    />
                 }
             }} />
 
