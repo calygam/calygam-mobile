@@ -4,6 +4,7 @@ import Montanha from "./SvgMontanha/Montanha"
 import Cards from '../../components/CardHomeExplorar/Card';
 import CardProcessoTrilha from '../../components/CardProcesso/CardProcessoTrilha';
 import PetCard from '../../components/PetCardHome/PetCard';
+import ModalTrocarPet from '../../components/ModalTrocarPet/ModalTrocarPet';
 import IOTIcon from "../../../assets/svg/IconsCardExplorar/site-alt-1.svg";
 import CachorroIcon from "../../../assets/svg/undraw_page-eaten_b2rt 1.svg";
 import FigmaIcon from "../../../assets/svg/IconsCardExplorar/figma.svg";
@@ -31,6 +32,8 @@ export default function Homepage() {
 
     const [userName, setUserName] = useState();
     const [recentTrails, setRecentTrails] = useState([]);
+    const [showInventario, setShowInventario] = useState(false);
+    const [petRefreshKey, setPetRefreshKey] = useState(0);
     const navigation = useNavigation();
 
     const xp = userName?.userXp ?? 0;
@@ -133,7 +136,7 @@ export default function Homepage() {
 
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, alignItems: "center", justifyContent: "space-between" }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, alignItems: "center", justifyContent: "space-between" }}>
 
                 {/* Fundo */}
                 <View style={styles.background}>
@@ -289,9 +292,12 @@ export default function Homepage() {
 
                 {/* Texto Mascote */}
                 <View style={styles.MascoteContainer}>
-                    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold', width: '100%', paddingLeft: 20 }}>Meu Mascote 🐾</Text>
+                    <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 10, paddingRight: 10 }}>
+                        <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>Meu Mascote 🐾</Text>
+                    </View>
 
                     <PetCard
+                        key={petRefreshKey}
                         renderEmpty={() => (
                             <View style={styles.petCardContainer}>
                                 <Text style={{ color: '#FFF', fontSize: 15, padding: 20, fontWeight: '700', textAlign: 'center' }}>
@@ -310,6 +316,10 @@ export default function Homepage() {
                                     >
                                         <Text style={styles.petCardBtnText}>Ver Loja</Text>
                                     </TouchableOpacity>
+
+                                    <TouchableOpacity style={styles.inventoryButton} onPress={() => setShowInventario(true)}>
+                                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Inventário</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         )}
@@ -318,6 +328,16 @@ export default function Homepage() {
                     <View style={{ height: 80 }}></View>
                 </View>
             </ScrollView >
+
+            {/* Modal Inventário de Pets - reutiliza ModalTrocarPet */}
+            <ModalTrocarPet
+                visible={showInventario}
+                onClose={() => setShowInventario(false)}
+                onEquipped={() => {
+                    setShowInventario(false);
+                    setPetRefreshKey((k) => k + 1);
+                }}
+            />
         </View >
     );
 }
@@ -404,7 +424,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 10,
     },
     petCardBtnText: {
         color: '#FFF',
@@ -489,4 +509,23 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginBottom: 15,
     },
+    inventoryButton: {
+        backgroundColor: '#6C63FF',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 14,
+    },
+    petCardButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 10,
+        width: '100%',
+    },
+    petCardContainer: {
+        width: '100%',
+        height: 'auto',
+        backgroundColor: '#e70000ff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    }
 });

@@ -76,7 +76,7 @@ export default function TestePet({ route, renderEmpty }) {
     const boostFood = pet.petBoostFood || 0;
 
     return (
-        <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
+        <ScrollView style={{ width: '90%' }} contentContainerStyle={{ paddingVertical: 20 }}>
             <View style={styles.CardContainer}>
 
                 {/* Nome do Pet */}
@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
     },
     CardContainer: {
         width: '100%',
+        alignSelf: 'stretch',
         height: 'auto',
         borderWidth: 5,
         borderColor: '#6C63FF',
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     btnTrocar: {
         flex: 1,
         paddingHorizontal: 15,
-        height: 50,
+        height: 45,
         backgroundColor: '#6C63FF',
         borderRadius: 20,
         justifyContent: 'center',
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
     btnDesequipar: {
         flex: 1,
         paddingHorizontal: 15,
-        height: 50,
+        height: 45,
         backgroundColor: '#C1121F',
         borderRadius: 20,
         justifyContent: 'center',
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
     btnTrocarSkin: {
         flex: 1,
         paddingHorizontal: 15,
-        height: 50,
+        height: 45,
         backgroundColor: '#6C63FF',
         borderRadius: 20,
         justifyContent: 'center',
