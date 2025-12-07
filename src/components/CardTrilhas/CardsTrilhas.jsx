@@ -47,7 +47,7 @@ export default function CardsTrilhas({ item, professorName, professorPhotoUrl, o
                              !trailImage.includes('/file/read/null') && 
                              !trailImage.includes('null') &&
                              !trailImage.endsWith('/file/read/') &&
-                             trailImage.length > 'http://10.0.0.191:8080/file/read/'.length;
+                             trailImage.length > 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net/file/read/'.length;
         
         if (hasValidImage) {
             return (

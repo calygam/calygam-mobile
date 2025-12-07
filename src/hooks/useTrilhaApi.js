@@ -76,7 +76,7 @@ const useTrilhaApi = () => {
             }
 
             // Monta URL completa usando baseURL do api
-            const baseURL = api.defaults?.baseURL || 'http://10.0.0.191:8080';
+            const baseURL = api.defaults?.baseURL || 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net';
             const url = `${baseURL}/trail/create`;
 
             console.log('[CRIAR] Enviando via fetch para:', url);
@@ -126,7 +126,7 @@ const useTrilhaApi = () => {
             }
 
             // Monta URL completa usando baseURL do api
-            const baseURL = api.defaults?.baseURL || 'http://10.0.0.191:8080';
+            const baseURL = api.defaults?.baseURL || 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net';
             const url = `${baseURL}/trail/update/${trailId}`;
 
             console.log('[UPDATE] Enviando via fetch para:', url);
@@ -177,7 +177,7 @@ const useTrilhaApi = () => {
             formData.append('calygamCode', calygamCode);
             
             // Monta URL completa usando baseURL do api
-            const baseURL = api.defaults?.baseURL || 'http://10.0.0.191:8080';
+            const baseURL = api.defaults?.baseURL || 'https://calygamb-dmdzafhbf4aaf6bp.brazilsouth-01.azurewebsites.net';
             const url = `${baseURL}/trail/update/${trailId}`;
 
             // backend só altera para ENABLE se calygamCode == "calygam up trail"
