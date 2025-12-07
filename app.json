@@ -4,9 +4,10 @@
     "slug": "Calygam",
     "scheme": "calygam",
     "version": "1.0.0",
-    "icon": "./assets/image/logo.png",
-    "adaptiveIcon": {
-      "foregroundImage": "./assets/image/logo.png",
+    "icon": "./assets/image/imagelogo/logocaylgam.png",
+    "splash": {
+      "image": "./assets/image/imagelogo/logocaylgam.png",
+      "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "extra": {
@@ -18,7 +19,11 @@
     
     ],
     "android": {
-      "package": "com.mr_cat.Calygam"
+      "package": "com.mr_cat.Calygam",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/image/imagelogo/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
     }
   }
 }
