@@ -157,7 +157,7 @@ export default function ShopPage() {
     getPetsLoja();
   }, []);
   if (loading) {
-    return <LoadingSkeletonShimmer type="cards" count={15} />;
+    return <LoadingSkeletonShimmer type="cards" count={30} />;
   }
 
   return (
@@ -199,10 +199,6 @@ export default function ShopPage() {
               </View>
             )}
 
-            <View style={{ height: 180 }}>
-
-            </View>
-
           </View>
 
         </View>
@@ -239,18 +235,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 55,
     gap: 35,
-    backgroundColor: '#021713'
+    backgroundColor: '#021713',
   },
   containerText: {
-    // backgroundColor: 'red',
-    width: 'auto',
-    gap: 20
+    width: '100%',
+    gap: 20,
   },
   TextInput: {
     backgroundColor: '#FFF',
-    width: '80%',
+    flex: 1,
     height: 45,
-    fontWeight: '200'
+    fontWeight: '200',
+    paddingHorizontal: 10,
   },
   containerSeachBar: {
     flexDirection: 'row',
@@ -259,27 +255,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    marginLeft: 15,
-    marginRight: 15
-
+    marginHorizontal: 15,
+    paddingHorizontal: 10,
   },
   card: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 20,
+    gap: 15,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    height: 'auto'
-
+    paddingVertical: 15,
   },
   containerCard: {
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-    backgroundColor: '#021713',
     width: '100%',
-    height: 'auto',
-
+    paddingHorizontal: 10,
+    backgroundColor: '#021713',
+    marginBottom: 100,
   }
 })

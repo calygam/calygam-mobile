@@ -257,7 +257,7 @@ export default function Trail() {
                 {/* Topo: Bandeiras e Timer globais */}
                 <View style={styles.FlagsBox}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <Text style={styles.flagsLabel}>Bandeiras Restantes</Text>
+                        <Text style={styles.flagsLabel}>Vidas Restantes</Text>
                         <Text style={styles.flagsValue}>{flags?.flagsQtd ?? 0}</Text>
                     </View>
                     

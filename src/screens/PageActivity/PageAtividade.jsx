@@ -443,7 +443,7 @@ export default function PageAtividade() {
                 if (oldEnergy > newEnergy) {
                     const energyLost = oldEnergy - newEnergy;
                     console.log(`[Pet] Energia reduzida: ${oldEnergy} → ${newEnergy} (-${energyLost})`);
-                    
+
                     // Avisar se pet ficou EXHAUSTED
                     if (newEnergy < minEnergy && oldEnergy >= minEnergy) {
                         setTimeout(() => {
@@ -542,190 +542,190 @@ export default function PageAtividade() {
     }
 
     return (
-        <KeyboardAvoidingView 
-            style={{ flex: 1 }} 
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         >
             <ScrollView contentContainerStyle={styles.container}>
                 <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Text style={{ color: '#928cffff' }}>Voltar</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>{activityName || 'Atividade'}</Text>
-            </View>
-
-            <View style={styles.descriptionBox}>
-                <Text style={styles.boxTitle}>Atividade {index != null ? index + 1 : ''}: {activityName}</Text>
-                <Text style={styles.description}>{activityDescription || 'Sem descrição.'}</Text>
-                <View style={styles.metaRow}>
-                    <Text style={styles.metaText}>Dificuldade: {activityDifficulty || 'N/D'}</Text>
-                    <Text style={styles.metaText}>XP: {activityPrice ?? 0}</Text>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Text style={{ color: '#928cffff' }}>Voltar</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.title}>{activityName || 'Atividade'}</Text>
                 </View>
-            </View>
 
-            {submissions.length > 0 && (
-                <View style={styles.submissionsBox}>
-                    <Text style={styles.boxTitle}>Entregas anteriores</Text>
-                    {submissions.map((userSub, idx) => (
-                        userSub.submissions.map((s, sidx) => (
-                            <TouchableOpacity key={`${idx}-${sidx}`} onPress={() => Linking.openURL(s.submissionArchiveUrl)}>
-                                <Text style={styles.submissionText}>{s.submissionOriginalName}</Text>
-                            </TouchableOpacity>
-                        ))
-                    ))}
+                <View style={styles.descriptionBox}>
+                    <Text style={styles.boxTitle}>Atividade {index != null ? index + 1 : ''}: {activityName}</Text>
+                    <Text style={styles.description}>{activityDescription || 'Sem descrição.'}</Text>
+                    <View style={styles.metaRow}>
+                        <Text style={styles.metaText}>Dificuldade: {activityDifficulty || 'N/D'}</Text>
+                        <Text style={styles.metaText}>XP: {activityPrice ?? 0}</Text>
+                    </View>
                 </View>
-            )}
 
-            {/* Topo: Limites */}
-            <View style={styles.limitsBox}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <Text style={styles.boxTitle}>Entregas desta atividade</Text>
-                    <Text style={styles.limitValue}>{limits?.perActivity?.used ?? 0}/5</Text>
-                </View>
-                {limits?.perActivity?.atLimit && (
-                    <Text style={styles.warningText}>⚠️ Limite de 5 entregas atingido para esta atividade!</Text>
+                {submissions.length > 0 && (
+                    <View style={styles.submissionsBox}>
+                        <Text style={styles.boxTitle}>Entregas anteriores</Text>
+                        {submissions.map((userSub, idx) => (
+                            userSub.submissions.map((s, sidx) => (
+                                <TouchableOpacity key={`${idx}-${sidx}`} onPress={() => Linking.openURL(s.submissionArchiveUrl)}>
+                                    <Text style={styles.submissionText}>{s.submissionOriginalName}</Text>
+                                </TouchableOpacity>
+                            ))
+                        ))}
+                    </View>
                 )}
 
-                <View style={{ marginTop: 5, paddingTop: 5}}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <Text style={styles.boxTitle}>Bandeiras restantes</Text>
-                        <Text style={styles.limitValue}>{limits?.flags?.flagsQtd ?? 0}</Text>
+                {/* Topo: Limites */}
+                <View style={styles.limitsBox}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <Text style={styles.boxTitle}>Entregas desta atividade</Text>
+                        <Text style={styles.limitValue}>{limits?.perActivity?.used ?? 0}/5</Text>
                     </View>
-                    {(limits?.flags?.flagsQtd ?? 0) <= 0 && (
-                        <Text style={styles.timerText}>Reseta em: {hhmmss}</Text>
+                    {limits?.perActivity?.atLimit && (
+                        <Text style={styles.warningText}>⚠️ Limite de 5 entregas atingido para esta atividade!</Text>
                     )}
-                </View>
-            </View>
 
-            {/* Card do Pet e Boosts */}
-            {petData && petData.apprenticeInventoryEquipped && (
-                <View style={styles.petBoostCard}>
-                    <View style={styles.petBoostHeader}>
-                        <Text style={styles.petBoostTitle}>🐾 Pet Equipado</Text>
-                        {petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? (
-                            <Text style={styles.petStatusHappy}>⚡ HAPPY</Text>
-                        ) : (
-                            <Text style={styles.petStatusExhausted}>😴 CANSADO</Text>
+                    <View style={{ marginTop: 5, paddingTop: 5 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={styles.boxTitle}>Bandeiras restantes</Text>
+                            <Text style={styles.limitValue}>{limits?.flags?.flagsQtd ?? 0}</Text>
+                        </View>
+                        {(limits?.flags?.flagsQtd ?? 0) <= 0 && (
+                            <Text style={styles.timerText}>Reseta em: {hhmmss}</Text>
                         )}
                     </View>
+                </View>
 
-                    <View style={styles.petBoostContent}>
-                        {petData.petOutfitUrl && (
-                            <Image source={{ uri: petData.petOutfitUrl }} style={styles.petBoostImage} />
-                        )}
-                        <View style={styles.petBoostInfo}>
-                            <Text style={styles.petBoostName}>{petData.petOutfitName || petData.petName || 'Pet'}</Text>
-                            
+                {/* Card do Pet e Boosts */}
+                {petData && petData.apprenticeInventoryEquipped && (
+                    <View style={styles.petBoostCard}>
+                        <View style={styles.petBoostHeader}>
+                            <Text style={styles.petBoostTitle}>🐾 Pet Equipado</Text>
                             {petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? (
-                                <View style={styles.petBoostStats}>
-                                    <Text style={styles.petBoostStat}>✨ XP: x{petData.petBoostXp || 1}</Text>
-                                    <Text style={styles.petBoostStat}>💰 Moedas: x{petData.petBoostMoney || 1}</Text>
-                                    <Text style={styles.petBoostStat}>🍖 Comida: x{petData.petBoostFood || 1}</Text>
-                                </View>
+                                <Text style={styles.petStatusHappy}>⚡ HAPPY</Text>
                             ) : (
-                                <Text style={styles.petBoostWarning}>
-                                    Alimente seu pet para ativar os boosts!
-                                </Text>
+                                <Text style={styles.petStatusExhausted}>😴 CANSADO</Text>
                             )}
-                            
-                            <View style={styles.petEnergyBar}>
-                                <View 
-                                    style={[
-                                        styles.petEnergyFill, 
-                                        { 
-                                            width: `${Math.min(100, Math.max(0, ((petData.apprenticePetEnergy || 0) / (petData.petMaxEnergy || 100)) * 100))}%`,
-                                            backgroundColor: petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? '#4CAF50' : '#FF6B6B'
-                                        }
-                                    ]} 
-                                />
+                        </View>
+
+                        <View style={styles.petBoostContent}>
+                            {petData.petOutfitUrl && (
+                                <Image source={{ uri: petData.petOutfitUrl }} style={styles.petBoostImage} />
+                            )}
+                            <View style={styles.petBoostInfo}>
+                                <Text style={styles.petBoostName}>{petData.petOutfitName || petData.petName || 'Pet'}</Text>
+
+                                {petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? (
+                                    <View style={styles.petBoostStats}>
+                                        <Text style={styles.petBoostStat}>✨ XP: x{petData.petBoostXp || 1}</Text>
+                                        <Text style={styles.petBoostStat}>💰 Moedas: x{petData.petBoostMoney || 1}</Text>
+                                        <Text style={styles.petBoostStat}>🍖 Comida: x{petData.petBoostFood || 1}</Text>
+                                    </View>
+                                ) : (
+                                    <Text style={styles.petBoostWarning}>
+                                        Alimente seu pet para ativar os boosts!
+                                    </Text>
+                                )}
+
+                                <View style={styles.petEnergyBar}>
+                                    <View
+                                        style={[
+                                            styles.petEnergyFill,
+                                            {
+                                                width: `${Math.min(100, Math.max(0, ((petData.apprenticePetEnergy || 0) / (petData.petMaxEnergy || 100)) * 100))}%`,
+                                                backgroundColor: petData.apprenticePetEnergy >= (petData.petMinEnergy || 0) ? '#4CAF50' : '#FF6B6B'
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                                <Text style={styles.petEnergyText}>
+                                    🔋 Energia: {petData.apprenticePetEnergy || 0}/{petData.petMaxEnergy || 100}
+                                </Text>
                             </View>
-                            <Text style={styles.petEnergyText}>
-                                🔋 Energia: {petData.apprenticePetEnergy || 0}/{petData.petMaxEnergy || 100}
-                            </Text>
                         </View>
                     </View>
-                </View>
-            )}
+                )}
 
-            <Text style={styles.boxTitle}>Sua entrega</Text>
+                <Text style={styles.boxTitle}>Sua entrega</Text>
 
-            {/* Espaço para futura entrega de arquivo / inputs */}
-            <View style={styles.box}>
-                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: '100%' }} onPress={handlePickFile}>
-                    {file && filePreviewIsImage ? (
-                        <Image source={{ uri: file.uri }} style={{ width: 120, height: 120, borderRadius: 8 }} />
-                    ) : (
-                        <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffffff', width: 56, height: 56, borderRadius: 100 }}>
-                            <IconUpload width={25} height={25} fill="#FFF" />
-                        </View>
-                    )}
+                {/* Espaço para futura entrega de arquivo / inputs */}
+                <View style={styles.box}>
+                    <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: '100%' }} onPress={handlePickFile}>
+                        {file && filePreviewIsImage ? (
+                            <Image source={{ uri: file.uri }} style={{ width: 120, height: 120, borderRadius: 8 }} />
+                        ) : (
+                            <View style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffffff', width: 56, height: 56, borderRadius: 100 }}>
+                                <IconUpload width={25} height={25} fill="#FFF" />
+                            </View>
+                        )}
 
-                    <Text style={{ color: '#ffffffff', fontSize: 14, textAlign: 'center', marginTop: 10 }}>
-                        {file ? file.name : 'Clique para enviar sua entrega'}
-                    </Text>
-                    {!!file && (
-                        <Text style={{ color: '#B7B7B7', fontSize: 12, textAlign: 'center', marginTop: 6 }}>
-                            {file.mimeType}
+                        <Text style={{ color: '#ffffffff', fontSize: 14, textAlign: 'center', marginTop: 10 }}>
+                            {file ? file.name : 'Clique para enviar sua entrega'}
                         </Text>
-                    )}
-                </TouchableOpacity>
-            </View>
+                        {!!file && (
+                            <Text style={{ color: '#B7B7B7', fontSize: 12, textAlign: 'center', marginTop: 6 }}>
+                                {file.mimeType}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
 
-            <View style={styles.actionsRow}>
-                <TouchableOpacity style={styles.actionBtn} onPress={handlePickFile}><Text style={styles.actionText}>Escolher arquivo</Text></TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.actionBtn,
-                        {
-                            backgroundColor: (file && !limits?.shouldBlock) ? '#6C63FF' : '#6C63FF55'
-                        }
-                    ]}
-                    disabled={!file || limits?.shouldBlock}
-                    onPress={() => {
-                        // Bloqueia localmente se já atingir limites
-                        if (limits?.perActivity?.atLimit) {
-                            Alert.alert(
-                                'Limite por atividade',
-                                'Limite de 5 entregas atingido para esta atividade!'
-                            );
-                            return;
-                        }
-                        if ((limits?.flags?.flagsQtd ?? 0) <= 0) {
-                            Alert.alert(
-                                'Limite global',
-                                `Entregas - Limite atingido. Tente novamente em ${hhmmss}.`
-                            );
-                            return;
-                        }
-                        setShowConfirm(true);
+                <View style={styles.actionsRow}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handlePickFile}><Text style={styles.actionText}>Escolher arquivo</Text></TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.actionBtn,
+                            {
+                                backgroundColor: (file && !limits?.shouldBlock) ? '#6C63FF' : '#6C63FF55'
+                            }
+                        ]}
+                        disabled={!file || limits?.shouldBlock}
+                        onPress={() => {
+                            // Bloqueia localmente se já atingir limites
+                            if (limits?.perActivity?.atLimit) {
+                                Alert.alert(
+                                    'Limite por atividade',
+                                    'Limite de 5 entregas atingido para esta atividade!'
+                                );
+                                return;
+                            }
+                            if ((limits?.flags?.flagsQtd ?? 0) <= 0) {
+                                Alert.alert(
+                                    'Limite global',
+                                    `Entregas - Limite atingido. Tente novamente em ${hhmmss}.`
+                                );
+                                return;
+                            }
+                            setShowConfirm(true);
+                        }}
+                    >
+                        <Text style={[styles.actionText, { color: '#FFF' }]}>Entregar atividade</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Sistema de comentários em tempo real */}
+                <CommentsSection activityId={activityId} />
+
+
+                {/* Modal de confirmação */}
+                <ModalEntrega
+                    visible={showConfirm}
+                    onClose={() => setShowConfirm(false)}
+                    onConfirm={submitActivity}
+                    loading={uploading || ensuringProgress}
+                />
+
+                {/* Modal de sucesso */}
+                <ModalSucessoEntrega
+                    visible={showSuccess}
+                    onClose={() => setShowSuccess(false)}
+                    onConfirm={() => {
+                        setShowSuccess(false);
+                        navigation.goBack(); // Volta para a tela anterior (Trail)
                     }}
-                >
-                    <Text style={[styles.actionText, { color: '#FFF' }]}>Entregar atividade</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Sistema de comentários em tempo real */}
-            <CommentsSection activityId={activityId} />
-
-
-            {/* Modal de confirmação */}
-            <ModalEntrega
-                visible={showConfirm}
-                onClose={() => setShowConfirm(false)}
-                onConfirm={submitActivity}
-                loading={uploading || ensuringProgress}
-            />
-
-            {/* Modal de sucesso */}
-            <ModalSucessoEntrega
-                visible={showSuccess}
-                onClose={() => setShowSuccess(false)}
-                onConfirm={() => {
-                    setShowSuccess(false);
-                    navigation.goBack(); // Volta para a tela anterior (Trail)
-                }}
-            />
+                />
 
             </ScrollView>
         </KeyboardAvoidingView>
