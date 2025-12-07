@@ -75,6 +75,9 @@ export const CommentItem = ({
 
   const handleReplyPress = () => {
     setShowReplyInput(true);
+    // Garantir que o modal não abra quando clicar em responder
+    // O modal só deve abrir quando clicar nos 3 pontos
+    // Não chama onMenuPress aqui
   };
 
   const handleSendReply = async () => {
@@ -132,7 +135,16 @@ export const CommentItem = ({
           </View>
         </View>
         {isOwner && (
-          <TouchableOpacity onPress={() => onMenuPress('comment', comment)} style={styles.menuButton}>
+          <TouchableOpacity 
+            onPress={(e) => {
+              // Prevenir propagação de eventos
+              e.stopPropagation();
+              // Só abre o modal quando clicar explicitamente nos 3 pontos
+              onMenuPress('comment', comment);
+            }} 
+            style={styles.menuButton}
+            activeOpacity={0.7}
+          >
             <Text style={styles.menuDots}>⋮</Text>
           </TouchableOpacity>
         )}
@@ -260,7 +272,16 @@ const ReplyItem = ({ reply, onMenuPress }) => {
         </View>
       </View>
       {isOwner && (
-        <TouchableOpacity onPress={() => onMenuPress('reply', reply)} style={styles.menuButton}>
+        <TouchableOpacity 
+          onPress={(e) => {
+            // Prevenir propagação de eventos
+            e.stopPropagation();
+            // Só abre o modal quando clicar explicitamente nos 3 pontos
+            onMenuPress('reply', reply);
+          }} 
+          style={styles.menuButton}
+          activeOpacity={0.7}
+        >
           <Text style={styles.menuDots}>⋮</Text>
         </TouchableOpacity>
       )}

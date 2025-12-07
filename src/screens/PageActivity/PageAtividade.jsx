@@ -589,7 +589,7 @@ export default function PageAtividade() {
 
                     <View style={{ marginTop: 5, paddingTop: 5 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={styles.boxTitle}>Bandeiras restantes</Text>
+                            <Text style={styles.boxTitle}>Vidas restantes</Text>
                             <Text style={styles.limitValue}>{limits?.flags?.flagsQtd ?? 0}</Text>
                         </View>
                         {(limits?.flags?.flagsQtd ?? 0) <= 0 && (

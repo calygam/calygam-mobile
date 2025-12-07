@@ -26,7 +26,7 @@ export default function Trail() {
     const [flags, setFlags] = useState({ flagsQtd: null, flagGenerateTimer: 0 });
     const [loading, setLoading] = useState(true);
     const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
-    const animationRef = useRef(null);
+    const animationRefs = useRef({}); // Objeto para armazenar refs de cada coração
     const [flagsChanged, setFlagsChanged] = useState(false);
     const previousFlagsQtd = useRef(flags.flagsQtd);
 
@@ -63,8 +63,24 @@ export default function Trail() {
     // Animar quando as bandeiras mudarem (ex: após submissão de atividade)
     useEffect(() => {
         if (previousFlagsQtd.current !== null && previousFlagsQtd.current !== flags.flagsQtd) {
-            // Bandeiras mudaram - tocar animação
-            animationRef.current?.play();
+            // Bandeiras mudaram - calcular qual coração deve animar
+            // A animação deve começar do último coração disponível (da frente para trás)
+            const currentFlags = flags?.flagsQtd ?? 0;
+            const previousFlags = previousFlagsQtd.current;
+            
+            // Se as flags diminuíram, anima o coração que foi "gasto" (o último que estava disponível)
+            if (previousFlags > currentFlags && currentFlags >= 0) {
+                // O índice do coração que deve animar é o último disponível ANTES da redução
+                // Queremos animar o coração no índice (previousFlags - 1), que é o último que estava visível
+                const indexToAnimate = previousFlags - 1;
+                
+                // Busca a ref do coração correspondente
+                const heartRef = animationRefs.current[indexToAnimate];
+                if (heartRef && heartRef.current) {
+                    heartRef.current.play();
+                }
+            }
+            
             setFlagsChanged(true);
             setTimeout(() => setFlagsChanged(false), 1000);
         }
@@ -263,16 +279,31 @@ export default function Trail() {
                     
                     {/* Mostra as bandeiras visualmente */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-                        {Array.from({ length: flags?.flagsQtd ?? 0 }).map((_, index) => (
-                            <LottieView 
-                                key={index}
-                                source={require('../../../assets/like.json')}
-                                autoPlay={false}
-                                loop={false}
-                                style={{ width: 35, height: 35 }}
-                                ref={index === 0 ? animationRef : null}
-                            />
-                        ))}
+                        {Array.from({ length: flags?.flagsQtd ?? 0 }).map((_, index) => {
+                            // Cria uma ref única para cada coração usando useRef
+                            const getRef = (idx) => {
+                                if (!animationRefs.current[idx]) {
+                                    animationRefs.current[idx] = { current: null };
+                                }
+                                return animationRefs.current[idx];
+                            };
+                            
+                            return (
+                                <LottieView 
+                                    key={index}
+                                    source={require('../../../assets/like.json')}
+                                    autoPlay={false}
+                                    loop={false}
+                                    style={{ width: 35, height: 35 }}
+                                    ref={(ref) => {
+                                        if (!animationRefs.current[index]) {
+                                            animationRefs.current[index] = { current: null };
+                                        }
+                                        animationRefs.current[index].current = ref;
+                                    }}
+                                />
+                            );
+                        })}
                     </View>
                     
                     {(flags?.flagsQtd ?? 0) <= 0 && (

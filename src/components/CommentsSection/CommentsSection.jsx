@@ -1,7 +1,7 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { useComments } from '../../hooks/useComments';
 import { CommentItem } from '../CommentItem/CommentItem';
 
@@ -12,11 +12,21 @@ export const CommentsSection = ({ activityId }) => {
   const [commentText, setCommentText] = useState('');
   const [textInputHeight, setTextInputHeight] = useState(40);
   const [selectedItem, setSelectedItem] = useState(null); // {type: 'comment'|'reply', data: item}
-  const [sheetIndex, setSheetIndex] = useState(-1); // -1 = fechado, 0 = aberto
+  const [sheetIndex, setSheetIndex] = useState(-1); // -1 = fechado, 0 = aberto (inicia fechado)
   const [editingItem, setEditingItem] = useState(null); // Item sendo editado
   const inputRef = useRef(null);
   const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => [130, '75%'], []);
+  const isOpeningMenu = useRef(false); // Flag para prevenir abertura automática
+  const snapPoints = useMemo(() => ['45%', '25%'], []);
+
+  // Previne abertura automática do modal
+  useEffect(() => {
+    // Se o modal estiver aberto mas não tiver selectedItem, força fechar
+    if (sheetIndex !== -1 && !selectedItem) {
+      setSheetIndex(-1);
+      isOpeningMenu.current = false;
+    }
+  }, [sheetIndex, selectedItem]);
 
   const {
     comments,
@@ -70,24 +80,36 @@ export const CommentsSection = ({ activityId }) => {
     return success;
   };
 
-  // Abre o BottomSheet com opções
+  // Abre o BottomSheet com opções - só quando explicitamente chamado
   const openMenu = useCallback((type, item) => {
-    setSelectedItem({ type, data: item });
-    setSheetIndex(0);
+    // Garantir que só abre quando chamado explicitamente
+    if (type && item && !isOpeningMenu.current) {
+      isOpeningMenu.current = true;
+      // Primeiro define o item, depois abre o modal
+      setSelectedItem({ type, data: item });
+      // Usa setTimeout para garantir que o estado foi atualizado
+      setTimeout(() => {
+        setSheetIndex(0);
+        // Força o BottomSheet a abrir
+        bottomSheetRef.current?.snapToIndex(0);
+        isOpeningMenu.current = false;
+      }, 50);
+    }
   }, []);
 
   // Handler para editar - vai pro input
   const handleEditPress = useCallback(() => {
     if (!selectedItem) return;
     
+    // Fecha o modal primeiro
     setSheetIndex(-1);
     setEditingItem(selectedItem);
     setCommentText(selectedItem.data.messageActivityDescription);
     
-    // Foca no input
+    // Foca no input após fechar o modal
     setTimeout(() => {
       inputRef.current?.focus();
-    }, 100);
+    }, 300);
   }, [selectedItem]);
 
   // Handler para deletar - mostra modal de confirmação
@@ -163,6 +185,7 @@ export const CommentsSection = ({ activityId }) => {
   };
 
   return (
+    <>
     <View style={styles.container}>
       {/* Input de comentário */}
       <View style={styles.inputContainer}>
@@ -236,6 +259,8 @@ export const CommentsSection = ({ activityId }) => {
         }
         contentContainerStyle={comments.length === 0 ? styles.emptyList : styles.list}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        scrollEnabled={false}
       />
 
       {hasNext && !loading && (
@@ -244,24 +269,51 @@ export const CommentsSection = ({ activityId }) => {
         </TouchableOpacity>
       )}
 
-      {/* BottomSheet para Menu de Opções */}
+      {/* BottomSheet para Menu de Opções - Fixo na tela */}
       <BottomSheet
         ref={bottomSheetRef}
         snapPoints={snapPoints}
         index={sheetIndex}
-        onChange={setSheetIndex}
+        onChange={(index) => {
+          // Previne qualquer abertura automática
+          // Só permite mudanças se:
+          // 1. Estiver fechando (index === -1) - sempre permite
+          // 2. Estiver abrindo (index >= 0) E tiver selectedItem E flag de abertura ativa
+          if (index === -1) {
+            // Sempre permite fechar
+            setSheetIndex(-1);
+            setSelectedItem(null);
+            isOpeningMenu.current = false;
+          } else if (index >= 0 && selectedItem && isOpeningMenu.current) {
+            // Só permite abrir se todas as condições forem verdadeiras
+            setSheetIndex(index);
+          } else if (index >= 0 && (!selectedItem || !isOpeningMenu.current)) {
+            // Se tentar abrir sem as condições, força fechar
+            setSheetIndex(-1);
+            isOpeningMenu.current = false;
+            if (!selectedItem) {
+              setSelectedItem(null);
+            }
+          }
+        }}
         enablePanDownToClose={true}
         style={styles.sheetContainer}
-        bottomInset={50}
+        bottomInset={0}
         detached={true}
+        enableOverDrag={false}
+        enableContentPanningGesture={true}
+        enableHandlePanningGesture={true}
         backgroundStyle={{ backgroundColor: '#1E3D35' }}
         handleIndicatorStyle={{ backgroundColor: '#ffffffff' }}
-        
-  
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
+        animateOnMount={false}
+        enableDynamicSizing={false}
       >
           <BottomSheetView style={styles.sheetContent}>
             <Text style={styles.sheetTitle}>
-              {selectedItem?.type === 'delete' ? 'Deseja Deletar?' : 'Opções'}
+              {selectedItem?.type === 'delete' ? 'Deseja Deletar?' : 'Opções '}
             </Text>
             
             {selectedItem?.type !== 'delete' ? (
@@ -294,6 +346,7 @@ export const CommentsSection = ({ activityId }) => {
           </BottomSheetView>
         </BottomSheet>
     </View>
+    </>
   );
 };
 
@@ -412,15 +465,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  // BottomSheet
+
+  // BottomSheet - Fixo na tela (não acompanha scroll)
   sheetContainer: {
-    zIndex: 999,
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: 'auto',
+    elevation: 10, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   sheetContent: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     gap: 20,
+    height: 'auto',
   },
   sheetTitle: {
     fontSize: 18,
