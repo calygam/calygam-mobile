@@ -27,6 +27,7 @@ export default function Trail() {
     const [loading, setLoading] = useState(true);
     const { hhmmss, start: startTimer, reset: resetTimer } = useFlagsTimer(0);
     const animationRefs = useRef({}); // Objeto para armazenar refs de cada coração
+    const [visibleFlags, setVisibleFlags] = useState(flags.flagsQtd ?? 0);
     const [flagsChanged, setFlagsChanged] = useState(false);
     const previousFlagsQtd = useRef(flags.flagsQtd);
 
@@ -62,29 +63,38 @@ export default function Trail() {
 
     // Animar quando as bandeiras mudarem (ex: após submissão de atividade)
     useEffect(() => {
-        if (previousFlagsQtd.current !== null && previousFlagsQtd.current !== flags.flagsQtd) {
-            // Bandeiras mudaram - calcular qual coração deve animar
-            // A animação deve começar do último coração disponível (da frente para trás)
-            const currentFlags = flags?.flagsQtd ?? 0;
-            const previousFlags = previousFlagsQtd.current;
-            
-            // Se as flags diminuíram, anima o coração que foi "gasto" (o último que estava disponível)
-            if (previousFlags > currentFlags && currentFlags >= 0) {
-                // O índice do coração que deve animar é o último disponível ANTES da redução
-                // Queremos animar o coração no índice (previousFlags - 1), que é o último que estava visível
-                const indexToAnimate = previousFlags - 1;
-                
-                // Busca a ref do coração correspondente
-                const heartRef = animationRefs.current[indexToAnimate];
-                if (heartRef && heartRef.current) {
-                    heartRef.current.play();
-                }
-            }
-            
-            setFlagsChanged(true);
-            setTimeout(() => setFlagsChanged(false), 1000);
+        const currentFlags = flags?.flagsQtd ?? 0;
+        const previousFlags = previousFlagsQtd.current;
+
+        // Primeira carga: só sincroniza contagem visível
+        if (previousFlags === null || previousFlags === undefined) {
+            setVisibleFlags(currentFlags);
+            previousFlagsQtd.current = currentFlags;
+            return;
         }
-        previousFlagsQtd.current = flags.flagsQtd;
+
+        // Aumentou vidas: mostra imediatamente
+        if (currentFlags > previousFlags) {
+            setVisibleFlags(currentFlags);
+        }
+
+        // Diminuiu vidas: anima o último coração disponível e só depois reduz a contagem renderizada
+        if (currentFlags < previousFlags && currentFlags >= 0) {
+            const indexToAnimate = Math.max(0, previousFlags - 1);
+            const heartRef = animationRefs.current[indexToAnimate];
+            if (heartRef && heartRef.current) {
+                heartRef.current.play();
+            }
+            // Espera a animação e então oculta o coração gasto
+            setTimeout(() => {
+                setVisibleFlags(currentFlags);
+            }, 700);
+        }
+
+        setFlagsChanged(true);
+        setTimeout(() => setFlagsChanged(false), 1000);
+
+        previousFlagsQtd.current = currentFlags;
     }, [flags.flagsQtd]);
 
 
@@ -279,31 +289,21 @@ export default function Trail() {
                     
                     {/* Mostra as bandeiras visualmente */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-                        {Array.from({ length: flags?.flagsQtd ?? 0 }).map((_, index) => {
-                            // Cria uma ref única para cada coração usando useRef
-                            const getRef = (idx) => {
-                                if (!animationRefs.current[idx]) {
-                                    animationRefs.current[idx] = { current: null };
-                                }
-                                return animationRefs.current[idx];
-                            };
-                            
-                            return (
-                                <LottieView 
-                                    key={index}
-                                    source={require('../../../assets/like.json')}
-                                    autoPlay={false}
-                                    loop={false}
-                                    style={{ width: 35, height: 35 }}
-                                    ref={(ref) => {
-                                        if (!animationRefs.current[index]) {
-                                            animationRefs.current[index] = { current: null };
-                                        }
-                                        animationRefs.current[index].current = ref;
-                                    }}
-                                />
-                            );
-                        })}
+                        {Array.from({ length: visibleFlags }).map((_, index) => (
+                            <LottieView 
+                                key={index}
+                                source={require('../../../assets/like.json')}
+                                autoPlay={false}
+                                loop={false}
+                                style={{ width: 35, height: 35 }}
+                                ref={(ref) => {
+                                    if (!animationRefs.current[index]) {
+                                        animationRefs.current[index] = { current: null };
+                                    }
+                                    animationRefs.current[index].current = ref;
+                                }}
+                            />
+                        ))}
                     </View>
                     
                     {(flags?.flagsQtd ?? 0) <= 0 && (

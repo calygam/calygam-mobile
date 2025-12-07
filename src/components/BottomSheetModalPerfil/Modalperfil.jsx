@@ -277,7 +277,7 @@ const Modal = () => {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 20 }}>
                         <Text style={{ fontSize: 24, color: '#ffffffff' }}>Meu Perfil</Text>
                         <TouchableOpacity onPress={handleCloseAction}>
-                            <IconClose width={24} height={24} fill="#ffffffff" />
+                            <IconClose width={34} height={34} fill="#ffffffff" />
                         </TouchableOpacity>
                     </View>
 

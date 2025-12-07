@@ -177,6 +177,11 @@ export default function BibliotecaCursos() {
     // Header component para o FlatList - memoizado para evitar recriação
     const ListHeader = useMemo(() => (
         <View style={styles.listHeaderContainer}>
+            <View style={styles.searchBarRow}>
+                <Modal />
+                <SearchBar value={search} onChangeText={setSearch} />
+            </View>
+
             {inProgressTrails.length > 0 && (
                 <View style={styles.CardProcessoTrilha}>
                     {/* Card de progresso da trilha que o usuario está participando */}
@@ -188,8 +193,6 @@ export default function BibliotecaCursos() {
                         data={inProgressTrails}
                         keyExtractor={(t) => String(t.trailId)}
                         renderItem={({ item: t }) => (
-                            // Você só se preocupa em RENDERIZAR o card.
-                            // O Carrossel.js cuida do tamanho e da margem.
                             <CardProcessoTrilha
                                 title={t.trailName}
                                 progress={t.progress ?? 0}
@@ -204,7 +207,6 @@ export default function BibliotecaCursos() {
                     />
                 </View>
             )}
-            
 
             {/* Texto - Trilhas Disponiveis */}
             <View style={styles.TextTrilhas}>
@@ -212,7 +214,7 @@ export default function BibliotecaCursos() {
                 <Text style={{ color: '#D9D9D9', fontSize: 15, textAlign: 'left', fontWeight: '100' }}> Explore novas áreas do conhecimento </Text>
             </View>
         </View>
-    ), [inProgressTrails, navigation, fetchTrails]);
+    ), [inProgressTrails, navigation, fetchTrails, search]);
 
     if (loading) {
         return (
@@ -224,16 +226,6 @@ export default function BibliotecaCursos() {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#021713' }}>
-            {/* Header fixo com SearchBar - fora do FlatList para não recriar */}
-            <View style={styles.fixedHeader}>
-                <View style={styles.containerHeader}>
-                    <View style={styles.searchBar}>
-                        <Modal />
-                        <SearchBar value={search} onChangeText={setSearch} />
-                    </View>
-                </View>
-            </View>
-            
             <FlatList
                 data={filteredTrails}
                 ListHeaderComponent={ListHeader}
@@ -286,33 +278,19 @@ export default function BibliotecaCursos() {
 }
 
 const styles = StyleSheet.create({
-    fixedHeader: {
-        width: '100%',
-        backgroundColor: '#021713',
-        paddingTop: 15,
-        zIndex: 10,
-    },
     listHeaderContainer: {
         justifyContent: 'flex-start',
         alignItems: 'flex-start',
         backgroundColor: '#021713',
-        paddingTop: 15,
+        paddingTop: 40,
         gap: 15,
     },
-    containerHeader: {
+    searchBarRow: {
         width: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-
-    },
-    searchBar: {
-        width: '90%',
-        height: 'auto',
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
         gap: 18,
-        zIndex: 2,
     },
     perfil: {
         height: 50,
@@ -326,6 +304,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',  
         gap: 4,
         paddingTop: 18,
+        paddingHorizontal: 8,
     },
     flatListContainer: {
         backgroundColor: '#021713',
