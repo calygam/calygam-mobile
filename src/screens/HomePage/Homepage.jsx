@@ -524,7 +524,6 @@ const styles = StyleSheet.create({
     petCardContainer: {
         width: '100%',
         height: 'auto',
-        backgroundColor: '#e70000ff',
         alignItems: 'center',
         justifyContent: 'center',
     }
